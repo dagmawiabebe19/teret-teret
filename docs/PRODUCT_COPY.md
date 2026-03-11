@@ -139,15 +139,16 @@ Keep sentences short and feelings big.
 - **Legacy:** paywallTitle, paywallSub, paywallValueLine, paywallSubscribeBtn, paywallLaterBtn  
 
 ### Free story limits (daily, server-enforced)
-- **Guest users:** 3 free stories per day (by IP; resets at midnight UTC).  
-- **Signed-in free users:** 3 free stories per day (resets at midnight UTC).  
+- **Guest users:** 3 free stories per day (by IP; rolling 24h window).  
+- **Signed-in free users:** 3 free stories per day (rolling 24h from first story in window).  
 - **Premium users:** Unlimited stories.
 
 ### Account subscription UX
 - **planFree:** Free | **planPremium:** Premium  
 - **unlimitedStories:** Unlimited stories (e.g. under Premium plan)  
 - **manageSubscription:** Manage subscription | **upgradeToPremium:** Upgrade to Premium  
-- **checkoutCancelled:** Checkout cancelled. | **signInToSubscribe:** Sign in to subscribe.
+- **checkoutCancelled:** Checkout cancelled. | **signInToSubscribe:** Sign in to subscribe.  
+- **subscriptionComingSoon:** Subscription coming soon. (When Stripe is not configured.)
 
 ---
 

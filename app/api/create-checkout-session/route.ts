@@ -29,10 +29,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let returnToPath = "/";
   let returnTo = `${APP_URL}/account`;
   try {
     const body = await request.json();
     if (typeof body?.returnTo === "string" && body.returnTo.startsWith("/")) {
+      returnToPath = body.returnTo;
       returnTo = `${APP_URL}${body.returnTo}`;
     }
   } catch {
@@ -51,12 +53,13 @@ export async function POST(request: NextRequest) {
     customerId = sub?.stripe_customer_id ?? null;
   }
 
+  const successReturnTo = encodeURIComponent(returnToPath);
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: PRICE_ID, quantity: 1 }],
-      success_url: `${APP_URL}/account?success=1`,
+      success_url: `${APP_URL}/account?success=1&returnTo=${successReturnTo}`,
       cancel_url: returnTo,
       customer_email: customerId ? undefined : (user.email ?? undefined),
       customer: customerId ?? undefined,

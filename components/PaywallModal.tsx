@@ -140,7 +140,7 @@ export function PaywallModal({ onClose, lang, onSubscribe, stripeEnabled = false
           </>
         ) : (
           <>
-            <p className="text-[#c9b8e8] text-sm mb-4">Coming soon.</p>
+            <p className="text-[#c9b8e8] text-sm mb-4">{t.paywallSubSoon}</p>
             <button
               type="button"
               onClick={onClose}

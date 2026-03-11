@@ -310,8 +310,9 @@ export default function HomePage() {
         setScreen("home");
         toast.showToast(data.error ?? "Try again", "error");
         if (res.status === 402) {
-        setShowPaywall(true);
-        refreshUsage();
+          setShowPaywall(true);
+          refreshUsage();
+        }
         generatingRef.current = false;
         setIsGenerating(false);
         return;

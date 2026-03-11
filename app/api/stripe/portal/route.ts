@@ -18,11 +18,14 @@ export async function GET() {
     }
 
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.redirect(new URL("/account", APP_URL));
+    }
     const { data: sub } = await admin
-      ?.from("subscriptions")
+      .from("subscriptions")
       .select("stripe_customer_id")
       .eq("user_id", user.id)
-      .single() ?? { data: null };
+      .single();
 
     const customerId = sub?.stripe_customer_id;
     if (!customerId) {

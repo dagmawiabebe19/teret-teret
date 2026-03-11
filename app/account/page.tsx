@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { createClient, isAuthConfigured } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -76,8 +76,9 @@ export default function AccountPage() {
     return () => subscription.unsubscribe();
   }, [authConfigured]);
 
+  const refreshProfileRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
   const refreshProfile = useCallback(() => {
-    if (!user?.id) return;
+    if (!user?.id) return Promise.resolve(false);
     return fetch("/api/profile")
       .then((r) => (r.ok ? r.json() : { progress: null, subscriptionStatus: null }))
       .then((d) => {
@@ -92,6 +93,7 @@ export default function AccountPage() {
         return false;
       });
   }, [user?.id]);
+  refreshProfileRef.current = refreshProfile;
 
   useEffect(() => {
     if (!user?.id) return;
@@ -110,7 +112,7 @@ export default function AccountPage() {
         const maxAttempts = 5;
         intervalId = setInterval(() => {
           attempts += 1;
-          refreshProfile().then((premium) => {
+          refreshProfileRef.current().then((premium) => {
             if (premium) {
               if (intervalId) clearInterval(intervalId);
               intervalId = null;
@@ -181,11 +183,20 @@ export default function AccountPage() {
     setMessage("");
     setGoogleLoading(true);
     try {
+      let redirectTo = `${window.location.origin}/account`;
+      if (typeof window !== "undefined" && searchParams.returnTo) {
+        try {
+          const path = decodeURIComponent(searchParams.returnTo);
+          if (path.startsWith("/") && !path.startsWith("//")) {
+            redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(path)}`;
+          }
+        } catch {
+          // use default
+        }
+      }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/account` : undefined,
-        },
+        options: { redirectTo },
       });
       if (error) {
         setMessage(getFriendlyAuthError(error, t));
@@ -345,7 +356,7 @@ export default function AccountPage() {
                 </a>
               )}
               {!stripeEnabled && status !== "premium" && (
-                <p className="mt-2 text-xs text-[rgba(255,255,255,0.5)]">Subscription coming soon</p>
+                <p className="mt-2 text-xs text-[rgba(255,255,255,0.5)]">{t.subscriptionComingSoon}</p>
               )}
             </div>
             <button

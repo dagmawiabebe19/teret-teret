@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         userId = row?.user_id;
       }
       if (!userId) break;
-      const status = sub.status === "active" ? "premium" : "free";
+      const status = (sub.status === "active" || sub.status === "trialing") ? "premium" : "free";
       await admin.from("subscriptions").update({
         status: sub.status,
         current_period_end: new Date((sub.current_period_end ?? 0) * 1000).toISOString(),

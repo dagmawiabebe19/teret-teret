@@ -64,6 +64,7 @@ export const UI: Record<
     upgradeToPremium: string;
     checkoutCancelled: string;
     signInToSubscribe: string;
+    subscriptionComingSoon: string;
     unlimitedStories: string;
     dailyTeretTitle: string;
     dailyTeretSubtitle: string;
@@ -269,6 +270,7 @@ export const UI: Record<
     upgradeToPremium: "ወደ ፕሪሚየም ይለግሱ",
     checkoutCancelled: "ግዢው ተሰርዟል።",
     signInToSubscribe: "ለመመዝገብ ይግቡ።",
+    subscriptionComingSoon: "የደንበኝነት ምዝገባ በቅርብ ጊዜ ይመጣል።",
     unlimitedStories: "ያልተገደበ",
     dailyTeretTitle: "የዛሬ ተረት",
     dailyTeretSubtitle: "ለዛሬ ሌሊት ትምህርት እና የመጽለፊያ ታሪክ",
@@ -462,6 +464,7 @@ export const UI: Record<
     upgradeToPremium: "Upgrade to Premium",
     checkoutCancelled: "Checkout cancelled.",
     signInToSubscribe: "Sign in to subscribe.",
+    subscriptionComingSoon: "Subscription coming soon.",
     unlimitedStories: "Unlimited",
     dailyTeretTitle: "Tonight's Teret",
     dailyTeretSubtitle: "A new story for tonight's learning and bedtime",
@@ -657,6 +660,7 @@ export const UI: Record<
     upgradeToPremium: "Mejorar a Premium",
     checkoutCancelled: "Pago cancelado.",
     signInToSubscribe: "Inicia sesión para suscribirte.",
+    subscriptionComingSoon: "Suscripción próximamente.",
     unlimitedStories: "Ilimitado",
     dailyTeretTitle: "El Teret de hoy",
     dailyTeretSubtitle: "Un cuento nuevo para aprender y dormir esta noche",
