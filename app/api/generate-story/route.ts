@@ -128,6 +128,25 @@ function buildUserPrompt(
   return `Write a short bedtime story (4–6 pages, 2–3 sentences per page) for a child named ${childName} who ${traitPhrase}. Set the story in ${setting}. Make ${childName} the clear hero. Keep it brief.`;
 }
 
+function generateFallbackStory(childName: string, setting: string): string {
+  const safeName = childName.slice(0, 40).trim() || "little one";
+  return `[AM] ተረት ተረት! ${safeName} በውብ የኢትዮጵያ ደጋ ነበረ። ፀሐይ ብሩህ ነበረች።
+[EN] Teret teret! ${safeName} was in ${setting}. The sun was bright.
+[ES] ¡Teret teret! ${safeName} estaba en ${setting}. El sol brillaba.
+
+[AM] ${safeName} አንድ ወዳጅ እንስሳ አገኘች። ወዳጅነት እጅግ ጠቃሚ ነው።
+[EN] ${safeName} met a friendly animal. Friendship is very important.
+[ES] ${safeName} conoció un animal amigable. La amistad es muy importante.
+
+[AM] ${safeName} በጎ ነገር አደረገች። ሁሉም ደስ አላቸው።
+[EN] ${safeName} did a kind thing. Everyone was happy.
+[ES] ${safeName} hizo algo bueno. Todos estaban contentos.
+
+[AM] ተረቱ ሄደ ዘንቢሉ መጣ። ${safeName} ጣፋጭ ህልም ይስማት።
+[EN] The story went, the basket came. May ${safeName} have sweet dreams.
+[ES] El cuento se fue, la cesta llegó. Que ${safeName} tenga dulces sueños.`;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -230,6 +249,11 @@ export async function POST(request: Request) {
       const err = anthropicErr as { name?: string; status?: number; message?: string; error?: { type?: string; message?: string }; body?: unknown };
       const status = err?.status ?? (err?.error as { status?: number } | undefined)?.status;
       const message = err?.message ?? (err?.error as { message?: string } | undefined)?.message ?? String(anthropicErr);
+      const useFallback =
+        (status == null ||
+          [402, 429, 502, 503, 504].includes(status as number)) &&
+        ![400, 401, 403].includes(status as number);
+      let fallbackTriggered = false;
       console.error("[generate-story] Anthropic request failed:", {
         name: err?.name ?? "Error",
         status: status ?? "unknown",
@@ -240,6 +264,42 @@ export async function POST(request: Request) {
       if (err?.body && typeof err.body === "object" && "error" in err.body) {
         const bodyErr = (err.body as { error?: { type?: string; message?: string } }).error;
         if (bodyErr) console.error("[generate-story] API error body:", { type: bodyErr.type, message: bodyErr.message });
+      }
+      if (useFallback && !fallbackTriggered) {
+        fallbackTriggered = true;
+        const regionObj = region ? REGIONS.find((r) => r.name === region) : null;
+        const setting = regionObj ? regionObj.detail : "the beautiful Ethiopian highlands";
+        const rawText = generateFallbackStory(childName, setting);
+        const result = parseStory(rawText);
+        if (result && result.am.length >= MIN_PAGES) {
+          console.log("[teret] fallback story used", { reason: status ?? "network" });
+          const pageContents = result.en.length ? result.en : result.am;
+          const illustrationPrompts = buildLocalIllustrationPrompts(
+            pageContents,
+            storyInspiration as StoryInspiration,
+            regionObj?.name ?? undefined
+          );
+          result.illustrationPrompts = illustrationPrompts;
+          if (user) {
+            const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
+            if (supabase) {
+              const { error: rpcError } = await supabase.rpc("increment_usage", { p_user_id: user.id });
+              if (rpcError) {
+                const { data: usage } = await supabase.from("usage_tracking").select("generation_count").eq("user_id", user.id).single();
+                const next = (usage?.generation_count ?? 0) + 1;
+                await supabase.from("usage_tracking").update({
+                  generation_count: next,
+                  last_generated_at: new Date().toISOString(),
+                }).eq("user_id", user.id);
+              }
+            }
+          }
+          return NextResponse.json({
+            rawStory: rawText,
+            parsed: result,
+            region: region ?? "Ethiopian highlands",
+          });
+        }
       }
       const clientMessage =
         status === 400
