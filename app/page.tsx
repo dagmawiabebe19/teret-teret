@@ -48,7 +48,19 @@ export default function HomePage() {
   const [loadingMsg, setLoadingMsg] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [error, setError] = useState("");
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLangState] = useState<Lang>(() => {
+    if (typeof window === "undefined") return "en";
+    const s = localStorage.getItem("teret_lang");
+    return s === "am" || s === "en" || s === "es" ? s : "en";
+  });
+  const setLang = useCallback((newLang: Lang) => {
+    setLangState(newLang);
+    try {
+      localStorage.setItem("teret_lang", newLang);
+    } catch {
+      // ignore
+    }
+  }, []);
   const [usage, setUsage] = useState<{
     subscriptionStatus: "free" | "premium" | null;
     freeStoriesPerDay: number;
@@ -108,15 +120,6 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (showPaywall && !stripeEnabled) {
-      fetch("/api/config")
-        .then((r) => (r.ok ? r.json() : { stripeEnabled: false }))
-        .then((d) => setStripeEnabled(d.stripeEnabled ?? false))
-        .catch(() => {});
-    }
-  }, [showPaywall, stripeEnabled]);
-
-  useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState === "visible") refreshUsage();
     };
@@ -140,7 +143,7 @@ export default function HomePage() {
         setUserProgress(profileData.progress ?? null);
         const status = profileData.subscriptionStatus;
         setSubscriptionStatus(status === "premium" || status === "active" ? "premium" : "free");
-        const list = ((storiesData.stories ?? []) as {
+        const dbStories = ((storiesData.stories ?? []) as {
           id: string;
           childName: string;
           region: string;
@@ -159,10 +162,32 @@ export default function HomePage() {
           illustrationPrompts: s.illustrationPrompts,
           isFavorite: s.isFavorite ?? false,
         }));
-        setSavedStories(list);
+        const dbContentSet = new Set(dbStories.map((s) => s.content));
+        const localStories = getStoredSaved();
+        const merged = [...dbStories];
+        for (const loc of localStories) {
+          if (!dbContentSet.has(loc.content)) {
+            dbContentSet.add(loc.content);
+            merged.push({
+              id: loc.id,
+              name: loc.name,
+              region: loc.region,
+              date: loc.date,
+              content: loc.content,
+              parsedPages: loc.parsedPages,
+              illustrationPrompts: loc.illustrationPrompts,
+              isFavorite: loc.isFavorite ?? false,
+            });
+          }
+        }
+        setSavedStories(merged.slice(0, 50));
         refreshUsage();
       }).catch(() => {});
     });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsGuest(!session?.user);
+    });
+    return () => subscription.unsubscribe();
   }, [refreshUsage]);
 
   useEffect(() => {
@@ -361,11 +386,6 @@ export default function HomePage() {
     }
   }, [childName, age, trait, region, storyInspiration, lang, usage, subscriptionStatus, refreshUsage, toast]);
 
-  const handleSubscribe = useCallback(() => {
-    setShowPaywall(false);
-    if (stripeEnabled) window.location.href = "/api/stripe/checkout";
-  }, [stripeEnabled]);
-
   const openSavedStory = useCallback((story: SavedStoryItem) => {
     setIsDailyTeretView(false);
     setRawStory(story.content);
@@ -441,6 +461,17 @@ export default function HomePage() {
     }
   }, []);
 
+  const deleteStory = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/stories/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setSavedStories((prev) => prev.filter((s) => s.id !== id));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const t = getT(lang);
 
   return (
@@ -449,7 +480,6 @@ export default function HomePage() {
         <PaywallModal
           onClose={() => setShowPaywall(false)}
           lang={lang}
-          onSubscribe={handleSubscribe}
           stripeEnabled={stripeEnabled}
           isGuest={isGuest}
         />
@@ -594,6 +624,7 @@ export default function HomePage() {
                 open={showSaved}
                 onToggle={() => setShowSaved(!showSaved)}
                 onOpenStory={openSavedStory}
+                onDelete={isGuest ? undefined : deleteStory}
                 onToggleFavorite={isGuest ? undefined : toggleFavorite}
                 isGuest={isGuest}
               />

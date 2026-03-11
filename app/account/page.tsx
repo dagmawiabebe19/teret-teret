@@ -22,6 +22,9 @@ function getFriendlyAuthError(
   if (msg.includes("already registered") || msg.includes("user already exists")) {
     return t.authErrorDuplicate;
   }
+  if (msg.includes("email not confirmed") || msg.includes("confirm your email")) {
+    return t.authErrorEmailNotConfirmed;
+  }
   return t.authErrorGeneric;
 }
 
@@ -39,7 +42,13 @@ export default function AccountPage() {
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [lang] = useState<"am" | "en" | "es">("en");
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [signOutLoading, setSignOutLoading] = useState(false);
+  const [lang] = useState<"am" | "en" | "es">(() => {
+    if (typeof window === "undefined") return "en";
+    const s = localStorage.getItem("teret_lang");
+    return s === "am" || s === "en" || s === "es" ? s : "en";
+  });
   const t = getT(lang);
 
   const authConfigured = isAuthConfigured();
@@ -137,6 +146,10 @@ export default function AccountPage() {
       setMessage(t.signInToSubscribe);
       setMessageType("info");
     }
+    if (searchParams.error === "no_subscription") {
+      setMessage(t.noSubscriptionFound);
+      setMessageType("info");
+    }
   }, [searchParams, t, refreshProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,9 +180,48 @@ export default function AccountPage() {
         setMessage(getFriendlyAuthError(error, t));
         setMessageType("error");
       } else {
+        const returnTo = searchParams.returnTo;
+        if (returnTo) {
+          try {
+            const path = decodeURIComponent(returnTo);
+            if (path.startsWith("/") && !path.startsWith("//")) {
+              window.location.href = typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+              return;
+            }
+          } catch {
+            // fall through to success message
+          }
+        }
         setMessage(t.signInSuccess);
         setMessageType("success");
       }
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setMessage(t.authErrorInvalidLogin);
+      setMessageType("error");
+      return;
+    }
+    const supabase = createClient();
+    if (!supabase) {
+      setMessage(t.authErrorGeneric);
+      setMessageType("error");
+      return;
+    }
+    setMessage("");
+    setForgotPasswordLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/account`,
+    });
+    setForgotPasswordLoading(false);
+    if (error) {
+      setMessage(getFriendlyAuthError(error, t));
+      setMessageType("error");
+    } else {
+      setMessage(t.forgotPasswordSent);
+      setMessageType("success");
     }
   };
 
@@ -211,11 +263,13 @@ export default function AccountPage() {
   };
 
   const handleSignOut = async () => {
+    setSignOutLoading(true);
     const supabase = createClient();
     if (supabase) await supabase.auth.signOut();
     setUser(null);
     setStatus(null);
     setProgress(null);
+    setSignOutLoading(false);
   };
 
   if (loading) {
@@ -362,9 +416,10 @@ export default function AccountPage() {
             <button
               type="button"
               onClick={handleSignOut}
-              className="w-full py-2 rounded-xl border border-[rgba(255,255,255,0.2)] text-sm font-bold text-[#c9b8e8] hover:bg-[rgba(255,255,255,0.05)]"
+              disabled={signOutLoading}
+              className="w-full py-2 rounded-xl border border-[rgba(255,255,255,0.2)] text-sm font-bold text-[#c9b8e8] hover:bg-[rgba(255,255,255,0.05)] disabled:opacity-70"
             >
-              {t.signOut}
+              {signOutLoading ? t.authLoading : t.signOut}
             </button>
           </div>
         ) : (
@@ -435,6 +490,16 @@ export default function AccountPage() {
             >
               {isSignUp ? "Already have an account? Sign in" : "Create an account"}
             </button>
+            {!isSignUp && (
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={forgotPasswordLoading || authLoading}
+                className="w-full text-sm text-[#c9b8e8] hover:underline disabled:opacity-70 mt-1"
+              >
+                {forgotPasswordLoading ? t.authLoading : t.forgotPasswordBtn}
+              </button>
+            )}
           </form>
           </div>
         )}

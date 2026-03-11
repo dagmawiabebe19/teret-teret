@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     .insert({
       user_id: user.id,
       child_name: parsed.data.childName,
-      region: parsed.data.region,
+      region: parsed.data.region || "Ethiopian highlands",
       age_group: parsed.data.ageGroup,
       trait: parsed.data.trait ?? null,
       raw_story: parsed.data.rawStory,

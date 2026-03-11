@@ -7,13 +7,12 @@ import type { Lang } from "@/types";
 interface PaywallModalProps {
   onClose: () => void;
   lang: Lang;
-  onSubscribe?: () => void;
   stripeEnabled?: boolean;
   /** When true, show sign-in prompt and redirect to account instead of checkout */
   isGuest?: boolean;
 }
 
-export function PaywallModal({ onClose, lang, onSubscribe, stripeEnabled = false, isGuest = false }: PaywallModalProps) {
+export function PaywallModal({ onClose, lang, stripeEnabled = false, isGuest = false }: PaywallModalProps) {
   const t = getT(lang);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

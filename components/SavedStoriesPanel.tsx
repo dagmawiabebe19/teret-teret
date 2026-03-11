@@ -34,6 +34,7 @@ export function SavedStoriesPanel({
   open,
   onToggle,
   onOpenStory,
+  onDelete,
   onToggleFavorite,
   isGuest = false,
 }: SavedStoriesPanelProps) {
@@ -160,6 +161,19 @@ export function SavedStoriesPanel({
                     {s.region} · {s.date}
                   </p>
                 </div>
+                {onDelete && !isGuest ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(s.id);
+                    }}
+                    className="flex-shrink-0 p-1.5 rounded text-[12px] text-[rgba(255,150,150,0.9)] hover:bg-[rgba(255,100,100,0.1)]"
+                    aria-label="Delete story"
+                  >
+                    🗑
+                  </button>
+                ) : null}
               </div>
             ))
           )}

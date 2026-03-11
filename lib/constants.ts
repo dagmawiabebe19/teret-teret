@@ -65,6 +65,7 @@ export const UI: Record<
     checkoutCancelled: string;
     signInToSubscribe: string;
     subscriptionComingSoon: string;
+    noSubscriptionFound: string;
     unlimitedStories: string;
     dailyTeretTitle: string;
     dailyTeretSubtitle: string;
@@ -165,8 +166,11 @@ export const UI: Record<
     authErrorInvalidLogin: string;
     authErrorWeakPassword: string;
     authErrorDuplicate: string;
+    authErrorEmailNotConfirmed: string;
     authErrorGeneric: string;
     signUpSuccess: string;
+    forgotPasswordBtn: string;
+    forgotPasswordSent: string;
     signInSuccess: string;
     signOut: string;
     accountSubtitle: string;
@@ -271,6 +275,7 @@ export const UI: Record<
     checkoutCancelled: "ግዢው ተሰርዟል።",
     signInToSubscribe: "ለመመዝገብ ይግቡ።",
     subscriptionComingSoon: "የደንበኝነት ምዝገባ በቅርብ ጊዜ ይመጣል።",
+    noSubscriptionFound: "ንቁ የደንበኝነት ምዝገባ አልተገኘም። እባክዎ በመጀመር ይመዝገቡ።",
     unlimitedStories: "ያልተገደበ",
     dailyTeretTitle: "የዛሬ ተረት",
     dailyTeretSubtitle: "ለዛሬ ሌሊት ትምህርት እና የመጽለፊያ ታሪክ",
@@ -360,8 +365,11 @@ export const UI: Record<
     authErrorInvalidLogin: "ኢሜይል ወይም የይለፍ ቃል አልተሳካም። እባክዎ ይሞክሩ።",
     authErrorWeakPassword: "የይለፍ ቃል ቢያንስ ፮ ቁምፊ ይሁን።",
     authErrorDuplicate: "በዚህ ኢሜይል የተመዘገበ መለያ አለ። ይግቡ ወይም ሌላ ኢሜይል ይጠቀሙ።",
+    authErrorEmailNotConfirmed: "ኢሜይልዎን ያረጋግጡ። የማረጋገጫ አገናኝ በኢሜይልዎ ይመልከቱ።",
     authErrorGeneric: "አንድ ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
-    signUpSuccess: "ለማረጋገጥ ኢሜይልዎን ይመልከቱ።",
+    signUpSuccess: "ይመልከቱ ኢሜይልዎን ለማረጋገጥ፣ ከዚያ ይግቡ።",
+    forgotPasswordBtn: "የይለፍ ቃል ረሱ?",
+    forgotPasswordSent: "የይለፍ ቃል ዳግም ማስጀመር አገናኝ በኢሜይልዎ ተላልፏል።",
     signInSuccess: "በተሳካ ሁኔታ ገብተዋል።",
     signOut: "ውጣ",
     accountSubtitle: "መግቢያ ተያይዘው ተወዳጅ ታሪኮችዎን ያስቀምጡ፣ እድገት ይከታተሉ፣ እና ለቤተሰብዎ ያልተገደበ ተረት ይክፈቱ።",
@@ -465,6 +473,7 @@ export const UI: Record<
     checkoutCancelled: "Checkout cancelled.",
     signInToSubscribe: "Sign in to subscribe.",
     subscriptionComingSoon: "Subscription coming soon.",
+    noSubscriptionFound: "No active subscription found. Please subscribe first.",
     unlimitedStories: "Unlimited",
     dailyTeretTitle: "Tonight's Teret",
     dailyTeretSubtitle: "A new story for tonight's learning and bedtime",
@@ -554,8 +563,11 @@ export const UI: Record<
     authErrorInvalidLogin: "Email or password is incorrect. Please try again.",
     authErrorWeakPassword: "Password must be at least 6 characters.",
     authErrorDuplicate: "An account with this email already exists. Sign in or use a different email.",
+    authErrorEmailNotConfirmed: "Please check your email and confirm your account before signing in.",
     authErrorGeneric: "Something went wrong. Please try again.",
-    signUpSuccess: "Check your email to confirm sign up.",
+    signUpSuccess: "Check your email to confirm your account, then sign in.",
+    forgotPasswordBtn: "Forgot password?",
+    forgotPasswordSent: "Check your email for a password reset link.",
     signInSuccess: "Signed in.",
     signOut: "Sign out",
     accountSubtitle: "Sign in to save your favorite stories, track progress, and unlock unlimited Teret for your family.",
@@ -661,6 +673,7 @@ export const UI: Record<
     checkoutCancelled: "Pago cancelado.",
     signInToSubscribe: "Inicia sesión para suscribirte.",
     subscriptionComingSoon: "Suscripción próximamente.",
+    noSubscriptionFound: "No se encontró suscripción activa. Suscríbete primero.",
     unlimitedStories: "Ilimitado",
     dailyTeretTitle: "El Teret de hoy",
     dailyTeretSubtitle: "Un cuento nuevo para aprender y dormir esta noche",
@@ -750,8 +763,11 @@ export const UI: Record<
     authErrorInvalidLogin: "El correo o la contraseña no son correctos. Intenta de nuevo.",
     authErrorWeakPassword: "La contraseña debe tener al menos 6 caracteres.",
     authErrorDuplicate: "Ya existe una cuenta con este correo. Inicia sesión o usa otro correo.",
+    authErrorEmailNotConfirmed: "Revisa tu correo y confirma tu cuenta antes de iniciar sesión.",
     authErrorGeneric: "Algo salió mal. Intenta de nuevo.",
-    signUpSuccess: "Revisa tu correo para confirmar el registro.",
+    signUpSuccess: "Revisa tu correo para confirmar tu cuenta, luego inicia sesión.",
+    forgotPasswordBtn: "¿Olvidaste tu contraseña?",
+    forgotPasswordSent: "Revisa tu correo para el enlace de restablecimiento.",
     signInSuccess: "Sesión iniciada.",
     signOut: "Cerrar sesión",
     accountSubtitle: "Inicia sesión para guardar tus cuentos favoritos, seguir tu progreso y desbloquear Teret ilimitado para tu familia.",

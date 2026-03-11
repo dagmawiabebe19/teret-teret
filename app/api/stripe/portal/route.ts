@@ -29,7 +29,7 @@ export async function GET() {
 
     const customerId = sub?.stripe_customer_id;
     if (!customerId) {
-      return NextResponse.redirect(new URL("/account", APP_URL));
+      return NextResponse.redirect(new URL("/account?error=no_subscription", APP_URL));
     }
 
     const session = await stripe.billingPortal.sessions.create({
