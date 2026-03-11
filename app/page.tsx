@@ -69,6 +69,7 @@ export default function HomePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<"free" | "premium" | null>(null);
   const [isDailyTeretView, setIsDailyTeretView] = useState(false);
   const generatingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -101,6 +102,8 @@ export default function HomePage() {
         fetch("/api/stories").then((r) => r.json()),
       ]).then(([profileData, storiesData]) => {
         setUserProgress(profileData.progress ?? null);
+        const status = profileData.subscriptionStatus;
+        setSubscriptionStatus(status === "premium" || status === "active" ? "premium" : "free");
         const list = ((storiesData.stories ?? []) as {
           id: string;
           childName: string;
@@ -260,7 +263,8 @@ export default function HomePage() {
       generatingRef.current = false;
       return;
     }
-    if (storiesUsed >= FREE_STORY_LIMIT) {
+    const isPremium = subscriptionStatus === "premium";
+    if (!isPremium && storiesUsed >= FREE_STORY_LIMIT) {
       setShowPaywall(true);
       generatingRef.current = false;
       return;
@@ -295,6 +299,7 @@ export default function HomePage() {
         setError(data.error ?? "Something went wrong. Please try again.");
         setScreen("home");
         toast.showToast(data.error ?? "Try again", "error");
+        if (res.status === 402) setShowPaywall(true);
         generatingRef.current = false;
         setIsGenerating(false);
         return;
@@ -320,7 +325,7 @@ export default function HomePage() {
       generatingRef.current = false;
       setIsGenerating(false);
     }
-  }, [childName, age, trait, region, storyInspiration, lang, storiesUsed, saveCount, toast]);
+  }, [childName, age, trait, region, storyInspiration, lang, storiesUsed, saveCount, subscriptionStatus, toast]);
 
   const handleSubscribe = useCallback(() => {
     setShowPaywall(false);
@@ -477,14 +482,16 @@ export default function HomePage() {
           <div
             className="fixed top-[18px] left-[18px] z-[2] rounded-[10px] py-1.5 px-2.5 text-[10px] font-bold border transition-all duration-300"
             style={{
-              background: storiesUsed >= FREE_STORY_LIMIT ? "rgba(255,100,100,0.1)" : "rgba(255,255,255,0.07)",
-              borderColor: storiesUsed >= FREE_STORY_LIMIT ? "rgba(255,140,140,0.25)" : "rgba(255,215,0,0.2)",
-              color: storiesUsed >= FREE_STORY_LIMIT ? "rgba(255,180,180,0.9)" : "rgba(255,215,0,0.65)",
+              background: subscriptionStatus === "premium" ? "rgba(255,255,255,0.07)" : storiesUsed >= FREE_STORY_LIMIT ? "rgba(255,100,100,0.1)" : "rgba(255,255,255,0.07)",
+              borderColor: subscriptionStatus === "premium" ? "rgba(255,215,0,0.2)" : storiesUsed >= FREE_STORY_LIMIT ? "rgba(255,140,140,0.25)" : "rgba(255,215,0,0.2)",
+              color: subscriptionStatus === "premium" ? "rgba(255,215,0,0.85)" : storiesUsed >= FREE_STORY_LIMIT ? "rgba(255,180,180,0.9)" : "rgba(255,215,0,0.65)",
             }}
           >
-            {storiesUsed >= FREE_STORY_LIMIT
-              ? t.limitReached
-              : t.freeLeft(FREE_STORY_LIMIT - storiesUsed)}
+            {subscriptionStatus === "premium"
+              ? t.unlimitedStories
+              : storiesUsed >= FREE_STORY_LIMIT
+                ? t.limitReached
+                : t.freeLeft(FREE_STORY_LIMIT - storiesUsed)}
           </div>
         )}
 

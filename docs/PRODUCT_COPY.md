@@ -125,18 +125,16 @@ Keep sentences short and feelings big.
 
 ## Premium subscription & paywall
 
-- **Paywall title:** You’ve used your free stories  
-- **Paywall sub:** Unlock unlimited magical stories for your little ones. Give them endless bedtime adventures.  
-- **Value line:** Bedtime ritual · Language learning · Family stories · Cultural connection  
-- **Price line:** Unlimited · All ages · Cancel anytime  
-- **CTA:** Subscribe now  
-- **Secondary:** Maybe later  
-- **Benefits (bullets, optional):**  
-  - Unlimited new stories every month  
-  - Full audio for every story  
-  - Language learning in every story  
-  - Save as many stories as you like  
-  - Progress and streaks for the whole family  
+- **paywallLimitTitle:** You’ve used your free stories  
+- **paywallLimitSubtitle:** Unlock unlimited Teret for your family.  
+- **paywallBenefit1:** Unlimited magical stories  
+- **paywallBenefit2:** Save and revisit favorite stories  
+- **paywallBenefit3:** Learn languages through stories  
+- **paywallBenefit4:** Access stories on any device  
+- **paywallUpgradeCta:** Upgrade for $4.99/month  
+- **paywallMaybeLater:** Maybe later  
+- **subscriptionSuccessMessage:** Welcome to unlimited Teret. (Account page after Stripe success.)  
+- **Legacy:** paywallTitle, paywallSub, paywallValueLine, paywallSubscribeBtn, paywallLaterBtn  
 
 ---
 

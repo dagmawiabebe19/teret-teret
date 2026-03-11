@@ -45,6 +45,16 @@ export const UI: Record<
     paywallSubscribeBtn: string;
     paywallLaterBtn: string;
     paywallValueLine: string;
+    paywallLimitTitle: string;
+    paywallLimitSubtitle: string;
+    paywallBenefit1: string;
+    paywallBenefit2: string;
+    paywallBenefit3: string;
+    paywallBenefit4: string;
+    paywallUpgradeCta: string;
+    paywallMaybeLater: string;
+    subscriptionSuccessMessage: string;
+    unlimitedStories: string;
     dailyTeretTitle: string;
     dailyTeretSubtitle: string;
     completedTonightTeret: string;
@@ -230,6 +240,16 @@ export const UI: Record<
     paywallSubscribeBtn: "አሁን ይመዝገቡ",
     paywallLaterBtn: "ለቆይ",
     paywallValueLine: "የመጽለፊያ ልምድ · ቋንቋ መማር · የቤተሰብ ታሪኮች",
+    paywallLimitTitle: "ነፃ ታሪኮችዎን ተጠቀሙ",
+    paywallLimitSubtitle: "ለቤተሰብዎ ያልተገደበ ተረት ይክፈቱ።",
+    paywallBenefit1: "ያልተወሰነ አስማታዊ ታሪኮች",
+    paywallBenefit2: "ተወዳጅ ታሪኮች ያስቀምጡ እና እንደገና ይጎትቱ",
+    paywallBenefit3: "በታሪኮች በቋንቋ ይማሩ",
+    paywallBenefit4: "ታሪኮችን በማንኛውም መሣሪያ ይድረሱ",
+    paywallUpgradeCta: "በ$4.99/ወር ይለግሱ",
+    paywallMaybeLater: "ለቆይ",
+    subscriptionSuccessMessage: "ያልተገደበ ተረት እንኳን በደህና መጡ።",
+    unlimitedStories: "ያልተገደበ",
     dailyTeretTitle: "የዛሬ ተረት",
     dailyTeretSubtitle: "ለዛሬ ሌሊት ትምህርት እና የመጽለፊያ ታሪክ",
     completedTonightTeret: "የዛሬ ተረት አጠናቀህል።",
@@ -403,6 +423,16 @@ export const UI: Record<
     paywallSubscribeBtn: "Subscribe Now",
     paywallLaterBtn: "Maybe later",
     paywallValueLine: "Bedtime ritual · Language learning · Family stories · Cultural connection",
+    paywallLimitTitle: "You've used your free stories",
+    paywallLimitSubtitle: "Unlock unlimited Teret for your family.",
+    paywallBenefit1: "Unlimited magical stories",
+    paywallBenefit2: "Save and revisit favorite stories",
+    paywallBenefit3: "Learn languages through stories",
+    paywallBenefit4: "Access stories on any device",
+    paywallUpgradeCta: "Upgrade for $4.99/month",
+    paywallMaybeLater: "Maybe later",
+    subscriptionSuccessMessage: "Welcome to unlimited Teret.",
+    unlimitedStories: "Unlimited",
     dailyTeretTitle: "Tonight's Teret",
     dailyTeretSubtitle: "A new story for tonight's learning and bedtime",
     completedTonightTeret: "You completed tonight's Teret",
@@ -577,6 +607,16 @@ export const UI: Record<
     paywallSubscribeBtn: "Suscribirse ahora",
     paywallLaterBtn: "Quizás luego",
     paywallValueLine: "Rutina de sueño · Aprender idiomas · Cuentos en familia · Conexión cultural",
+    paywallLimitTitle: "Usaste tus cuentos gratis",
+    paywallLimitSubtitle: "Desbloquea Teret ilimitado para tu familia.",
+    paywallBenefit1: "Cuentos mágicos ilimitados",
+    paywallBenefit2: "Guarda y vuelve a tus cuentos favoritos",
+    paywallBenefit3: "Aprende idiomas con los cuentos",
+    paywallBenefit4: "Accede a tus cuentos en cualquier dispositivo",
+    paywallUpgradeCta: "Suscribirse por $4.99/mes",
+    paywallMaybeLater: "Quizás luego",
+    subscriptionSuccessMessage: "Bienvenido a Teret ilimitado.",
+    unlimitedStories: "Ilimitado",
     dailyTeretTitle: "El Teret de hoy",
     dailyTeretSubtitle: "Un cuento nuevo para aprender y dormir esta noche",
     completedTonightTeret: "Completaste el Teret de hoy",

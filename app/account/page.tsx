@@ -91,7 +91,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (searchParams.success === "1") {
-      setMessage("Subscription active. You have unlimited stories!");
+      setMessage(t.subscriptionSuccessMessage);
       setMessageType("success");
     }
     if (searchParams.cancel === "1") {
@@ -102,7 +102,7 @@ export default function AccountPage() {
       setMessage("Sign in to subscribe.");
       setMessageType("info");
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
