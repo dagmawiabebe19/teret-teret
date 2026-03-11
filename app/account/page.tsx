@@ -2,10 +2,28 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isAuthConfigured } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { UserProgress } from "@/types";
 import { getT } from "@/lib/constants";
+import type { UITranslations } from "@/lib/constants";
+
+function getFriendlyAuthError(
+  error: { message?: string; status?: number },
+  t: UITranslations
+): string {
+  const msg = (error?.message ?? "").toLowerCase();
+  if (msg.includes("invalid login") || msg.includes("invalid_credentials") || error?.status === 400) {
+    return t.authErrorInvalidLogin;
+  }
+  if (msg.includes("password") && (msg.includes("short") || msg.includes("6"))) {
+    return t.authErrorWeakPassword;
+  }
+  if (msg.includes("already registered") || msg.includes("user already exists")) {
+    return t.authErrorDuplicate;
+  }
+  return t.authErrorGeneric;
+}
 
 export default function AccountPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -16,10 +34,14 @@ export default function AccountPage() {
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"info" | "error" | "success">("info");
   const [searchParams, setSearchParams] = useState<Record<string, string>>({});
   const [stripeEnabled, setStripeEnabled] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   const [lang] = useState<"am" | "en" | "es">("en");
   const t = getT(lang);
+
+  const authConfigured = isAuthConfigured();
 
   useEffect(() => {
     fetch("/api/config")
@@ -34,6 +56,10 @@ export default function AccountPage() {
   }, []);
 
   useEffect(() => {
+    if (!authConfigured) {
+      setLoading(false);
+      return;
+    }
     const supabase = createClient();
     if (!supabase) {
       setLoading(false);
@@ -47,7 +73,7 @@ export default function AccountPage() {
       setUser(session?.user ?? null);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [authConfigured]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -63,27 +89,51 @@ export default function AccountPage() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (searchParams.success === "1") setMessage("Subscription active. You have unlimited stories!");
-    if (searchParams.cancel === "1") setMessage("Checkout cancelled.");
-    if (searchParams.signin === "1") setMessage("Sign in to subscribe.");
+    if (searchParams.success === "1") {
+      setMessage("Subscription active. You have unlimited stories!");
+      setMessageType("success");
+    }
+    if (searchParams.cancel === "1") {
+      setMessage("Checkout cancelled.");
+      setMessageType("info");
+    }
+    if (searchParams.signin === "1") {
+      setMessage("Sign in to subscribe.");
+      setMessageType("info");
+    }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage("");
+    setMessageType("info");
     const supabase = createClient();
     if (!supabase) {
-      setMessage("Auth not configured.");
+      setMessage(t.authErrorGeneric);
+      setMessageType("error");
       return;
     }
+    setAuthLoading(true);
     if (isSignUp) {
       const { error } = await supabase.auth.signUp({ email, password });
-      if (error) setMessage(error.message);
-      else setMessage("Check your email to confirm sign up.");
+      setAuthLoading(false);
+      if (error) {
+        setMessage(getFriendlyAuthError(error, t));
+        setMessageType("error");
+      } else {
+        setMessage(t.signUpSuccess);
+        setMessageType("success");
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMessage(error.message);
-      else setMessage("Signed in.");
+      setAuthLoading(false);
+      if (error) {
+        setMessage(getFriendlyAuthError(error, t));
+        setMessageType("error");
+      } else {
+        setMessage(t.signInSuccess);
+        setMessageType("success");
+      }
     }
   };
 
@@ -92,15 +142,26 @@ export default function AccountPage() {
     if (supabase) await supabase.auth.signOut();
     setUser(null);
     setStatus(null);
+    setProgress(null);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0d0d2b]">
-        <p className="text-[#c9b8e8]">Loading...</p>
+      <div
+        className="min-h-screen flex items-center justify-center bg-[#0d0d2b]"
+        style={{ fontFamily: "'Nunito',sans-serif" }}
+      >
+        <p className="text-[#c9b8e8]">{t.authLoading}</p>
       </div>
     );
   }
+
+  const messageStyles =
+    messageType === "error"
+      ? "bg-[rgba(255,120,120,0.12)] border-[rgba(255,150,150,0.35)] text-[#f0b0b0]"
+      : messageType === "success"
+        ? "bg-[rgba(100,220,140,0.12)] border-[rgba(100,220,140,0.35)] text-[#a0e0b0]"
+        : "bg-[rgba(255,215,0,0.1)] border-[rgba(255,215,0,0.3)] text-[#e8e0ff]";
 
   return (
     <div
@@ -122,16 +183,28 @@ export default function AccountPage() {
           Account
         </h1>
         <p className="text-[13px] text-[rgba(200,180,255,0.65)] mb-6">
-          Sign in to sync stories and manage your subscription
+          {t.accountSubtitle}
         </p>
 
         {message && (
-          <p className="mb-4 p-3 rounded-xl bg-[rgba(255,215,0,0.1)] border border-[rgba(255,215,0,0.3)] text-sm">
+          <p className={`mb-4 p-3 rounded-xl border text-sm ${messageStyles}`}>
             {message}
           </p>
         )}
 
-        {user ? (
+        {!authConfigured ? (
+          <div
+            className="p-5 rounded-xl border border-[rgba(255,215,0,0.2)] bg-[rgba(255,255,255,0.05)]"
+            style={{ fontFamily: "'Nunito',sans-serif" }}
+          >
+            <p className="text-[#FFD700] font-bold text-base mb-2">
+              {t.authNotConfiguredTitle}
+            </p>
+            <p className="text-[13px] text-[rgba(200,180,255,0.8)] leading-relaxed">
+              {t.authNotConfiguredSub}
+            </p>
+          </div>
+        ) : user ? (
           <div className="space-y-4">
             <p className="text-sm text-[#c9b8e8]">{user.email}</p>
             {progress != null && (
@@ -185,7 +258,7 @@ export default function AccountPage() {
               onClick={handleSignOut}
               className="w-full py-2 rounded-xl border border-[rgba(255,255,255,0.2)] text-sm font-bold text-[#c9b8e8] hover:bg-[rgba(255,255,255,0.05)]"
             >
-              Sign out
+              {t.signOut}
             </button>
           </div>
         ) : (
@@ -200,7 +273,8 @@ export default function AccountPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-2 rounded-xl border border-[rgba(255,215,0,0.3)] bg-[rgba(255,255,255,0.08)] text-white outline-none"
+                disabled={authLoading}
+                className="w-full px-4 py-2 rounded-xl border border-[rgba(255,215,0,0.3)] bg-[rgba(255,255,255,0.08)] text-white outline-none disabled:opacity-70"
               />
             </div>
             <div>
@@ -214,19 +288,22 @@ export default function AccountPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-4 py-2 rounded-xl border border-[rgba(255,215,0,0.3)] bg-[rgba(255,255,255,0.08)] text-white outline-none"
+                disabled={authLoading}
+                className="w-full px-4 py-2 rounded-xl border border-[rgba(255,215,0,0.3)] bg-[rgba(255,255,255,0.08)] text-white outline-none disabled:opacity-70"
               />
             </div>
             <button
               type="submit"
-              className="w-full py-3 rounded-xl font-bold bg-[linear-gradient(135deg,#7b2d8b,#c44dff)] text-white"
+              disabled={authLoading}
+              className="w-full py-3 rounded-xl font-bold bg-[linear-gradient(135deg,#7b2d8b,#c44dff)] text-white disabled:opacity-70"
             >
-              {isSignUp ? "Sign up" : "Sign in"}
+              {authLoading ? t.authLoading : isSignUp ? "Sign up" : "Sign in"}
             </button>
             <button
               type="button"
               onClick={() => setIsSignUp(!isSignUp)}
-              className="w-full text-sm text-[#c9b8e8] hover:underline"
+              className="w-full text-sm text-[#c9b8e8] hover:underline disabled:opacity-70"
+              disabled={authLoading}
             >
               {isSignUp ? "Already have an account? Sign in" : "Create an account"}
             </button>
@@ -234,7 +311,7 @@ export default function AccountPage() {
         )}
 
         <p className="mt-6 text-xs text-[rgba(255,255,255,0.4)]">
-          You can use the app as a guest; stories are saved in this browser. Sign in to sync across devices and subscribe for unlimited stories.
+          {t.accountGuestNote}
         </p>
       </div>
     </div>

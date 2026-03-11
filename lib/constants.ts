@@ -137,6 +137,19 @@ export const UI: Record<
     schoolsContactSub: string;
     schoolsCta: string;
     schoolsFormPlaceholder: string;
+    // Account / auth
+    authNotConfiguredTitle: string;
+    authNotConfiguredSub: string;
+    authLoading: string;
+    authErrorInvalidLogin: string;
+    authErrorWeakPassword: string;
+    authErrorDuplicate: string;
+    authErrorGeneric: string;
+    signUpSuccess: string;
+    signInSuccess: string;
+    signOut: string;
+    accountSubtitle: string;
+    accountGuestNote: string;
   }
 > = {
   am: {
@@ -290,6 +303,18 @@ export const UI: Record<
     schoolsContactSub: "ስለ ክፍልዎ ወይም ትምህርት ቤትዎ ይንገሩን። ለማስተካከል እንረዳዎታለን።",
     schoolsCta: "ፍላጎት አለኝ",
     schoolsFormPlaceholder: "ስምዎ፣ ትምህርት ቤት እና ተረት ተረትን እንዴት ማጠቃለል እንደሚፈልጉ",
+    authNotConfiguredTitle: "የመለያ ማስመሳሰል ገና አይገኝም",
+    authNotConfiguredSub: "ተረት ተረትን በዚህ መሣሪያ ላይ መጠቀም እና ታሪኮችን በአካባቢ ማስቀጠል ትችላለህ።",
+    authLoading: "በመጫን ላይ...",
+    authErrorInvalidLogin: "ኢሜይል ወይም የይለፍ ቃል አልተሳካም። እባክዎ ይሞክሩ።",
+    authErrorWeakPassword: "የይለፍ ቃል ቢያንስ ፮ ቁምፊ ይሁን።",
+    authErrorDuplicate: "በዚህ ኢሜይል የተመዘገበ መለያ አለ። ይግቡ ወይም ሌላ ኢሜይል ይጠቀሙ።",
+    authErrorGeneric: "አንድ ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
+    signUpSuccess: "ለማረጋገጥ ኢሜይልዎን ይመልከቱ።",
+    signInSuccess: "በተሳካ ሁኔታ ገብተዋል።",
+    signOut: "ውጣ",
+    accountSubtitle: "መግቢያ ተያይዘው ታሪኮችን ያስቀምጡ እና የደንበኝነት ምዝገባዎን ያስተዳድሩ",
+    accountGuestNote: "ተረት ተረትን እንደ እንግዳ መጠቀም ትችላለህ፤ ታሪኮች በዚህ መሣሪያ ላይ ይቀራሉ። መግቢያ ለማድረግ እና ለማስቀጠል ያልተወሰነ ታሪኮች ይመዝገቡ።",
   },
   en: {
     appTitle: "Teret Teret",
@@ -442,6 +467,18 @@ export const UI: Record<
     schoolsContactSub: "Tell us about your class or school. We'll help you get set up.",
     schoolsCta: "I'm interested",
     schoolsFormPlaceholder: "Your name, school, and how you'd like to use Teret-Teret",
+    authNotConfiguredTitle: "Account sync is not available yet",
+    authNotConfiguredSub: "You can still use Teret-Teret in this browser and save stories locally.",
+    authLoading: "Loading...",
+    authErrorInvalidLogin: "Email or password is incorrect. Please try again.",
+    authErrorWeakPassword: "Password must be at least 6 characters.",
+    authErrorDuplicate: "An account with this email already exists. Sign in or use a different email.",
+    authErrorGeneric: "Something went wrong. Please try again.",
+    signUpSuccess: "Check your email to confirm sign up.",
+    signInSuccess: "Signed in.",
+    signOut: "Sign out",
+    accountSubtitle: "Sign in to sync stories and manage your subscription",
+    accountGuestNote: "You can use the app as a guest; stories are saved in this browser. Sign in to sync across devices and subscribe for unlimited stories.",
   },
   es: {
     appTitle: "Teret Teret",
@@ -595,6 +632,18 @@ export const UI: Record<
     schoolsContactSub: "Cuéntanos sobre tu clase o colegio. Te ayudamos a empezar.",
     schoolsCta: "Me interesa",
     schoolsFormPlaceholder: "Tu nombre, colegio y cómo te gustaría usar Teret-Teret",
+    authNotConfiguredTitle: "La sincronización de cuenta no está disponible aún",
+    authNotConfiguredSub: "Puedes seguir usando Teret-Teret en este navegador y guardar cuentos localmente.",
+    authLoading: "Cargando...",
+    authErrorInvalidLogin: "El correo o la contraseña no son correctos. Intenta de nuevo.",
+    authErrorWeakPassword: "La contraseña debe tener al menos 6 caracteres.",
+    authErrorDuplicate: "Ya existe una cuenta con este correo. Inicia sesión o usa otro correo.",
+    authErrorGeneric: "Algo salió mal. Intenta de nuevo.",
+    signUpSuccess: "Revisa tu correo para confirmar el registro.",
+    signInSuccess: "Sesión iniciada.",
+    signOut: "Cerrar sesión",
+    accountSubtitle: "Inicia sesión para sincronizar cuentos y gestionar tu suscripción",
+    accountGuestNote: "Puedes usar la app como invitado; los cuentos se guardan en este navegador. Inicia sesión para sincronizar y suscribirte a cuentos ilimitados.",
   },
 };
 
