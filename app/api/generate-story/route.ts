@@ -10,6 +10,7 @@ import {
   buildIllustrationUserPrompt,
   parseIllustrationPrompts,
 } from "@/lib/illustrationPrompts";
+import { checkRateLimit } from "@/lib/rateLimit";
 import type { StoryInspiration } from "@/types";
 
 /** Set to "true" or "1" to use AI for illustration prompts (extra Anthropic call). Default: local/deterministic. */
@@ -180,6 +181,15 @@ export async function POST(request: Request) {
           console.log("[teret] usage check ok", { userId: user.id, count, limit: FREE_STORY_LIMIT });
         }
       }
+    }
+
+    const { allowed: rateLimitOk, ip: clientIp } = await checkRateLimit(request, !user);
+    if (!rateLimitOk) {
+      console.log("[teret] rate limit exceeded", { ip: clientIp, isGuest: !user });
+      return NextResponse.json(
+        { error: "Too many stories generated. Please try again later." },
+        { status: 429 }
+      );
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
