@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOptionalUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { FREE_STORIES_PER_DAY, getTodayPeriodUTC, getGuestDailyUsage, getClientIp } from "@/lib/usageDaily";
+import { FREE_STORIES_PER_DAY, getSignedInUsageFromRow, getGuestDailyUsage, getClientIp } from "@/lib/usageDaily";
 
 export const dynamic = "force-dynamic";
 
@@ -28,25 +28,17 @@ export async function GET(request: Request) {
       });
     }
 
-    const { periodStart, periodEnd } = getTodayPeriodUTC();
-    const now = new Date();
     const { data: usage } = await supabase
       .from("usage_tracking")
-      .select("generation_count, billing_period_end")
+      .select("generation_count, first_story_at")
       .eq("user_id", user.id)
       .single();
 
-    let count = usage?.generation_count ?? 0;
-    const storedEnd = usage?.billing_period_end ? new Date(usage.billing_period_end) : null;
-    if (!storedEnd || storedEnd <= now) {
-      count = 0;
-    }
-
-    const remaining = Math.max(0, FREE_STORIES_PER_DAY - count);
+    const { storiesUsed, remaining } = getSignedInUsageFromRow(usage ?? null);
     return NextResponse.json({
       subscriptionStatus: "free",
       freeStoriesPerDay: FREE_STORIES_PER_DAY,
-      storiesUsedToday: count,
+      storiesUsedToday: storiesUsed,
       remainingStoriesToday: remaining,
     });
   }

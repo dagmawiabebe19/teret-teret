@@ -4,7 +4,7 @@ import { z } from "zod";
 import { AGES, REGIONS, TRAITS_EN, ALLOWED_AGES, ALLOWED_REGIONS, ALLOWED_STORY_INSPIRATIONS } from "@/lib/constants";
 import {
   FREE_STORIES_PER_DAY,
-  getTodayPeriodUTC,
+  getSignedInUsageFromRow,
   checkGuestDailyLimit,
   incrementGuestDaily,
   getClientIp,
@@ -170,43 +170,27 @@ export async function POST(request: Request) {
 
     const { user } = await getOptionalUser();
 
-    // Signed-in: daily free limit (usage_tracking); premium = unlimited
+    // Signed-in: rolling 24h free limit (usage_tracking); premium = unlimited
     if (user) {
       const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
       if (supabase) {
-        const { periodStart, periodEnd } = getTodayPeriodUTC();
-        const now = new Date();
         await supabase.from("usage_tracking").upsert(
-          {
-            user_id: user.id,
-            generation_count: 0,
-            billing_period_start: periodStart.toISOString(),
-            billing_period_end: periodEnd.toISOString(),
-          },
+          { user_id: user.id, generation_count: 0 },
           { onConflict: "user_id", ignoreDuplicates: true }
         );
         const { data: profile } = await supabase.from("profiles").select("subscription_status").eq("id", user.id).single();
         const isPremium = profile?.subscription_status === "premium" || profile?.subscription_status === "active";
         if (!isPremium) {
-          const { data: usage } = await supabase.from("usage_tracking").select("generation_count, billing_period_end").eq("user_id", user.id).single();
-          let count = usage?.generation_count ?? 0;
-          const storedEnd = usage?.billing_period_end ? new Date(usage.billing_period_end) : null;
-          if (!storedEnd || storedEnd <= now) {
-            await supabase.from("usage_tracking").update({
-              generation_count: 0,
-              billing_period_start: periodStart.toISOString(),
-              billing_period_end: periodEnd.toISOString(),
-            }).eq("user_id", user.id);
-            count = 0;
-          }
-          if (count >= FREE_STORIES_PER_DAY) {
-            console.log("[teret] daily usage limit reached", { userId: user.id, count, limit: FREE_STORIES_PER_DAY });
+          const { data: usage } = await supabase.from("usage_tracking").select("generation_count, first_story_at").eq("user_id", user.id).single();
+          const { storiesUsed, remaining } = getSignedInUsageFromRow(usage ?? null);
+          if (remaining <= 0) {
+            console.log("[teret] rolling daily limit reached", { userId: user.id, storiesUsed, limit: FREE_STORIES_PER_DAY });
             return NextResponse.json(
-              { error: "Free daily limit reached. Resets at midnight UTC. Upgrade for unlimited stories." },
+              { error: "Free story limit reached. Your allowance resets 24 hours after your first story in this period. Upgrade for unlimited." },
               { status: 402 }
             );
           }
-          console.log("[teret] usage check ok", { userId: user.id, count, limit: FREE_STORIES_PER_DAY });
+          console.log("[teret] usage check ok", { userId: user.id, storiesUsed, remaining, limit: FREE_STORIES_PER_DAY });
         }
       }
     }
@@ -308,12 +292,22 @@ export async function POST(request: Request) {
             if (supabase) {
               const { error: rpcError } = await supabase.rpc("increment_usage", { p_user_id: user.id });
               if (rpcError) {
-                const { data: usage } = await supabase.from("usage_tracking").select("generation_count").eq("user_id", user.id).single();
-                const next = (usage?.generation_count ?? 0) + 1;
-                await supabase.from("usage_tracking").update({
-                  generation_count: next,
-                  last_generated_at: new Date().toISOString(),
-                }).eq("user_id", user.id);
+                const now = new Date();
+                const { data: usage } = await supabase.from("usage_tracking").select("generation_count, first_story_at").eq("user_id", user.id).single();
+                const { windowExpired } = getSignedInUsageFromRow(usage ?? null, now);
+                if (windowExpired) {
+                  await supabase.from("usage_tracking").update({
+                    first_story_at: now.toISOString(),
+                    generation_count: 1,
+                    last_generated_at: now.toISOString(),
+                  }).eq("user_id", user.id);
+                } else {
+                  const next = (usage?.generation_count ?? 0) + 1;
+                  await supabase.from("usage_tracking").update({
+                    generation_count: next,
+                    last_generated_at: now.toISOString(),
+                  }).eq("user_id", user.id);
+                }
               }
             }
           } else {
@@ -442,12 +436,22 @@ No other text. No markdown.`;
       if (supabase) {
         const { error: rpcError } = await supabase.rpc("increment_usage", { p_user_id: user.id });
         if (rpcError) {
-          const { data: usage } = await supabase.from("usage_tracking").select("generation_count").eq("user_id", user.id).single();
-          const next = (usage?.generation_count ?? 0) + 1;
-          await supabase.from("usage_tracking").update({
-            generation_count: next,
-            last_generated_at: new Date().toISOString(),
-          }).eq("user_id", user.id);
+          const now = new Date();
+          const { data: usage } = await supabase.from("usage_tracking").select("generation_count, first_story_at").eq("user_id", user.id).single();
+          const { windowExpired } = getSignedInUsageFromRow(usage ?? null, now);
+          if (windowExpired) {
+            await supabase.from("usage_tracking").update({
+              first_story_at: now.toISOString(),
+              generation_count: 1,
+              last_generated_at: now.toISOString(),
+            }).eq("user_id", user.id);
+          } else {
+            const next = (usage?.generation_count ?? 0) + 1;
+            await supabase.from("usage_tracking").update({
+              generation_count: next,
+              last_generated_at: now.toISOString(),
+            }).eq("user_id", user.id);
+          }
         }
       }
     } else {

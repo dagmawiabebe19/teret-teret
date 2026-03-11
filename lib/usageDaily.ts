@@ -2,22 +2,47 @@
  * Daily free-story usage: server truth for guests (by IP) and signed-in users (usage_tracking).
  * FREE_STORIES_PER_DAY applies to both guests and signed-in free users.
  * Premium users are unlimited (no check).
+ *
+ * Signed-in users: rolling 24-hour window from first_story_at (resets 24h after first story in window).
+ * Guests: 24h window from first use (rate_limits table).
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const FREE_STORIES_PER_DAY = 3;
 
+/** Rolling window length in ms (24 hours). */
+export const ROLLING_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 const GUEST_DAILY_KEY_PREFIX = "guest_daily:";
 const GUEST_DAILY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-/** Start of today and start of tomorrow in UTC (for daily reset). */
-export function getTodayPeriodUTC(): { periodStart: Date; periodEnd: Date } {
-  const now = new Date();
-  const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
-  const periodEnd = new Date(periodStart);
-  periodEnd.setUTCDate(periodEnd.getUTCDate() + 1);
-  return { periodStart, periodEnd };
+export type UsageTrackingRow = {
+  generation_count?: number | null;
+  first_story_at?: string | null;
+  billing_period_end?: string | null;
+};
+
+/**
+ * Compute signed-in usage from a usage_tracking row (rolling 24h window).
+ * If first_story_at is null or more than 24h ago, the window is expired → 0 used, full allowance.
+ */
+export function getSignedInUsageFromRow(
+  row: UsageTrackingRow | null,
+  now: Date = new Date()
+): { storiesUsed: number; remaining: number; windowExpired: boolean } {
+  if (!row) {
+    return { storiesUsed: 0, remaining: FREE_STORIES_PER_DAY, windowExpired: true };
+  }
+  const firstAt = row.first_story_at ? new Date(row.first_story_at).getTime() : null;
+  const nowMs = now.getTime();
+  const windowExpired = firstAt == null || nowMs >= firstAt + ROLLING_WINDOW_MS;
+  if (windowExpired) {
+    return { storiesUsed: 0, remaining: FREE_STORIES_PER_DAY, windowExpired: true };
+  }
+  const count = Math.max(0, row.generation_count ?? 0);
+  const remaining = Math.max(0, FREE_STORIES_PER_DAY - count);
+  return { storiesUsed: count, remaining, windowExpired: false };
 }
 
 /** Get guest daily usage count (by IP). Uses rate_limits table with 24h window. Admin client required. */

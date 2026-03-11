@@ -27,12 +27,13 @@ export async function GET() {
   }
   const [profileRes, usageRes] = await Promise.all([
     supabase.from("profiles").select("subscription_status").eq("id", user.id).single(),
-    supabase.from("usage_tracking").select("generation_count, billing_period_end").eq("user_id", user.id).single(),
+    supabase.from("usage_tracking").select("generation_count, first_story_at, billing_period_end").eq("user_id", user.id).single(),
   ]);
   return NextResponse.json({
     userId: user.id,
     subscriptionStatus: profileRes.data?.subscription_status ?? null,
     usageCount: usageRes.data?.generation_count ?? null,
+    firstStoryAt: usageRes.data?.first_story_at ?? null,
     billingPeriodEnd: usageRes.data?.billing_period_end ?? null,
     isGuest: false,
   });
