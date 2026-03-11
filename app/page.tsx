@@ -104,6 +104,15 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    if (showPaywall && !stripeEnabled) {
+      fetch("/api/config")
+        .then((r) => (r.ok ? r.json() : { stripeEnabled: false }))
+        .then((d) => setStripeEnabled(d.stripeEnabled ?? false))
+        .catch(() => {});
+    }
+  }, [showPaywall, stripeEnabled]);
+
+  useEffect(() => {
     const supabase = createClient();
     if (!supabase) {
       setIsGuest(true);

@@ -115,6 +115,12 @@ export function PaywallModal({ onClose, lang, onSubscribe, stripeEnabled = false
           </p>
         )}
 
+        {process.env.NODE_ENV === "development" && (
+          <p className="mb-2 text-[10px] text-[rgba(255,255,255,0.4)]" aria-hidden>
+            Stripe: {stripeEnabled ? "configured" : "not configured"}
+          </p>
+        )}
+
         {stripeEnabled ? (
           <>
             <button
