@@ -9,11 +9,12 @@ import { getT } from "@/lib/constants";
 import type { UITranslations } from "@/lib/constants";
 
 function getFriendlyAuthError(
-  error: { message?: string; status?: number },
+  error: { message?: string; status?: number; code?: string },
   t: UITranslations
 ): string {
   const msg = (error?.message ?? "").toLowerCase();
-  if (msg.includes("invalid login") || msg.includes("invalid_credentials") || error?.status === 400) {
+  const code = (error?.code ?? "").toLowerCase();
+  if (msg.includes("invalid login") || msg.includes("invalid_credentials")) {
     return t.authErrorInvalidLogin;
   }
   if (msg.includes("password") && (msg.includes("short") || msg.includes("6"))) {
@@ -22,7 +23,7 @@ function getFriendlyAuthError(
   if (msg.includes("already registered") || msg.includes("user already exists")) {
     return t.authErrorDuplicate;
   }
-  if (msg.includes("email not confirmed") || msg.includes("confirm your email")) {
+  if (code === "email_not_confirmed" || msg.includes("email not confirmed") || msg.includes("confirm your email")) {
     return t.authErrorEmailNotConfirmed;
   }
   return t.authErrorGeneric;
@@ -110,34 +111,6 @@ export default function AccountPage() {
   }, [user?.id, refreshProfile]);
 
   useEffect(() => {
-    if (searchParams.success === "1") {
-      setMessage(t.subscriptionSuccessMessage);
-      setMessageType("success");
-      let intervalId: ReturnType<typeof setInterval> | null = null;
-      refreshProfile().then((isPremium) => {
-        if (isPremium) return;
-        setMessage(t.premiumActivating);
-        let attempts = 0;
-        const maxAttempts = 5;
-        intervalId = setInterval(() => {
-          attempts += 1;
-          refreshProfileRef.current().then((premium) => {
-            if (premium) {
-              if (intervalId) clearInterval(intervalId);
-              intervalId = null;
-              setMessage(t.subscriptionSuccessMessage);
-              setMessageType("success");
-            } else if (attempts >= maxAttempts && intervalId) {
-              clearInterval(intervalId);
-              intervalId = null;
-            }
-          });
-        }, 2000);
-      });
-      return () => {
-        if (intervalId) clearInterval(intervalId);
-      };
-    }
     if (searchParams.cancel === "1") {
       setMessage(t.checkoutCancelled);
       setMessageType("info");
@@ -150,7 +123,41 @@ export default function AccountPage() {
       setMessage(t.noSubscriptionFound);
       setMessageType("info");
     }
-  }, [searchParams, t, refreshProfile]);
+    if (searchParams.error === "auth") {
+      setMessage(t.authErrorGeneric);
+      setMessageType("error");
+    }
+  }, [searchParams, t]);
+
+  useEffect(() => {
+    if (searchParams.success !== "1" || !user?.id) return;
+    setMessage(t.subscriptionSuccessMessage);
+    setMessageType("success");
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    refreshProfile().then((isPremium) => {
+      if (isPremium) return;
+      setMessage(t.premiumActivating);
+      let attempts = 0;
+      const maxAttempts = 5;
+      intervalId = setInterval(() => {
+        attempts += 1;
+        refreshProfileRef.current().then((premium) => {
+          if (premium) {
+            if (intervalId) clearInterval(intervalId);
+            intervalId = null;
+            setMessage(t.subscriptionSuccessMessage);
+            setMessageType("success");
+          } else if (attempts >= maxAttempts && intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+        });
+      }, 2000);
+    });
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [searchParams.success, user?.id, t, refreshProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,17 +242,18 @@ export default function AccountPage() {
     setMessage("");
     setGoogleLoading(true);
     try {
-      let redirectTo = `${window.location.origin}/account`;
+      let next = "/account";
       if (typeof window !== "undefined" && searchParams.returnTo) {
         try {
           const path = decodeURIComponent(searchParams.returnTo);
           if (path.startsWith("/") && !path.startsWith("//")) {
-            redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(path)}`;
+            next = path;
           }
         } catch {
           // use default
         }
       }
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo },
@@ -253,11 +261,11 @@ export default function AccountPage() {
       if (error) {
         setMessage(getFriendlyAuthError(error, t));
         setMessageType("error");
+        setGoogleLoading(false);
       }
     } catch {
       setMessage(t.authErrorGeneric);
       setMessageType("error");
-    } finally {
       setGoogleLoading(false);
     }
   };

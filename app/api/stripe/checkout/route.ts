@@ -34,7 +34,7 @@ export async function GET() {
       payment_method_types: ["card"],
       line_items: [{ price: PRICE_ID, quantity: 1 }],
       success_url: `${APP_URL}/account?success=1`,
-      cancel_url: `${APP_URL}/account?cancel=1`,
+      cancel_url: `${APP_URL}/?cancel=1`,
       customer_email: customerId ? undefined : (user.email ?? undefined),
       customer: customerId ?? undefined,
       metadata: { user_id: user.id },
