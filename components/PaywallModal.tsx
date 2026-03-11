@@ -9,14 +9,21 @@ interface PaywallModalProps {
   lang: Lang;
   onSubscribe?: () => void;
   stripeEnabled?: boolean;
+  /** When true, show sign-in prompt and redirect to account instead of checkout */
+  isGuest?: boolean;
 }
 
-export function PaywallModal({ onClose, lang, onSubscribe, stripeEnabled = false }: PaywallModalProps) {
+export function PaywallModal({ onClose, lang, onSubscribe, stripeEnabled = false, isGuest = false }: PaywallModalProps) {
   const t = getT(lang);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleUpgrade = async () => {
+    if (isGuest) {
+      const returnTo = typeof window !== "undefined" ? encodeURIComponent(window.location.pathname || "/") : "";
+      window.location.href = returnTo ? `/account?signin=1&returnTo=${returnTo}` : "/account?signin=1";
+      return;
+    }
     if (!stripeEnabled) {
       onClose();
       return;
@@ -77,6 +84,11 @@ export function PaywallModal({ onClose, lang, onSubscribe, stripeEnabled = false
         <p className="text-[#c9b8e8] text-sm leading-relaxed mb-4">
           {t.paywallLimitSubtitle}
         </p>
+        {isGuest && (
+          <p className="text-[#FFD700]/90 text-sm leading-relaxed mb-4 font-medium">
+            {t.signInToUpgrade}
+          </p>
+        )}
 
         <ul className="text-left mb-5 space-y-2 text-[13px] text-[rgba(200,180,255,0.9)]" style={{ listStyle: "none", paddingLeft: 0 }}>
           <li className="flex items-center gap-2">

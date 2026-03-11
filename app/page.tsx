@@ -12,25 +12,14 @@ import { SavedStoriesPanel, type SavedStoryItem } from "@/components/SavedStorie
 import { DailyTeretCard } from "@/components/DailyTeretCard";
 import { PaywallModal } from "@/components/PaywallModal";
 import { LoadingState } from "@/components/LoadingState";
-import { getT, FREE_STORY_LIMIT } from "@/lib/constants";
+import { getT } from "@/lib/constants";
 import type { UserProgress } from "@/types";
 import { parseStory, parsedToPages } from "@/lib/parseStory";
 import { useToast } from "@/components/ToastProvider";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
 
-const STORAGE_USED = "teret_used";
 const STORAGE_SAVED = "teret_saved";
-
-function getStoredUsed(): number {
-  if (typeof window === "undefined") return 0;
-  try {
-    const n = parseInt(localStorage.getItem(STORAGE_USED) ?? "0", 10);
-    return Number.isFinite(n) ? n : 0;
-  } catch {
-    return 0;
-  }
-}
 
 function getStoredSaved(): SavedStoryItem[] {
   if (typeof window === "undefined") return [];
@@ -60,7 +49,12 @@ export default function HomePage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [error, setError] = useState("");
   const [lang, setLang] = useState<Lang>("en");
-  const [storiesUsed, setStoriesUsed] = useState(0);
+  const [usage, setUsage] = useState<{
+    subscriptionStatus: "free" | "premium" | null;
+    freeStoriesPerDay: number;
+    storiesUsedToday: number;
+    remainingStoriesToday: number | null;
+  } | null>(null);
   const [savedStories, setSavedStories] = useState<SavedStoryItem[]>([]);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
@@ -77,9 +71,30 @@ export default function HomePage() {
   const toast = useToast();
 
   useEffect(() => {
-    setStoriesUsed(getStoredUsed());
     setSavedStories(getStoredSaved());
   }, []);
+
+  const refreshUsage = useCallback(() => {
+    fetch("/api/usage")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          const status = data.subscriptionStatus === "premium" || data.subscriptionStatus === "active" ? "premium" : "free";
+          setUsage({
+            subscriptionStatus: status,
+            freeStoriesPerDay: data.freeStoriesPerDay ?? 3,
+            storiesUsedToday: data.storiesUsedToday ?? 0,
+            remainingStoriesToday: data.subscriptionStatus === "premium" || data.subscriptionStatus === "active" ? null : (data.remainingStoriesToday ?? 0),
+          });
+          setSubscriptionStatus(status);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refreshUsage();
+  }, [refreshUsage]);
 
   useEffect(() => {
     fetch("/api/config")
@@ -124,9 +139,10 @@ export default function HomePage() {
           isFavorite: s.isFavorite ?? false,
         }));
         setSavedStories(list);
+        refreshUsage();
       }).catch(() => {});
     });
-  }, []);
+  }, [refreshUsage]);
 
   useEffect(() => {
     if (screen === "loading") {
@@ -146,13 +162,6 @@ export default function HomePage() {
       if (progressRef.current) clearInterval(progressRef.current);
     };
   }, [screen, lang]);
-
-  const saveCount = useCallback((n: number) => {
-    setStoriesUsed(n);
-    try {
-      localStorage.setItem(STORAGE_USED, String(n));
-    } catch {}
-  }, []);
 
   const saveStory = useCallback(async () => {
     const entry: SavedStoryItem = {
@@ -264,7 +273,8 @@ export default function HomePage() {
       return;
     }
     const isPremium = subscriptionStatus === "premium";
-    if (!isPremium && storiesUsed >= FREE_STORY_LIMIT) {
+    const remaining = usage?.remainingStoriesToday ?? 0;
+    if (!isPremium && remaining <= 0 && usage !== null) {
       setShowPaywall(true);
       generatingRef.current = false;
       return;
@@ -299,14 +309,16 @@ export default function HomePage() {
         setError(data.error ?? "Something went wrong. Please try again.");
         setScreen("home");
         toast.showToast(data.error ?? "Try again", "error");
-        if (res.status === 402) setShowPaywall(true);
+        if (res.status === 402) {
+        setShowPaywall(true);
+        refreshUsage();
         generatingRef.current = false;
         setIsGenerating(false);
         return;
       }
 
       setIsGenerating(false);
-      saveCount(storiesUsed + 1);
+      refreshUsage();
       setRawStory(data.rawStory ?? "");
       setStoryRegion(data.region ?? "Ethiopian highlands");
       const pageList = data.parsed
@@ -325,7 +337,7 @@ export default function HomePage() {
       generatingRef.current = false;
       setIsGenerating(false);
     }
-  }, [childName, age, trait, region, storyInspiration, lang, storiesUsed, saveCount, subscriptionStatus, toast]);
+  }, [childName, age, trait, region, storyInspiration, lang, usage, subscriptionStatus, refreshUsage, toast]);
 
   const handleSubscribe = useCallback(() => {
     setShowPaywall(false);
@@ -417,6 +429,7 @@ export default function HomePage() {
           lang={lang}
           onSubscribe={handleSubscribe}
           stripeEnabled={stripeEnabled}
+          isGuest={isGuest}
         />
       )}
 
@@ -482,16 +495,18 @@ export default function HomePage() {
           <div
             className="fixed top-[18px] left-[18px] z-[2] rounded-[10px] py-1.5 px-2.5 text-[10px] font-bold border transition-all duration-300"
             style={{
-              background: subscriptionStatus === "premium" ? "rgba(255,255,255,0.07)" : storiesUsed >= FREE_STORY_LIMIT ? "rgba(255,100,100,0.1)" : "rgba(255,255,255,0.07)",
-              borderColor: subscriptionStatus === "premium" ? "rgba(255,215,0,0.2)" : storiesUsed >= FREE_STORY_LIMIT ? "rgba(255,140,140,0.25)" : "rgba(255,215,0,0.2)",
-              color: subscriptionStatus === "premium" ? "rgba(255,215,0,0.85)" : storiesUsed >= FREE_STORY_LIMIT ? "rgba(255,180,180,0.9)" : "rgba(255,215,0,0.65)",
+              background: subscriptionStatus === "premium" ? "rgba(255,255,255,0.07)" : (usage && usage.remainingStoriesToday <= 0) ? "rgba(255,100,100,0.1)" : "rgba(255,255,255,0.07)",
+              borderColor: subscriptionStatus === "premium" ? "rgba(255,215,0,0.2)" : (usage && usage.remainingStoriesToday <= 0) ? "rgba(255,140,140,0.25)" : "rgba(255,215,0,0.2)",
+              color: subscriptionStatus === "premium" ? "rgba(255,215,0,0.85)" : (usage && usage.remainingStoriesToday <= 0) ? "rgba(255,180,180,0.9)" : "rgba(255,215,0,0.65)",
             }}
           >
             {subscriptionStatus === "premium"
               ? t.unlimitedStories
-              : storiesUsed >= FREE_STORY_LIMIT
-                ? t.limitReached
-                : t.freeLeft(FREE_STORY_LIMIT - storiesUsed)}
+              : usage === null
+                ? "…"
+                : usage.remainingStoriesToday <= 0
+                  ? t.limitReachedToday
+                  : t.freeLeftToday(usage.remainingStoriesToday)}
           </div>
         )}
 

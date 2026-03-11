@@ -134,7 +134,20 @@ Keep sentences short and feelings big.
 - **paywallUpgradeCta:** Upgrade for $4.99/month  
 - **paywallMaybeLater:** Maybe later  
 - **subscriptionSuccessMessage:** Welcome to unlimited Teret. (Account page after Stripe success.)  
+- **premiumActivating:** Your premium access is being activated... (Shown while webhook may be delayed.)  
+- **signInToUpgrade:** Sign in to upgrade and keep your stories across devices. (When signed-out user taps upgrade.)  
 - **Legacy:** paywallTitle, paywallSub, paywallValueLine, paywallSubscribeBtn, paywallLaterBtn  
+
+### Free story limits (daily, server-enforced)
+- **Guest users:** 3 free stories per day (by IP; resets at midnight UTC).  
+- **Signed-in free users:** 3 free stories per day (resets at midnight UTC).  
+- **Premium users:** Unlimited stories.
+
+### Account subscription UX
+- **planFree:** Free | **planPremium:** Premium  
+- **unlimitedStories:** Unlimited stories (e.g. under Premium plan)  
+- **manageSubscription:** Manage subscription | **upgradeToPremium:** Upgrade to Premium  
+- **checkoutCancelled:** Checkout cancelled. | **signInToSubscribe:** Sign in to subscribe.
 
 ---
 

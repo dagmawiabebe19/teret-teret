@@ -19,6 +19,9 @@ export const UI: Record<
     inspirationOpts: string[];
     generateBtn: string;
     freeLeft: (n: number) => string;
+    freeLeftToday: (n: number) => string;
+    limitReached: string;
+    limitReachedToday: string;
     loading: string[];
     exitBtn: string;
     continueHint: string;
@@ -36,7 +39,6 @@ export const UI: Record<
     illustrationLabel: string;
     noSavedStories: string;
     signInToSync: string;
-    limitReached: string;
     paywallTitle: string;
     paywallSub: string;
     paywallSubSoon: string;
@@ -54,6 +56,14 @@ export const UI: Record<
     paywallUpgradeCta: string;
     paywallMaybeLater: string;
     subscriptionSuccessMessage: string;
+    premiumActivating: string;
+    signInToUpgrade: string;
+    planFree: string;
+    planPremium: string;
+    manageSubscription: string;
+    upgradeToPremium: string;
+    checkoutCancelled: string;
+    signInToSubscribe: string;
     unlimitedStories: string;
     dailyTeretTitle: string;
     dailyTeretSubtitle: string;
@@ -186,6 +196,9 @@ export const UI: Record<
     inspirationOpts: ["የኢትዮጵያ ተረት", "የመጽሐፍ ቅዱስ ርዕዮት", "የእንስሳት ወሬ", "የወዳጅነት ታሪክ"],
     generateBtn: "🌙 ታሪክ ንገሩኝ!",
     freeLeft: (n) => `${n} ነፃ ታሪክ ቀሩ`,
+    freeLeftToday: (n) => (n === 1 ? "1 ነፃ ታሪክ ዛሬ ቀርቷል" : `${n} ነፃ ታሪኮች ዛሬ ቀርተዋል`),
+    limitReached: "የዚህ ወር ነፃ ታሪኮች አልቀሩም።",
+    limitReachedToday: "የዛሬ ነፃ ታሪኮች አልቀሩም።",
     loading: [
       "ጥንታዊ ተረተኛውን እየጠሩ...",
       "ከደጋ ታሪኮችን እየሰበሰቡ...",
@@ -231,7 +244,6 @@ export const UI: Record<
     illustrationLabel: "ምስል",
     noSavedStories: "ገና ምንም ታሪክ አልቀመጥክም።",
     signInToSync: "መግቢያ ተያይዘው ታሪኮችን ያስቀምጡ።",
-    limitReached: "የዚህ ወር ነፃ ታሪኮች አልቀሩም።",
     paywallTitle: "3 ነፃ ታሪኮችዎን ተጠቀሙ",
     paywallSub: "ያልተወሰነ አስማታዊ ታሪኮች ያግኙ። የልጆችዎን ህልም ያብሩ።",
     paywallSubSoon: "በቅርብ ጊዜ ይመጣል።",
@@ -249,6 +261,14 @@ export const UI: Record<
     paywallUpgradeCta: "በ$4.99/ወር ይለግሱ",
     paywallMaybeLater: "ለቆይ",
     subscriptionSuccessMessage: "ያልተገደበ ተረት እንኳን በደህና መጡ።",
+    premiumActivating: "የፕሪሚየም መዳረሻዎ እየተጫነ ነው...",
+    signInToUpgrade: "ለማሻሻል እና ታሪኮችዎን በሁሉም መሣሪያ ለማስቀጠል ይግቡ።",
+    planFree: "ነፃ",
+    planPremium: "ፕሪሚየም",
+    manageSubscription: "የደንበኝነት ምዝገባ አስተዳድር",
+    upgradeToPremium: "ወደ ፕሪሚየም ይለግሱ",
+    checkoutCancelled: "ግዢው ተሰርዟል።",
+    signInToSubscribe: "ለመመዝገብ ይግቡ።",
     unlimitedStories: "ያልተገደበ",
     dailyTeretTitle: "የዛሬ ተረት",
     dailyTeretSubtitle: "ለዛሬ ሌሊት ትምህርት እና የመጽለፊያ ታሪክ",
@@ -369,6 +389,9 @@ export const UI: Record<
     inspirationOpts: ["Ethiopian Folklore", "Bible Moral Story", "Animal Adventure", "Friendship Story"],
     generateBtn: "🌙 Tell Me a Story!",
     freeLeft: (n) => `${n} free ${n === 1 ? "story" : "stories"} left`,
+    freeLeftToday: (n) => `${n} free ${n === 1 ? "story" : "stories"} left today`,
+    limitReached: "You've reached this month's free story limit.",
+    limitReachedToday: "You've used your free stories for today.",
     loading: [
       "Calling the ancient storyteller...",
       "Gathering tales from the highlands...",
@@ -414,7 +437,6 @@ export const UI: Record<
     illustrationLabel: "Illustration",
     noSavedStories: "No saved stories yet.",
     signInToSync: "Sign in to sync stories across devices.",
-    limitReached: "You've reached this month's free story limit.",
     paywallTitle: "You've used your free stories",
     paywallSub: "Unlock unlimited magical stories for your little ones. Give them endless bedtime adventures.",
     paywallSubSoon: "Coming soon.",
@@ -432,6 +454,14 @@ export const UI: Record<
     paywallUpgradeCta: "Upgrade for $4.99/month",
     paywallMaybeLater: "Maybe later",
     subscriptionSuccessMessage: "Welcome to unlimited Teret.",
+    premiumActivating: "Your premium access is being activated...",
+    signInToUpgrade: "Sign in to upgrade and keep your stories across devices.",
+    planFree: "Free",
+    planPremium: "Premium",
+    manageSubscription: "Manage subscription",
+    upgradeToPremium: "Upgrade to Premium",
+    checkoutCancelled: "Checkout cancelled.",
+    signInToSubscribe: "Sign in to subscribe.",
     unlimitedStories: "Unlimited",
     dailyTeretTitle: "Tonight's Teret",
     dailyTeretSubtitle: "A new story for tonight's learning and bedtime",
@@ -553,6 +583,10 @@ export const UI: Record<
     generateBtn: "🌙 ¡Cuéntame un cuento!",
     freeLeft: (n) =>
       `${n} cuento${n === 1 ? "" : "s"} gratis restante${n === 1 ? "" : "s"}`,
+    freeLeftToday: (n) =>
+      `${n} cuento${n === 1 ? "" : "s"} gratis hoy`,
+    limitReached: "Has llegado al límite gratuito de este mes.",
+    limitReachedToday: "Usaste tus cuentos gratis de hoy.",
     loading: [
       "Llamando al cuentista ancestral...",
       "Reuniendo historias de las montañas...",
@@ -598,7 +632,6 @@ export const UI: Record<
     illustrationLabel: "Ilustración",
     noSavedStories: "Aún no hay cuentos guardados.",
     signInToSync: "Inicia sesión para sincronizar tus cuentos.",
-    limitReached: "Has llegado al límite gratuito de este mes.",
     paywallTitle: "Usaste tus cuentos gratis",
     paywallSub: "Desbloquea cuentos mágicos ilimitados para tus pequeños. Dales aventuras infinitas.",
     paywallSubSoon: "Próximamente.",
@@ -616,6 +649,14 @@ export const UI: Record<
     paywallUpgradeCta: "Suscribirse por $4.99/mes",
     paywallMaybeLater: "Quizás luego",
     subscriptionSuccessMessage: "Bienvenido a Teret ilimitado.",
+    premiumActivating: "Tu acceso premium se está activando...",
+    signInToUpgrade: "Inicia sesión para mejorar y mantener tus cuentos en todos tus dispositivos.",
+    planFree: "Gratis",
+    planPremium: "Premium",
+    manageSubscription: "Administrar suscripción",
+    upgradeToPremium: "Mejorar a Premium",
+    checkoutCancelled: "Pago cancelado.",
+    signInToSubscribe: "Inicia sesión para suscribirte.",
     unlimitedStories: "Ilimitado",
     dailyTeretTitle: "El Teret de hoy",
     dailyTeretSubtitle: "Un cuento nuevo para aprender y dormir esta noche",

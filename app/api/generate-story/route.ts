@@ -1,7 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AGES, REGIONS, TRAITS_EN, ALLOWED_AGES, ALLOWED_REGIONS, ALLOWED_STORY_INSPIRATIONS, FREE_STORY_LIMIT } from "@/lib/constants";
+import { AGES, REGIONS, TRAITS_EN, ALLOWED_AGES, ALLOWED_REGIONS, ALLOWED_STORY_INSPIRATIONS } from "@/lib/constants";
+import {
+  FREE_STORIES_PER_DAY,
+  getTodayPeriodUTC,
+  checkGuestDailyLimit,
+  incrementGuestDaily,
+  getClientIp,
+} from "@/lib/usageDaily";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { parseStory } from "@/lib/parseStory";
 import { getOptionalUser } from "@/lib/supabase/server";
 import {
@@ -161,12 +169,13 @@ export async function POST(request: Request) {
     const { childName, ageGroup, trait, region, storyInspiration } = parsed.data;
 
     const { user } = await getOptionalUser();
+
+    // Signed-in: daily free limit (usage_tracking); premium = unlimited
     if (user) {
       const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
       if (supabase) {
+        const { periodStart, periodEnd } = getTodayPeriodUTC();
         const now = new Date();
-        const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         await supabase.from("usage_tracking").upsert(
           {
             user_id: user.id,
@@ -182,7 +191,7 @@ export async function POST(request: Request) {
           const { data: usage } = await supabase.from("usage_tracking").select("generation_count, billing_period_end").eq("user_id", user.id).single();
           let count = usage?.generation_count ?? 0;
           const storedEnd = usage?.billing_period_end ? new Date(usage.billing_period_end) : null;
-          if (storedEnd && storedEnd <= now) {
+          if (!storedEnd || storedEnd <= now) {
             await supabase.from("usage_tracking").update({
               generation_count: 0,
               billing_period_start: periodStart.toISOString(),
@@ -190,15 +199,29 @@ export async function POST(request: Request) {
             }).eq("user_id", user.id);
             count = 0;
           }
-          if (count >= FREE_STORY_LIMIT) {
-            console.log("[teret] usage limit reached", { userId: user.id, count, limit: FREE_STORY_LIMIT });
+          if (count >= FREE_STORIES_PER_DAY) {
+            console.log("[teret] daily usage limit reached", { userId: user.id, count, limit: FREE_STORIES_PER_DAY });
             return NextResponse.json(
-              { error: "Free monthly limit reached. Subscribe for unlimited stories." },
+              { error: "Free daily limit reached. Resets at midnight UTC. Upgrade for unlimited stories." },
               { status: 402 }
             );
           }
-          console.log("[teret] usage check ok", { userId: user.id, count, limit: FREE_STORY_LIMIT });
+          console.log("[teret] usage check ok", { userId: user.id, count, limit: FREE_STORIES_PER_DAY });
         }
+      }
+    }
+
+    // Guest: daily free limit by IP (rate_limits.guest_daily:*)
+    if (!user) {
+      const admin = createAdminClient();
+      const ip = getClientIp(request);
+      const { allowed, storiesUsedToday } = await checkGuestDailyLimit(admin, ip);
+      if (!allowed) {
+        console.log("[teret] guest daily limit reached", { ip: ip.slice(0, 8), storiesUsedToday, limit: FREE_STORIES_PER_DAY });
+        return NextResponse.json(
+          { error: "Free daily limit reached. Sign in to get a fresh daily allowance, or upgrade for unlimited." },
+          { status: 402 }
+        );
       }
     }
 
@@ -293,6 +316,9 @@ export async function POST(request: Request) {
                 }).eq("user_id", user.id);
               }
             }
+          } else {
+            const admin = createAdminClient();
+            await incrementGuestDaily(admin, getClientIp(request));
           }
           return NextResponse.json({
             rawStory: rawText,
@@ -424,6 +450,10 @@ No other text. No markdown.`;
           }).eq("user_id", user.id);
         }
       }
+    } else {
+      const admin = createAdminClient();
+      const ip = getClientIp(request);
+      await incrementGuestDaily(admin, ip);
     }
 
     console.log("[teret] story generated", { userId: user?.id ?? "guest", pageCount: result.am.length, hasIllustrationPrompts: illustrationPrompts.length > 0 });

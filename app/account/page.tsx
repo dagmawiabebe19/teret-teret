@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { createClient, isAuthConfigured } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -76,33 +76,66 @@ export default function AccountPage() {
     return () => subscription.unsubscribe();
   }, [authConfigured]);
 
+  const refreshProfile = useCallback(() => {
+    if (!user?.id) return;
+    return fetch("/api/profile")
+      .then((r) => (r.ok ? r.json() : { progress: null, subscriptionStatus: null }))
+      .then((d) => {
+        setProgress(d.progress ?? null);
+        const sub = d.subscriptionStatus ?? null;
+        const isPremium = sub === "premium" || sub === "active";
+        setStatus(isPremium ? "premium" : "free");
+        return isPremium;
+      })
+      .catch(() => {
+        setProgress(null);
+        return false;
+      });
+  }, [user?.id]);
+
   useEffect(() => {
     if (!user?.id) return;
-    const supabase = createClient();
-    if (!supabase) return;
-    supabase.from("profiles").select("subscription_status").eq("id", user.id).single().then(({ data }) => {
-      setStatus((data?.subscription_status === "premium" || data?.subscription_status === "active") ? "premium" : "free");
-    });
-    fetch("/api/profile")
-      .then((r) => (r.ok ? r.json() : { progress: null }))
-      .then((d) => setProgress(d.progress ?? null))
-      .catch(() => setProgress(null));
-  }, [user?.id]);
+    refreshProfile();
+  }, [user?.id, refreshProfile]);
 
   useEffect(() => {
     if (searchParams.success === "1") {
       setMessage(t.subscriptionSuccessMessage);
       setMessageType("success");
+      let intervalId: ReturnType<typeof setInterval> | null = null;
+      refreshProfile().then((isPremium) => {
+        if (isPremium) return;
+        setMessage(t.premiumActivating);
+        let attempts = 0;
+        const maxAttempts = 5;
+        intervalId = setInterval(() => {
+          attempts += 1;
+          refreshProfile().then((premium) => {
+            if (premium) {
+              if (intervalId) clearInterval(intervalId);
+              intervalId = null;
+              setMessage(t.subscriptionSuccessMessage);
+              setMessageType("success");
+            } else if (attempts >= maxAttempts && intervalId) {
+              clearInterval(intervalId);
+              intervalId = null;
+            }
+          });
+        }, 2000);
+      });
+      return () => {
+        if (intervalId) clearInterval(intervalId);
+      };
     }
     if (searchParams.cancel === "1") {
-      setMessage("Checkout cancelled.");
+      setMessage(t.checkoutCancelled);
       setMessageType("info");
     }
     if (searchParams.signin === "1") {
-      setMessage("Sign in to subscribe.");
+      setMessage(t.signInToSubscribe);
       setMessageType("info");
     }
-  }, [searchParams, t]);
+  }, [searchParams, t, refreshProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +235,17 @@ export default function AccountPage() {
     >
       <div className="max-w-md mx-auto pt-4">
         <Link
-          href="/"
+          href={
+            searchParams.returnTo
+              ? (() => {
+                  try {
+                    const path = decodeURIComponent(searchParams.returnTo);
+                    if (path.startsWith("/") && !path.startsWith("//")) return path;
+                  } catch {}
+                  return "/";
+                })()
+              : "/"
+          }
           className="inline-flex items-center gap-1 mb-8 text-[#c9b8e8] font-bold text-sm hover:text-[#FFD700] transition-colors duration-200"
         >
           ← Back to Teret Teret
@@ -230,9 +273,15 @@ export default function AccountPage() {
         </ul>
 
         {message && (
-          <p className={`mb-4 p-3 rounded-xl border text-sm ${messageStyles}`}>
+          <div
+            className={`mb-4 p-4 rounded-xl border text-sm ${messageStyles} ${messageType === "success" ? "shadow-[0_4px_20px_rgba(100,220,140,0.15)]" : ""}`}
+            role="alert"
+          >
+            {searchParams.success === "1" && messageType === "success" && (
+              <span className="text-[20px] mr-2" aria-hidden>✨</span>
+            )}
             {message}
-          </p>
+          </div>
         )}
 
         {!authConfigured ? (
@@ -274,14 +323,17 @@ export default function AccountPage() {
             <div className="p-4 rounded-xl border border-[rgba(255,215,0,0.2)] bg-[rgba(255,255,255,0.05)]">
               <p className="text-sm font-bold text-[#FFD700]">Subscription</p>
               <p className="text-lg font-fredoka">
-                {status === "premium" ? "Premium" : "Free"}
+                {status === "premium" ? t.planPremium : t.planFree}
               </p>
+              {status === "premium" && (
+                <p className="text-sm text-[#c9b8e8] mt-1">{t.unlimitedStories} stories</p>
+              )}
               {stripeEnabled && status === "premium" && (
                 <a
                   href="/api/stripe/portal"
                   className="inline-block mt-2 text-sm text-[#c44dff] hover:underline"
                 >
-                  Manage subscription →
+                  {t.manageSubscription} →
                 </a>
               )}
               {stripeEnabled && status !== "premium" && (
@@ -289,7 +341,7 @@ export default function AccountPage() {
                   href="/api/stripe/checkout"
                   className="inline-block mt-2 px-4 py-2 rounded-xl text-sm font-bold bg-[linear-gradient(135deg,#FF8C00,#FFD700)] text-[#1a1a4e]"
                 >
-                  Subscribe — $4.99/month
+                  {t.upgradeToPremium} — $4.99/month
                 </a>
               )}
               {!stripeEnabled && status !== "premium" && (
