@@ -70,6 +70,10 @@ export default function HomePage() {
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const toast = useToast();
 
+  const remainingForBadge = usage?.remainingStoriesToday ?? 0;
+  const isLimitReachedBadge =
+    subscriptionStatus !== "premium" && usage !== null && remainingForBadge <= 0;
+
   useEffect(() => {
     setSavedStories(getStoredSaved());
   }, []);
@@ -505,18 +509,18 @@ export default function HomePage() {
           <div
             className="fixed top-[18px] left-[18px] z-[2] rounded-[10px] py-1.5 px-2.5 text-[10px] font-bold border transition-all duration-300"
             style={{
-              background: subscriptionStatus === "premium" ? "rgba(255,255,255,0.07)" : (usage && usage.remainingStoriesToday <= 0) ? "rgba(255,100,100,0.1)" : "rgba(255,255,255,0.07)",
-              borderColor: subscriptionStatus === "premium" ? "rgba(255,215,0,0.2)" : (usage && usage.remainingStoriesToday <= 0) ? "rgba(255,140,140,0.25)" : "rgba(255,215,0,0.2)",
-              color: subscriptionStatus === "premium" ? "rgba(255,215,0,0.85)" : (usage && usage.remainingStoriesToday <= 0) ? "rgba(255,180,180,0.9)" : "rgba(255,215,0,0.65)",
+              background: subscriptionStatus === "premium" ? "rgba(255,255,255,0.07)" : isLimitReachedBadge ? "rgba(255,100,100,0.1)" : "rgba(255,255,255,0.07)",
+              borderColor: subscriptionStatus === "premium" ? "rgba(255,215,0,0.2)" : isLimitReachedBadge ? "rgba(255,140,140,0.25)" : "rgba(255,215,0,0.2)",
+              color: subscriptionStatus === "premium" ? "rgba(255,215,0,0.85)" : isLimitReachedBadge ? "rgba(255,180,180,0.9)" : "rgba(255,215,0,0.65)",
             }}
           >
             {subscriptionStatus === "premium"
               ? t.unlimitedStories
               : usage === null
                 ? "…"
-                : usage.remainingStoriesToday <= 0
+                : remainingForBadge <= 0
                   ? t.limitReachedToday
-                  : t.freeLeftToday(usage.remainingStoriesToday)}
+                  : t.freeLeftToday(remainingForBadge)}
           </div>
         )}
 
