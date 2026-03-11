@@ -117,6 +117,14 @@ export default function HomePage() {
   }, [showPaywall, stripeEnabled]);
 
   useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refreshUsage();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [refreshUsage]);
+
+  useEffect(() => {
     const supabase = createClient();
     if (!supabase) {
       setIsGuest(true);
