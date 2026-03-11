@@ -190,6 +190,28 @@ Keep sentences short and feelings big.
 
 ---
 
+## Account page
+
+- **Subtitle:** Sign in to save your favorite stories, track progress, and unlock unlimited Teret for your family.  
+- **Benefits (list):**  
+  - ✓ Save stories for bedtime  
+  - ✓ Track language learning progress  
+  - ✓ Access your stories on any device  
+- **Continue with Google:** Continue with Google  
+- **Guest note:** You can use the app as a guest; stories are saved in this browser. Sign in to sync across devices and subscribe for unlimited stories.
+
+---
+
+## Share this Teret (story completion)
+
+- **Button:** Share this Teret  
+- **Share title:** Tonight's Teret from Teret-Teret 📖  
+- **Share text:** A magical bedtime story that also teaches language.  
+- **Success (Web Share):** Shared!  
+- **Success (copy fallback):** Link copied to clipboard  
+
+---
+
 ## Microcopy & system messages
 
 - **Save success:** Saved!  

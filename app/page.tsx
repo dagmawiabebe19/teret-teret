@@ -215,18 +215,28 @@ export default function HomePage() {
   }, [rawStory, lang, toast]);
 
   const shareStory = useCallback(() => {
+    const shareT = getT(lang);
+    const title = shareT.shareTeretTitle;
+    const text = shareT.shareTeretText;
+    const url = typeof window !== "undefined" ? window.location.origin : "";
+    const fullText = url ? `${text}\n${url}` : text;
     if (typeof navigator !== "undefined" && navigator.share) {
       navigator
         .share({
-          title: `Teret Teret — ${childName}'s story`,
-          text: rawStory.slice(0, 500) + (rawStory.length > 500 ? "…" : ""),
+          title,
+          text: fullText,
         })
-        .then(() => toast.showToast("Shared!", "success"))
+        .then(() => toast.showToast(shareT.shareSuccess, "success"))
         .catch(() => {});
     } else {
-      copyStory();
+      try {
+        navigator.clipboard.writeText(fullText);
+        toast.showToast(shareT.shareCopied, "success");
+      } catch {
+        toast.showToast(shareT.shareCopied, "success");
+      }
     }
-  }, [childName, rawStory, copyStory, toast]);
+  }, [lang, toast]);
 
   const exportStory = useCallback(() => {
     try {

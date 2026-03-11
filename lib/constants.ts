@@ -149,7 +149,16 @@ export const UI: Record<
     signInSuccess: string;
     signOut: string;
     accountSubtitle: string;
+    accountBenefit1: string;
+    accountBenefit2: string;
+    accountBenefit3: string;
     accountGuestNote: string;
+    continueWithGoogle: string;
+    shareTeretBtn: string;
+    shareTeretTitle: string;
+    shareTeretText: string;
+    shareSuccess: string;
+    shareCopied: string;
   }
 > = {
   am: {
@@ -313,8 +322,17 @@ export const UI: Record<
     signUpSuccess: "ለማረጋገጥ ኢሜይልዎን ይመልከቱ።",
     signInSuccess: "በተሳካ ሁኔታ ገብተዋል።",
     signOut: "ውጣ",
-    accountSubtitle: "መግቢያ ተያይዘው ታሪኮችን ያስቀምጡ እና የደንበኝነት ምዝገባዎን ያስተዳድሩ",
+    accountSubtitle: "መግቢያ ተያይዘው ተወዳጅ ታሪኮችዎን ያስቀምጡ፣ እድገት ይከታተሉ፣ እና ለቤተሰብዎ ያልተገደበ ተረት ይክፈቱ።",
+    accountBenefit1: "ለመጽለፊያ ታሪኮች ያስቀምጡ",
+    accountBenefit2: "የቋንቋ መማር እድገት ይከታተሉ",
+    accountBenefit3: "ታሪኮችዎን በማንኛውም መሣሪያ ይድረሱ",
     accountGuestNote: "ተረት ተረትን እንደ እንግዳ መጠቀም ትችላለህ፤ ታሪኮች በዚህ መሣሪያ ላይ ይቀራሉ። መግቢያ ለማድረግ እና ለማስቀጠል ያልተወሰነ ታሪኮች ይመዝገቡ።",
+    continueWithGoogle: "በጉግል ይቀጥሉ",
+    shareTeretBtn: "ይህን ተረት አጋራ",
+    shareTeretTitle: "የዛሬ ተረት ከተረት ተረት 📖",
+    shareTeretText: "አስማታዊ የመጽለፊያ ታሪክ በተጨማሪ ቋንቋ የሚያስተምር።",
+    shareSuccess: "ተጋርቷል!",
+    shareCopied: "ቅዳ ተቀድቷል",
   },
   en: {
     appTitle: "Teret Teret",
@@ -477,8 +495,17 @@ export const UI: Record<
     signUpSuccess: "Check your email to confirm sign up.",
     signInSuccess: "Signed in.",
     signOut: "Sign out",
-    accountSubtitle: "Sign in to sync stories and manage your subscription",
+    accountSubtitle: "Sign in to save your favorite stories, track progress, and unlock unlimited Teret for your family.",
+    accountBenefit1: "Save stories for bedtime",
+    accountBenefit2: "Track language learning progress",
+    accountBenefit3: "Access your stories on any device",
     accountGuestNote: "You can use the app as a guest; stories are saved in this browser. Sign in to sync across devices and subscribe for unlimited stories.",
+    continueWithGoogle: "Continue with Google",
+    shareTeretBtn: "Share this Teret",
+    shareTeretTitle: "Tonight's Teret from Teret-Teret 📖",
+    shareTeretText: "A magical bedtime story that also teaches language.",
+    shareSuccess: "Shared!",
+    shareCopied: "Link copied to clipboard",
   },
   es: {
     appTitle: "Teret Teret",
@@ -642,8 +669,17 @@ export const UI: Record<
     signUpSuccess: "Revisa tu correo para confirmar el registro.",
     signInSuccess: "Sesión iniciada.",
     signOut: "Cerrar sesión",
-    accountSubtitle: "Inicia sesión para sincronizar cuentos y gestionar tu suscripción",
+    accountSubtitle: "Inicia sesión para guardar tus cuentos favoritos, seguir tu progreso y desbloquear Teret ilimitado para tu familia.",
+    accountBenefit1: "Guarda cuentos para la hora de dormir",
+    accountBenefit2: "Sigue tu progreso en idiomas",
+    accountBenefit3: "Accede a tus cuentos en cualquier dispositivo",
     accountGuestNote: "Puedes usar la app como invitado; los cuentos se guardan en este navegador. Inicia sesión para sincronizar y suscribirte a cuentos ilimitados.",
+    continueWithGoogle: "Continuar con Google",
+    shareTeretBtn: "Compartir este Teret",
+    shareTeretTitle: "El Teret de hoy de Teret-Teret 📖",
+    shareTeretText: "Un cuento mágico para dormir que también enseña idiomas.",
+    shareSuccess: "¡Compartido!",
+    shareCopied: "Enlace copiado",
   },
 };
 

@@ -219,7 +219,7 @@ export function StoryReader({
                     fontFamily: "'Nunito',sans-serif",
                   }}
                 >
-                  📤 Share
+                  📤 {t.shareTeretBtn}
                 </button>
               )}
               {onExport && (

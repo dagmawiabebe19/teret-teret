@@ -46,7 +46,9 @@ This creates `profiles`, `stories`, `usage_tracking`, `subscriptions`, RLS polic
 In Supabase Dashboard → Authentication → URL Configuration:
 
 - **Site URL**: `http://localhost:3000` (or your production URL)
-- **Redirect URLs**: add `http://localhost:3000/auth/callback` and your production callback URL (e.g. `https://teret-teret.vercel.app/auth/callback`)
+- **Redirect URLs**: add `http://localhost:3000/auth/callback`, `http://localhost:3000/account`, and your production equivalents (e.g. `https://teret-teret.vercel.app/auth/callback`, `https://teret-teret.vercel.app/account`).
+
+For **Google OAuth**: Authentication → Providers → Google → enable and add your OAuth client ID and secret from Google Cloud Console. The app’s “Continue with Google” button redirects back to `/account` after sign-in.
 
 ### 5. Stripe webhook (production)
 
