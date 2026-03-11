@@ -40,7 +40,7 @@ const ANTHROPIC_TIMEOUT_MS = 60_000;
 const MIN_PAGES = 2;
 
 /** Model ID supported by Anthropic Messages API. Use a known-good value to avoid 400 invalid_request_error. */
-const ANTHROPIC_MODEL = "claude-3-5-sonnet-latest";
+const ANTHROPIC_MODEL = "claude-3-haiku-20240307";
 
 function getInspirationBlock(storyInspiration: string): string {
   switch (storyInspiration) {
@@ -190,7 +190,7 @@ export async function POST(request: Request) {
       response = await anthropic.messages.create(
         {
           model: ANTHROPIC_MODEL,
-          max_tokens: 4096,
+          max_tokens: 700,
           temperature: 0.7,
           system: systemPrompt,
           messages: [{ role: "user", content: userPrompt }],
@@ -246,7 +246,7 @@ No other text. No markdown.`;
         const retry = await anthropic.messages.create(
           {
             model: ANTHROPIC_MODEL,
-            max_tokens: 4096,
+            max_tokens: 700,
             temperature: 0.7,
             system: systemPrompt,
             messages: [
@@ -293,7 +293,7 @@ No other text. No markdown.`;
         const illResponse = await anthropic.messages.create(
           {
             model: ANTHROPIC_MODEL,
-            max_tokens: 1024,
+            max_tokens: 400,
             temperature: 0.5,
             system: illSystem,
             messages: [{ role: "user", content: illUser }],
