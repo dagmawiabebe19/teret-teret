@@ -9,9 +9,11 @@ import { LangToggle } from "@/components/LangToggle";
 import { StoryForm } from "@/components/StoryForm";
 import { StoryReader } from "@/components/StoryReader";
 import { SavedStoriesPanel, type SavedStoryItem } from "@/components/SavedStoriesPanel";
+import { DailyTeretCard } from "@/components/DailyTeretCard";
 import { PaywallModal } from "@/components/PaywallModal";
 import { LoadingState } from "@/components/LoadingState";
 import { UI, FREE_STORY_LIMIT } from "@/lib/constants";
+import type { UserProgress } from "@/types";
 import { parseStory, parsedToPages } from "@/lib/parseStory";
 import { useToast } from "@/components/ToastProvider";
 import type { Lang } from "@/types";
@@ -66,6 +68,8 @@ export default function HomePage() {
   const [isGuest, setIsGuest] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [stripeEnabled, setStripeEnabled] = useState(false);
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
+  const [isDailyTeretView, setIsDailyTeretView] = useState(false);
   const generatingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -92,32 +96,32 @@ export default function HomePage() {
     supabase.auth.getUser().then(({ data: { user: u } }) => {
       setIsGuest(!u);
       if (!u) return;
-      fetch("/api/stories")
-        .then((r) => r.json())
-        .then((data) => {
-          const list = (data.stories ?? []).map(
-            (s: {
-              id: string;
-              childName: string;
-              region: string;
-              rawStory: string;
-              parsedPages?: { am: string; en: string; es: string }[];
-              illustrationPrompts?: string[];
-              createdAt: string;
-            }
-            ) => ({
-              id: s.id,
-              name: s.childName,
-              region: s.region,
-              date: s.createdAt ? new Date(s.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-              content: s.rawStory,
-              parsedPages: s.parsedPages,
-              illustrationPrompts: s.illustrationPrompts,
-            })
-          );
-          setSavedStories(list);
-        })
-        .catch(() => {});
+      Promise.all([
+        fetch("/api/profile").then((r) => (r.ok ? r.json() : { progress: null })),
+        fetch("/api/stories").then((r) => r.json()),
+      ]).then(([profileData, storiesData]) => {
+        setUserProgress(profileData.progress ?? null);
+        const list = ((storiesData.stories ?? []) as {
+          id: string;
+          childName: string;
+          region: string;
+          rawStory: string;
+          parsedPages?: { am: string; en: string; es: string }[];
+          illustrationPrompts?: string[];
+          isFavorite?: boolean;
+          createdAt: string;
+        }[]).map((s) => ({
+          id: s.id,
+          name: s.childName,
+          region: s.region,
+          date: s.createdAt ? new Date(s.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+          content: s.rawStory,
+          parsedPages: s.parsedPages,
+          illustrationPrompts: s.illustrationPrompts,
+          isFavorite: s.isFavorite ?? false,
+        }));
+        setSavedStories(list);
+      }).catch(() => {});
     });
   }, []);
 
@@ -314,6 +318,7 @@ export default function HomePage() {
   }, [stripeEnabled]);
 
   const openSavedStory = useCallback((story: SavedStoryItem) => {
+    setIsDailyTeretView(false);
     setRawStory(story.content);
     setChildName(story.name);
     setStoryRegion(story.region);
@@ -333,6 +338,58 @@ export default function HomePage() {
       setScreen("home");
     }
     setShowSaved(false);
+  }, []);
+
+  const openDailyStory = useCallback((payload: {
+    pages: StoryPage[];
+    illustrationPrompts: string[];
+    childName: string;
+    region: string;
+    rawStory: string;
+    isDailyTeret: true;
+  }) => {
+    setIsDailyTeretView(true);
+    setPages(payload.pages);
+    setIllustrationPrompts(payload.illustrationPrompts);
+    setChildName(payload.childName);
+    setStoryRegion(payload.region);
+    setRawStory(payload.rawStory);
+    setScreen("story");
+  }, []);
+
+  const completeDailyTeret = useCallback(async () => {
+    try {
+      const res = await fetch("/api/daily-teret/complete", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.progress) {
+        setUserProgress(data.progress);
+      }
+      if (res.ok) {
+        fetch("/api/profile")
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => d?.progress && setUserProgress(d.progress))
+          .catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleFavorite = useCallback(async (id: string, isFavorite: boolean) => {
+    try {
+      const res = await fetch(`/api/stories/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isFavorite }),
+      });
+      if (res.ok) {
+        setSavedStories((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, isFavorite } : s))
+        );
+      }
+    } catch {
+      // ignore
+    }
   }, []);
 
   const t = UI[lang];
@@ -357,6 +414,7 @@ export default function HomePage() {
           rawStory={rawStory}
           onNew={() => {
             setScreen("home");
+            setIsDailyTeretView(false);
             setPages([]);
             setIllustrationPrompts([]);
             setChildName("");
@@ -377,6 +435,8 @@ export default function HomePage() {
           )}
           lang={lang}
           setLang={setLang}
+          isDailyTeret={isDailyTeretView}
+          onCompleteDailyTeret={completeDailyTeret}
         />
       )}
 
@@ -456,12 +516,31 @@ export default function HomePage() {
                 </span>
               </div>
 
+              {userProgress != null && (
+                <div
+                  className="flex justify-center gap-2 mb-3 text-[11px] font-bold"
+                  style={{ color: "rgba(255,215,0,0.85)" }}
+                >
+                  <span>{userProgress.levelName}</span>
+                  {userProgress.streakCount > 0 && (
+                    <span>· 🔥 {t.streakDays(userProgress.streakCount)}</span>
+                  )}
+                </div>
+              )}
+
+              <DailyTeretCard
+                lang={lang}
+                progress={userProgress}
+                onOpenDailyStory={openDailyStory}
+              />
+
               <SavedStoriesPanel
                 lang={lang}
                 stories={savedStories}
                 open={showSaved}
                 onToggle={() => setShowSaved(!showSaved)}
                 onOpenStory={openSavedStory}
+                onToggleFavorite={isGuest ? undefined : toggleFavorite}
                 isGuest={isGuest}
               />
               {isGuest && (

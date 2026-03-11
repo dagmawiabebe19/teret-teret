@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Stars } from "./Stars";
 import { Fireflies } from "./Fireflies";
 import { Campfire } from "./Campfire";
@@ -25,6 +25,10 @@ interface StoryReaderProps {
   saved: boolean;
   lang: Lang;
   setLang: (l: Lang) => void;
+  /** When true, this is the Daily Teret; end screen shows completion message and calls onCompleteDailyTeret once */
+  isDailyTeret?: boolean;
+  /** Called once when user reaches end screen of Daily Teret (for streak/XP) */
+  onCompleteDailyTeret?: () => void;
 }
 
 export function StoryReader({
@@ -43,13 +47,23 @@ export function StoryReader({
   saved,
   lang,
   setLang,
+  isDailyTeret = false,
+  onCompleteDailyTeret,
 }: StoryReaderProps) {
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState<"fwd" | "bck">("fwd");
   const [animKey, setAnimKey] = useState(0);
   const [showEnd, setShowEnd] = useState(false);
   const [localSaved, setLocalSaved] = useState(saved);
+  const [dailyCompleted, setDailyCompleted] = useState(false);
   const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (showEnd && isDailyTeret && onCompleteDailyTeret && !dailyCompleted) {
+      setDailyCompleted(true);
+      onCompleteDailyTeret();
+    }
+  }, [showEnd, isDailyTeret, onCompleteDailyTeret, dailyCompleted]);
 
   const t = UI[lang];
   const total = pages.length;
@@ -133,6 +147,14 @@ export function StoryReader({
         >
           <div className="text-center mb-6">
             <div className="text-[50px] mb-3" aria-hidden>🌙</div>
+            {isDailyTeret && (
+              <p
+                className="text-[15px] text-[#FFD700] font-bold mb-2 px-2"
+                style={{ fontFamily: "'Nunito',sans-serif" }}
+              >
+                ✨ {t.completedTonightTeret}
+              </p>
+            )}
             <p
               className="text-[19px] text-[#FFD700] font-bold mb-1"
               style={{ fontFamily: "'Lora',Georgia,serif" }}
@@ -148,7 +170,7 @@ export function StoryReader({
             <p
               className="font-fredoka text-[20px] text-[#c9b8e8]"
             >
-              {t.endTitle}, {childName} 🌟
+              {t.endTitle}{childName ? `, ${childName} ` : " "}🌟
             </p>
           </div>
           <div className="mb-6">

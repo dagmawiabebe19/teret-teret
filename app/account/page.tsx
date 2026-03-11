@@ -4,10 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import type { UserProgress } from "@/types";
+import { UI } from "@/lib/constants";
 
 export default function AccountPage() {
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<"free" | "premium" | null>(null);
+  const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,6 +18,8 @@ export default function AccountPage() {
   const [message, setMessage] = useState("");
   const [searchParams, setSearchParams] = useState<Record<string, string>>({});
   const [stripeEnabled, setStripeEnabled] = useState(false);
+  const [lang] = useState<"am" | "en" | "es">("en");
+  const t = UI[lang];
 
   useEffect(() => {
     fetch("/api/config")
@@ -51,6 +56,10 @@ export default function AccountPage() {
     supabase.from("profiles").select("subscription_status").eq("id", user.id).single().then(({ data }) => {
       setStatus((data?.subscription_status === "premium" || data?.subscription_status === "active") ? "premium" : "free");
     });
+    fetch("/api/profile")
+      .then((r) => (r.ok ? r.json() : { progress: null }))
+      .then((d) => setProgress(d.progress ?? null))
+      .catch(() => setProgress(null));
   }, [user?.id]);
 
   useEffect(() => {
@@ -125,6 +134,27 @@ export default function AccountPage() {
         {user ? (
           <div className="space-y-4">
             <p className="text-sm text-[#c9b8e8]">{user.email}</p>
+            {progress != null && (
+              <div className="p-4 rounded-xl border border-[rgba(255,215,0,0.2)] bg-[rgba(255,255,255,0.05)]">
+                <p className="text-sm font-bold text-[#FFD700]">{t.levelLabel}: {progress.levelName}</p>
+                {progress.streakCount > 0 && (
+                  <p className="text-sm text-[#c9b8e8] mt-1">🔥 {t.streakDays(progress.streakCount)}</p>
+                )}
+                {progress.xpToNextLevel > 0 && (
+                  <p className="text-xs text-[rgba(200,180,255,0.7)] mt-1">{t.xpToNext(progress.xpToNextLevel)}</p>
+                )}
+                <div className="mt-2 h-1.5 rounded-full bg-[rgba(255,255,255,0.1)] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[linear-gradient(90deg,#c44dff,#FFD700)] transition-[width] duration-300"
+                    style={{
+                      width: progress.xpToNextLevel > 0
+                        ? `${Math.min(100, (progress.xp / (progress.xp + progress.xpToNextLevel)) * 100)}%`
+                        : "100%",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             <div className="p-4 rounded-xl border border-[rgba(255,215,0,0.2)] bg-[rgba(255,255,255,0.05)]">
               <p className="text-sm font-bold text-[#FFD700]">Subscription</p>
               <p className="text-lg font-fredoka">

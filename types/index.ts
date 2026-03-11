@@ -42,4 +42,25 @@ export interface UsageInfo {
   billingPeriodEnd: string | null;
 }
 
+/** Level names for progress system */
+export const LEVEL_NAMES = [
+  "Beginner Storyteller",
+  "Village Storyteller",
+  "Story Keeper",
+  "Elder Story Keeper",
+] as const;
+
+/** XP required for each level (cumulative). Index = level (0-based). */
+export const XP_PER_LEVEL = [0, 100, 300, 600] as const;
+
+export interface UserProgress {
+  streakCount: number;
+  lastDailyTeretViewedAt: string | null;
+  completedDailyTeretDates: string[];
+  xp: number;
+  level: number;
+  levelName: string;
+  xpToNextLevel: number;
+}
+
 export const FREE_STORY_LIMIT = 3;

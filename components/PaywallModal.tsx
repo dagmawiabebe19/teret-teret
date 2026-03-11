@@ -36,11 +36,16 @@ export function PaywallModal({ onClose, lang, onSubscribe, stripeEnabled = false
           {t.paywallTitle}
         </h2>
         <p
-          className="text-[#c9b8e8] text-sm leading-relaxed mb-5"
+          className="text-[#c9b8e8] text-sm leading-relaxed mb-2"
           style={{ lineHeight: 1.6 }}
         >
           {stripeEnabled ? t.paywallSub : t.paywallSubSoon}
         </p>
+        {stripeEnabled && (
+          <p className="text-[rgba(255,215,0,0.8)] text-xs mb-5">
+            {t.paywallValueLine}
+          </p>
+        )}
         {stripeEnabled && (
           <>
             <div
