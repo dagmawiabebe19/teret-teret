@@ -39,6 +39,9 @@ const GenerateStorySchema = z.object({
 const ANTHROPIC_TIMEOUT_MS = 60_000;
 const MIN_PAGES = 2;
 
+/** Model ID supported by Anthropic Messages API. Use a known-good value to avoid 400 invalid_request_error. */
+const ANTHROPIC_MODEL = "claude-3-5-sonnet-latest";
+
 function getInspirationBlock(storyInspiration: string): string {
   switch (storyInspiration) {
     case "ethiopian_folklore":
@@ -161,9 +164,14 @@ export async function POST(request: Request) {
       }
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+    const keyExists = Boolean(apiKey);
+    console.log("[generate-story] ANTHROPIC_API_KEY check:", {
+      exists: keyExists,
+      length: keyExists ? apiKey!.length : 0,
+    });
     if (!apiKey) {
-      console.error("[generate-story] ANTHROPIC_API_KEY is not set");
+      console.error("[generate-story] ANTHROPIC_API_KEY is missing or empty");
       return NextResponse.json(
         { error: "Story service is not configured" },
         { status: 503 }
@@ -177,15 +185,47 @@ export async function POST(request: Request) {
     const timeout = setTimeout(() => controller.abort(), ANTHROPIC_TIMEOUT_MS);
 
     const anthropic = new Anthropic({ apiKey });
-    const response = await anthropic.messages.create(
-      {
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1400,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-      },
-      { signal: controller.signal }
-    );
+    let response: Awaited<ReturnType<Anthropic["messages"]["create"]>>;
+    try {
+      response = await anthropic.messages.create(
+        {
+          model: ANTHROPIC_MODEL,
+          max_tokens: 4096,
+          temperature: 0.7,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userPrompt }],
+        },
+        { signal: controller.signal }
+      );
+    } catch (anthropicErr: unknown) {
+      clearTimeout(timeout);
+      const err = anthropicErr as { name?: string; status?: number; message?: string; error?: { type?: string; message?: string }; body?: unknown };
+      const status = err?.status ?? (err?.error as { status?: number } | undefined)?.status;
+      const message = err?.message ?? (err?.error as { message?: string } | undefined)?.message ?? String(anthropicErr);
+      console.error("[generate-story] Anthropic request failed:", {
+        name: err?.name ?? "Error",
+        status: status ?? "unknown",
+        message,
+        errorType: (err?.error as { type?: string } | undefined)?.type,
+        hasBody: Boolean(err?.body),
+      });
+      if (err?.body && typeof err.body === "object" && "error" in err.body) {
+        const bodyErr = (err.body as { error?: { type?: string; message?: string } }).error;
+        if (bodyErr) console.error("[generate-story] API error body:", { type: bodyErr.type, message: bodyErr.message });
+      }
+      const clientMessage =
+        status === 400
+          ? "Story request was invalid. Please try again."
+          : status === 401 || status === 403
+            ? "Story service authentication failed."
+            : status === 429
+              ? "Too many requests. Please try again in a moment."
+              : "Story service is temporarily unavailable. Please try again.";
+      return NextResponse.json(
+        { error: clientMessage },
+        { status: status && status >= 400 && status < 600 ? status : 502 }
+      );
+    }
     clearTimeout(timeout);
 
     const rawText =
@@ -205,8 +245,9 @@ No other text. No markdown.`;
       try {
         const retry = await anthropic.messages.create(
           {
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 1400,
+            model: ANTHROPIC_MODEL,
+            max_tokens: 4096,
+            temperature: 0.7,
             system: systemPrompt,
             messages: [
               { role: "user", content: userPrompt },
@@ -251,8 +292,9 @@ No other text. No markdown.`;
         );
         const illResponse = await anthropic.messages.create(
           {
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 600,
+            model: ANTHROPIC_MODEL,
+            max_tokens: 1024,
+            temperature: 0.5,
             system: illSystem,
             messages: [{ role: "user", content: illUser }],
           },
@@ -310,11 +352,21 @@ No other text. No markdown.`;
           { status: 504 }
         );
       }
-      console.error("[generate-story]", err.message);
+      console.error("[generate-story]", err.name, err.message);
     }
+    const apiErr = err as { status?: number; error?: { type?: string; message?: string } };
+    const status = apiErr?.status;
+    const clientMessage =
+      status === 400
+        ? "Story request was invalid. Please try again."
+        : status === 401 || status === 403
+          ? "Story service authentication failed."
+          : status === 429
+            ? "Too many requests. Please try again in a moment."
+            : "Something went wrong. Please try again.";
     return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
-      { status: 500 }
+      { error: clientMessage },
+      { status: status && status >= 400 && status < 600 ? status : 500 }
     );
   }
 }
