@@ -1,6 +1,6 @@
 "use client";
 
-import { UI, AGES, REGIONS, TRAITS_EN, ALLOWED_STORY_INSPIRATIONS } from "@/lib/constants";
+import { getT, AGES, REGIONS, TRAITS_EN, ALLOWED_STORY_INSPIRATIONS } from "@/lib/constants";
 import type { Lang } from "@/types";
 
 const btnStyle = (
@@ -66,7 +66,7 @@ export function StoryForm({
   disabled,
   error,
 }: StoryFormProps) {
-  const t = UI[lang];
+  const t = getT(lang);
 
   const handleTraitSelect = (idx: number) => {
     const next = traitIdx === idx ? null : idx;

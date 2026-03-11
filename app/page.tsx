@@ -12,7 +12,7 @@ import { SavedStoriesPanel, type SavedStoryItem } from "@/components/SavedStorie
 import { DailyTeretCard } from "@/components/DailyTeretCard";
 import { PaywallModal } from "@/components/PaywallModal";
 import { LoadingState } from "@/components/LoadingState";
-import { UI, FREE_STORY_LIMIT } from "@/lib/constants";
+import { getT, FREE_STORY_LIMIT } from "@/lib/constants";
 import type { UserProgress } from "@/types";
 import { parseStory, parsedToPages } from "@/lib/parseStory";
 import { useToast } from "@/components/ToastProvider";
@@ -129,7 +129,7 @@ export default function HomePage() {
     if (screen === "loading") {
       let msg = 0;
       intervalRef.current = setInterval(() => {
-        msg = (msg + 1) % UI[lang].loading.length;
+        msg = (msg + 1) % getT(lang).loading.length;
         setLoadingMsg(msg);
       }, 1800);
       let prog = 0;
@@ -186,7 +186,7 @@ export default function HomePage() {
             entry.date = data.createdAt ?? entry.date;
             const updated = [entry, ...savedStories.filter((s) => s.id !== entry.id)].slice(0, 50);
             setSavedStories(updated);
-            toast.showToast(UI[lang].savedConfirm, "success");
+            toast.showToast(getT(lang).savedConfirm, "success");
             return;
           }
         } catch {
@@ -200,7 +200,7 @@ export default function HomePage() {
     try {
       localStorage.setItem(STORAGE_SAVED, JSON.stringify(updated));
     } catch {}
-    toast.showToast(UI[lang].savedConfirm, "success");
+    toast.showToast(getT(lang).savedConfirm, "success");
   }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, savedStories, toast]);
 
   const copyStory = useCallback(() => {
@@ -208,7 +208,7 @@ export default function HomePage() {
       navigator.clipboard.writeText(rawStory);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      toast.showToast(UI[lang].copiedBtn, "success");
+      toast.showToast(getT(lang).copiedBtn, "success");
     } catch {
       toast.showToast("Copy failed", "error");
     }
@@ -392,7 +392,7 @@ export default function HomePage() {
     }
   }, []);
 
-  const t = UI[lang];
+  const t = getT(lang);
 
   return (
     <>

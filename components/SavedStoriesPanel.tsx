@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UI } from "@/lib/constants";
+import { getT } from "@/lib/constants";
 import type { Lang } from "@/types";
 
 export interface SavedStoryItem {
@@ -37,7 +37,7 @@ export function SavedStoriesPanel({
   onToggleFavorite,
   isGuest = false,
 }: SavedStoriesPanelProps) {
-  const t = UI[lang];
+  const t = getT(lang);
   const [filter, setFilter] = useState<LibraryFilter>("all");
   const filtered =
     filter === "favorites"

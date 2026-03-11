@@ -1,8 +1,22 @@
 # Teret-Teret Product Copy
 
-**Tone:** Warm · Magical · Family-friendly · Culturally rooted · Simple English · Trustworthy · Premium without corporate
+**Version:** 1.0  
+**Last Updated:** 2025-03-10  
+**Maintainer:** Walia Digital
 
-Use this doc as the single source of truth for all in-app and marketing copy. Keep sentences short and feelings big.
+**Tone:**  
+Warm · Magical · Family-friendly · Culturally rooted · Trustworthy · Premium but not corporate
+
+**Purpose:**  
+This document is the single source of truth for all Teret-Teret UI and marketing copy. Whenever UI wording changes, update this version and keep `lib/constants.ts` in sync.
+
+> **Process:** Any new UI text must be added to this document first (with the key and English copy), then added to `lib/constants.ts` for all supported languages (am, en, es). This keeps copy consistent and avoids missing translations.
+
+---
+
+## Sections (below)
+
+Keep sentences short and feelings big.
 
 ---
 

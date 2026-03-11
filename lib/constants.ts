@@ -598,6 +598,24 @@ export const UI: Record<
   },
 };
 
+/** Type of one language's UI strings (used by getT return type). */
+export type UITranslations = typeof UI.en;
+
+/**
+ * Safe translation accessor with fallback: UI[lang] → UI.en → key name.
+ * Use this instead of UI[lang] so missing keys never render undefined.
+ */
+export function getT(lang: Lang): UITranslations {
+  const en = UI.en as Record<string, unknown>;
+  const target = (UI[lang] ?? en) as Record<string, unknown>;
+  return new Proxy(target, {
+    get(_, key: string) {
+      const v = target[key] ?? en[key];
+      return v !== undefined ? v : key;
+    },
+  }) as UITranslations;
+}
+
 export const AGES = [
   {
     value: "2-4",

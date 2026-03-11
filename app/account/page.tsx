@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { UserProgress } from "@/types";
-import { UI } from "@/lib/constants";
+import { getT } from "@/lib/constants";
 
 export default function AccountPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -19,7 +19,7 @@ export default function AccountPage() {
   const [searchParams, setSearchParams] = useState<Record<string, string>>({});
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [lang] = useState<"am" | "en" | "es">("en");
-  const t = UI[lang];
+  const t = getT(lang);
 
   useEffect(() => {
     fetch("/api/config")

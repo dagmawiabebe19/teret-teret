@@ -1,6 +1,6 @@
 "use client";
 
-import { UI } from "@/lib/constants";
+import { getT } from "@/lib/constants";
 import type { Lang } from "@/types";
 
 interface PaywallModalProps {
@@ -11,7 +11,7 @@ interface PaywallModalProps {
 }
 
 export function PaywallModal({ onClose, lang, onSubscribe, stripeEnabled = false }: PaywallModalProps) {
-  const t = UI[lang];
+  const t = getT(lang);
 
   return (
     <div

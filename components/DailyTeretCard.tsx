@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { UI } from "@/lib/constants";
+import { getT } from "@/lib/constants";
 import { parsedToPages } from "@/lib/parseStory";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
@@ -62,7 +62,7 @@ export function DailyTeretCard({
     }
   }, [onOpenDailyStory]);
 
-  const t = UI[lang];
+  const t = getT(lang);
   const streak = progress?.streakCount ?? 0;
 
   return (

@@ -5,7 +5,7 @@ import { Stars } from "./Stars";
 import { Fireflies } from "./Fireflies";
 import { Campfire } from "./Campfire";
 import { LangToggle } from "./LangToggle";
-import { UI } from "@/lib/constants";
+import { getT } from "@/lib/constants";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
 
@@ -65,7 +65,7 @@ export function StoryReader({
     }
   }, [showEnd, isDailyTeret, onCompleteDailyTeret, dailyCompleted]);
 
-  const t = UI[lang];
+  const t = getT(lang);
   const total = pages.length;
   const progress = total > 0 ? (page + 1) / total : 0;
   const current = pages[page] || { am: "", en: "", es: "" };

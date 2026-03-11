@@ -1,9 +1,8 @@
 "use client";
 
 import { Campfire } from "./Campfire";
-import { ANIMALS } from "@/lib/constants";
+import { ANIMALS, getT } from "@/lib/constants";
 import type { Lang } from "@/types";
-import { UI } from "@/lib/constants";
 
 interface LoadingStateProps {
   lang: Lang;
@@ -16,7 +15,7 @@ export function LoadingState({
   loadingMsg,
   loadingProgress,
 }: LoadingStateProps) {
-  const t = UI[lang];
+  const t = getT(lang);
   const loadingMessages = t.loading;
 
   return (
