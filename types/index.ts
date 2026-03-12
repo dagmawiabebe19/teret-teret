@@ -12,11 +12,19 @@ export interface StoryPage {
   es: string;
 }
 
+export interface VocabWord {
+  word: string;
+  translation_am: string;
+  translation_es: string;
+  exampleSentence: string;
+}
+
 export interface ParsedStory {
   am: string[];
   en: string[];
   es: string[];
   illustrationPrompts?: string[];
+  vocabulary?: VocabWord[];
 }
 
 export interface StoryMeta {

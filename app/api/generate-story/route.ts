@@ -10,7 +10,8 @@ import {
   getClientIp,
 } from "@/lib/usageDaily";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { parseStory } from "@/lib/parseStory";
+import { parseStory, parsedToPages } from "@/lib/parseStory";
+import { getVocabForStory } from "@/lib/vocabulary";
 import { getOptionalUser } from "@/lib/supabase/server";
 import {
   buildLocalIllustrationPrompts,
@@ -287,6 +288,8 @@ export async function POST(request: Request) {
             regionObj?.name ?? undefined
           );
           result.illustrationPrompts = illustrationPrompts;
+          const fallbackPages = parsedToPages(result);
+          result.vocabulary = getVocabForStory(fallbackPages, "en").slice(0, 8);
           if (user) {
             const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
             if (supabase) {
@@ -430,6 +433,9 @@ No other text. No markdown.`;
       );
     }
     result.illustrationPrompts = illustrationPrompts;
+
+    const pagesForVocab = parsedToPages(result);
+    result.vocabulary = getVocabForStory(pagesForVocab, "en").slice(0, 8);
 
     if (user) {
       const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());

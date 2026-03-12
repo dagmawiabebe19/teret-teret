@@ -15,9 +15,12 @@ import { LoadingState } from "@/components/LoadingState";
 import { getT } from "@/lib/constants";
 import type { UserProgress } from "@/types";
 import { parseStory, parsedToPages } from "@/lib/parseStory";
+import { getVocabForStory } from "@/lib/vocabulary";
+import { getSavedWords, saveWord } from "@/lib/savedWords";
 import { useToast } from "@/components/ToastProvider";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
+import type { VocabWord } from "@/types";
 
 const STORAGE_SAVED = "teret_saved";
 
@@ -77,6 +80,8 @@ export default function HomePage() {
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<"free" | "premium" | null>(null);
   const [isDailyTeretView, setIsDailyTeretView] = useState(false);
+  const [storyVocabulary, setStoryVocabulary] = useState<VocabWord[]>([]);
+  const [savedWords, setSavedWords] = useState<VocabWord[]>([]);
   const generatingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -88,6 +93,7 @@ export default function HomePage() {
 
   useEffect(() => {
     setSavedStories(getStoredSaved());
+    setSavedWords(getSavedWords());
   }, []);
 
   const refreshUsage = useCallback(() => {
@@ -182,6 +188,10 @@ export default function HomePage() {
         }
         setSavedStories(merged.slice(0, 50));
         refreshUsage();
+        fetch("/api/profile/words")
+          .then((r) => (r.ok ? r.json() : { words: [] }))
+          .then((d) => setSavedWords(Array.isArray(d?.words) ? d.words : []))
+          .catch(() => {});
       }).catch(() => {});
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -373,6 +383,7 @@ export default function HomePage() {
         : [];
       setPages(pageList);
       setIllustrationPrompts(Array.isArray(data.parsed?.illustrationPrompts) ? data.parsed.illustrationPrompts : []);
+      setStoryVocabulary(Array.isArray(data.parsed?.vocabulary) ? data.parsed.vocabulary : []);
       setTimeout(() => setScreen("story"), 500);
     } catch (e) {
       setError("Something went wrong. Please try again.");
@@ -400,6 +411,7 @@ export default function HomePage() {
       pageList = parsed ? parsedToPages(parsed) : [];
     }
     setPages(pageList);
+    setStoryVocabulary(getVocabForStory(pageList, lang));
     if (pageList.length > 0) {
       setScreen("story");
     } else {
@@ -407,7 +419,7 @@ export default function HomePage() {
       setScreen("home");
     }
     setShowSaved(false);
-  }, []);
+  }, [lang]);
 
   const openDailyStory = useCallback((payload: {
     pages: StoryPage[];
@@ -423,8 +435,9 @@ export default function HomePage() {
     setChildName(payload.childName);
     setStoryRegion(payload.region);
     setRawStory(payload.rawStory);
+    setStoryVocabulary(getVocabForStory(payload.pages, lang));
     setScreen("story");
-  }, []);
+  }, [lang]);
 
   const completeDailyTeret = useCallback(async () => {
     try {
@@ -472,6 +485,32 @@ export default function HomePage() {
     }
   }, []);
 
+  const handleSaveWord = useCallback(
+    async (word: VocabWord) => {
+      if (isGuest) {
+        saveWord(word);
+        setSavedWords(getSavedWords());
+        toast.showToast("Word saved!", "success");
+        return;
+      }
+      try {
+        const res = await fetch("/api/profile/words", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(word),
+        });
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.words)) {
+          setSavedWords(data.words);
+          toast.showToast("Word saved!", "success");
+        }
+      } catch {
+        toast.showToast("Could not save word", "error");
+      }
+    },
+    [isGuest, toast]
+  );
+
   const t = getT(lang);
 
   return (
@@ -497,6 +536,7 @@ export default function HomePage() {
             setIsDailyTeretView(false);
             setPages([]);
             setIllustrationPrompts([]);
+            setStoryVocabulary([]);
             setChildName("");
             setTrait("");
             setTraitIdx(null);
@@ -519,6 +559,9 @@ export default function HomePage() {
           onCompleteDailyTeret={completeDailyTeret}
           subscriptionStatus={subscriptionStatus}
           onShowPaywall={() => setShowPaywall(true)}
+          vocabulary={storyVocabulary}
+          savedWordKeys={new Set(savedWords.map((w) => w.word))}
+          onSaveWord={handleSaveWord}
         />
       )}
 

@@ -6,9 +6,11 @@ import { Fireflies } from "./Fireflies";
 import { Campfire } from "./Campfire";
 import { LangToggle } from "./LangToggle";
 import { AudioPlayer, highlightSentenceInText } from "./AudioPlayer";
+import { LanguageLearningPanel } from "./LanguageLearningPanel";
 import { getT } from "@/lib/constants";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
+import type { VocabWord } from "@/types";
 
 interface StoryReaderProps {
   pages: StoryPage[];
@@ -34,6 +36,12 @@ interface StoryReaderProps {
   subscriptionStatus?: "free" | "premium" | null;
   /** Optional: when free user tries to listen past page 2 */
   onShowPaywall?: () => void;
+  /** Vocabulary for language learning (from API or getVocabForStory) */
+  vocabulary?: VocabWord[];
+  /** Set of saved word keys for "Save this word" state */
+  savedWordKeys?: Set<string>;
+  /** Callback when user saves a word */
+  onSaveWord?: (word: VocabWord) => void;
 }
 
 export function StoryReader({
@@ -56,6 +64,9 @@ export function StoryReader({
   onCompleteDailyTeret,
   subscriptionStatus = null,
   onShowPaywall,
+  vocabulary = [],
+  savedWordKeys = new Set(),
+  onSaveWord,
 }: StoryReaderProps) {
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState<"fwd" | "bck">("fwd");
@@ -63,7 +74,7 @@ export function StoryReader({
   const [showEnd, setShowEnd] = useState(false);
   const [localSaved, setLocalSaved] = useState(saved);
   const [dailyCompleted, setDailyCompleted] = useState(false);
-  const [audioMode, setAudioMode] = useState(false);
+  const [viewMode, setViewMode] = useState<"read" | "listen" | "learn">("read");
   const touchStartX = useRef<number | null>(null);
 
   const isPremium = subscriptionStatus === "premium";
@@ -130,19 +141,24 @@ export function StoryReader({
       >
         {t.exitBtn}
       </button>
-      <button
-        type="button"
-        onClick={() => setAudioMode((m) => !m)}
-        className="py-1.5 px-2.5 rounded-lg text-xs font-bold border transition-all"
-        style={{
-          background: audioMode ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.06)",
-          borderColor: audioMode ? "rgba(255,215,0,0.35)" : "rgba(255,255,255,0.12)",
-          color: audioMode ? "#FFD700" : "rgba(200,180,255,0.7)",
-          fontFamily: "'Nunito',sans-serif",
-        }}
-      >
-        {audioMode ? "📖 Read" : "🎧 Listen"}
-      </button>
+      <div className="flex items-center gap-1">
+        {(["read", "listen", "learn"] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setViewMode(mode)}
+            className="py-1.5 px-2 rounded-lg text-xs font-bold border transition-all"
+            style={{
+              background: viewMode === mode ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.06)",
+              borderColor: viewMode === mode ? "rgba(255,215,0,0.35)" : "rgba(255,255,255,0.12)",
+              color: viewMode === mode ? "#FFD700" : "rgba(200,180,255,0.7)",
+              fontFamily: "'Nunito',sans-serif",
+            }}
+          >
+            {mode === "read" ? "📖" : mode === "listen" ? "🎧" : "🌍"}
+          </button>
+        ))}
+      </div>
       <LangToggle lang={lang} setLang={setLang} />
       <p
         className="text-[11px] font-bold text-[rgba(200,180,255,0.35)]"
@@ -398,7 +414,7 @@ export function StoryReader({
             />
           </div>
 
-          {audioMode ? (
+          {viewMode === "listen" ? (
             <div className="w-full max-w-[380px] mx-auto">
               {audioAllowedThisPage ? (
                 <AudioPlayer
@@ -424,7 +440,7 @@ export function StoryReader({
                   <div className="flex gap-2 justify-center flex-wrap">
                     <button
                       type="button"
-                      onClick={() => setAudioMode(false)}
+                      onClick={() => setViewMode("read")}
                       className="py-2 px-3 rounded-xl text-xs font-bold border"
                       style={{
                         background: "rgba(255,255,255,0.08)",
@@ -451,6 +467,17 @@ export function StoryReader({
                   </div>
                 </div>
               )}
+            </div>
+          ) : viewMode === "learn" ? (
+            <div className="w-full px-2">
+              <LanguageLearningPanel
+                vocabulary={vocabulary}
+                currentPage={current}
+                allPages={pages}
+                storyLang={lang}
+                savedWordKeys={savedWordKeys}
+                onSaveWord={onSaveWord}
+              />
             </div>
           ) : (
             <p
