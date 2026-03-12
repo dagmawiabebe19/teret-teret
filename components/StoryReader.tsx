@@ -5,6 +5,7 @@ import { Stars } from "./Stars";
 import { Fireflies } from "./Fireflies";
 import { Campfire } from "./Campfire";
 import { LangToggle } from "./LangToggle";
+import { AudioPlayer, highlightSentenceInText } from "./AudioPlayer";
 import { getT } from "@/lib/constants";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
@@ -29,6 +30,10 @@ interface StoryReaderProps {
   isDailyTeret?: boolean;
   /** Called once when user reaches end screen of Daily Teret (for streak/XP) */
   onCompleteDailyTeret?: () => void;
+  /** "free" | "premium" | null — used to gate audio beyond first 2 pages */
+  subscriptionStatus?: "free" | "premium" | null;
+  /** Optional: when free user tries to listen past page 2 */
+  onShowPaywall?: () => void;
 }
 
 export function StoryReader({
@@ -49,6 +54,8 @@ export function StoryReader({
   setLang,
   isDailyTeret = false,
   onCompleteDailyTeret,
+  subscriptionStatus = null,
+  onShowPaywall,
 }: StoryReaderProps) {
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState<"fwd" | "bck">("fwd");
@@ -56,7 +63,11 @@ export function StoryReader({
   const [showEnd, setShowEnd] = useState(false);
   const [localSaved, setLocalSaved] = useState(saved);
   const [dailyCompleted, setDailyCompleted] = useState(false);
+  const [audioMode, setAudioMode] = useState(false);
   const touchStartX = useRef<number | null>(null);
+
+  const isPremium = subscriptionStatus === "premium";
+  const audioAllowedThisPage = isPremium || page < 2;
 
   useEffect(() => {
     if (showEnd && isDailyTeret && onCompleteDailyTeret && !dailyCompleted) {
@@ -118,6 +129,19 @@ export function StoryReader({
         style={{ fontFamily: "'Nunito',sans-serif" }}
       >
         {t.exitBtn}
+      </button>
+      <button
+        type="button"
+        onClick={() => setAudioMode((m) => !m)}
+        className="py-1.5 px-2.5 rounded-lg text-xs font-bold border transition-all"
+        style={{
+          background: audioMode ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.06)",
+          borderColor: audioMode ? "rgba(255,215,0,0.35)" : "rgba(255,255,255,0.12)",
+          color: audioMode ? "#FFD700" : "rgba(200,180,255,0.7)",
+          fontFamily: "'Nunito',sans-serif",
+        }}
+      >
+        {audioMode ? "📖 Read" : "🎧 Listen"}
       </button>
       <LangToggle lang={lang} setLang={setLang} />
       <p
@@ -373,18 +397,75 @@ export function StoryReader({
               }}
             />
           </div>
-          <p
-            className="text-[#e8e0ff] font-medium"
-            style={{
-              fontFamily: "'Lora',Georgia,serif",
-              fontSize: lang === "am" ? "clamp(18px,5vw,24px)" : "clamp(16px,4.5vw,21px)",
-              lineHeight: lang === "am" ? 2.1 : 1.95,
-              letterSpacing: lang === "am" ? "0.02em" : "0.015em",
-              textShadow: "0 2px 28px rgba(160,100,255,0.12)",
-            }}
-          >
-            {text}
-          </p>
+
+          {audioMode ? (
+            <div className="w-full max-w-[380px] mx-auto">
+              {audioAllowedThisPage ? (
+                <AudioPlayer
+                  key={page}
+                  text={text}
+                  lang={lang}
+                  onEnd={goNext}
+                  renderHighlightedText={({ currentSentenceIndex, sentenceStarts }) =>
+                    highlightSentenceInText(text, sentenceStarts, currentSentenceIndex)
+                  }
+                />
+              ) : (
+                <div
+                  className="rounded-2xl border p-5 text-center"
+                  style={{
+                    background: "rgba(26,26,78,0.5)",
+                    borderColor: "rgba(196,77,255,0.2)",
+                  }}
+                >
+                  <p className="text-sm text-[rgba(200,180,255,0.8)] mb-3">
+                    Listen to more of this story with Premium.
+                  </p>
+                  <div className="flex gap-2 justify-center flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setAudioMode(false)}
+                      className="py-2 px-3 rounded-xl text-xs font-bold border"
+                      style={{
+                        background: "rgba(255,255,255,0.08)",
+                        borderColor: "rgba(255,255,255,0.15)",
+                        color: "#c9b8e8",
+                      }}
+                    >
+                      📖 Read instead
+                    </button>
+                    {onShowPaywall && (
+                      <button
+                        type="button"
+                        onClick={onShowPaywall}
+                        className="py-2 px-3 rounded-xl text-xs font-bold"
+                        style={{
+                          background: "linear-gradient(135deg,rgba(255,140,0,0.3),rgba(255,215,0,0.2))",
+                          border: "1px solid rgba(255,215,0,0.4)",
+                          color: "#FFD700",
+                        }}
+                      >
+                        Upgrade
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p
+              className="text-[#e8e0ff] font-medium"
+              style={{
+                fontFamily: "'Lora',Georgia,serif",
+                fontSize: lang === "am" ? "clamp(18px,5vw,24px)" : "clamp(16px,4.5vw,21px)",
+                lineHeight: lang === "am" ? 2.1 : 1.95,
+                letterSpacing: lang === "am" ? "0.02em" : "0.015em",
+                textShadow: "0 2px 28px rgba(160,100,255,0.12)",
+              }}
+            >
+              {text}
+            </p>
+          )}
         </div>
       </div>
       <div className="relative z-[10] flex flex-col items-center pb-4 gap-2">

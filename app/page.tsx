@@ -517,6 +517,8 @@ export default function HomePage() {
           setLang={setLang}
           isDailyTeret={isDailyTeretView}
           onCompleteDailyTeret={completeDailyTeret}
+          subscriptionStatus={subscriptionStatus}
+          onShowPaywall={() => setShowPaywall(true)}
         />
       )}
 
