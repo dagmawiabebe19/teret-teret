@@ -21,6 +21,8 @@ import { useToast } from "@/components/ToastProvider";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
 import type { VocabWord } from "@/types";
+import type { StoryCategory } from "@/types";
+import { ALLOWED_STORY_CATEGORIES } from "@/lib/constants";
 
 const STORAGE_SAVED = "teret_saved";
 
@@ -42,7 +44,9 @@ export default function HomePage() {
   const [trait, setTrait] = useState("");
   const [traitIdx, setTraitIdx] = useState<number | null>(null);
   const [region, setRegion] = useState("");
-  const [storyInspiration, setStoryInspiration] = useState("ethiopian_folklore");
+  const [category, setCategory] = useState<StoryCategory>("bedtime");
+  const [topic, setTopic] = useState("");
+  const [storyGoal, setStoryGoal] = useState("");
   const [age, setAge] = useState("5-7");
   const [pages, setPages] = useState<StoryPage[]>([]);
   const [illustrationPrompts, setIllustrationPrompts] = useState<string[]>([]);
@@ -351,7 +355,9 @@ export default function HomePage() {
           ageGroup: age,
           trait: trait || undefined,
           region: region || undefined,
-          storyInspiration,
+          category,
+          topic: topic.trim() || undefined,
+          storyGoal: storyGoal || undefined,
           language: lang,
         }),
       });
@@ -395,7 +401,7 @@ export default function HomePage() {
       generatingRef.current = false;
       setIsGenerating(false);
     }
-  }, [childName, age, trait, region, storyInspiration, lang, usage, subscriptionStatus, refreshUsage, toast]);
+  }, [childName, age, trait, region, category, topic, storyGoal, lang, usage, subscriptionStatus, refreshUsage, toast]);
 
   const openSavedStory = useCallback((story: SavedStoryItem) => {
     setIsDailyTeretView(false);
@@ -541,7 +547,9 @@ export default function HomePage() {
             setTrait("");
             setTraitIdx(null);
             setRegion("");
-            setStoryInspiration("ethiopian_folklore");
+            setCategory("bedtime");
+            setTopic("");
+            setStoryGoal("");
             setError("");
           }}
           onAnother={generateStory}
@@ -682,6 +690,37 @@ export default function HomePage() {
                 </p>
               )}
 
+              <h2 className="text-center font-fredoka text-[#FFD700] text-lg mb-1 mt-2">
+                {t.createStoryHeading}
+              </h2>
+              <p className="text-center text-[12px] text-[#c9b8e8] mb-2 px-1">
+                {t.createStorySub}
+              </p>
+              <p className="text-center text-[11px] text-[rgba(200,180,255,0.5)] mb-3">
+                {t.learningTopicsLine}
+              </p>
+
+              <div className="flex flex-wrap gap-2 justify-center mb-4">
+                {t.categorySuggestions.map((label, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setCategory(ALLOWED_STORY_CATEGORIES[i]);
+                      setTopic(label);
+                    }}
+                    className="rounded-full py-2 px-3 text-[11px] font-bold border transition-all"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      borderColor: "rgba(196,77,255,0.25)",
+                      color: "#c9b8e8",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               <div className="mt-3">
                 <StoryForm
                   lang={lang}
@@ -695,8 +734,12 @@ export default function HomePage() {
                   setTraitIdx={setTraitIdx}
                   region={region}
                   setRegion={setRegion}
-                  storyInspiration={storyInspiration}
-                  setStoryInspiration={setStoryInspiration}
+                  category={category}
+                  setCategory={setCategory}
+                  topic={topic}
+                  setTopic={setTopic}
+                  storyGoal={storyGoal}
+                  setStoryGoal={setStoryGoal}
                   onSubmit={generateStory}
                   disabled={!childName.trim() || isGenerating}
                   error={error}

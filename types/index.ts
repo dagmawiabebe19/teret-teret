@@ -1,10 +1,29 @@
 export type Lang = "am" | "en" | "es";
 
+/** Learning-through-storytelling category. Primary driver for story type. */
+export type StoryCategory =
+  | "bedtime"
+  | "math"
+  | "science"
+  | "history"
+  | "faith"
+  | "language_learning"
+  | "culture_values";
+
+/** Legacy story inspiration; mapped from category for backward compatibility. */
 export type StoryInspiration =
   | "ethiopian_folklore"
   | "bible_moral"
   | "animal_adventure"
   | "friendship_story";
+
+/** Educational story goal (how the story teaches). */
+export type StoryGoal =
+  | "teach_concept"
+  | "teach_moral"
+  | "teach_vocabulary"
+  | "teach_history"
+  | "teach_faith_value";
 
 export interface StoryPage {
   am: string;

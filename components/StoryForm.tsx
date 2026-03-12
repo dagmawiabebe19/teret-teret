@@ -1,7 +1,16 @@
 "use client";
 
-import { getT, AGES, REGIONS, TRAITS_EN, ALLOWED_STORY_INSPIRATIONS } from "@/lib/constants";
+import {
+  getT,
+  AGES,
+  REGIONS,
+  TRAITS_EN,
+  ALLOWED_STORY_CATEGORIES,
+  ALLOWED_STORY_GOALS,
+  CATEGORY_EMOJI,
+} from "@/lib/constants";
 import type { Lang } from "@/types";
+import type { StoryCategory } from "@/types";
 
 const btnStyle = (
   active: boolean,
@@ -41,11 +50,17 @@ interface StoryFormProps {
   setTraitIdx: (v: number | null) => void;
   region: string;
   setRegion: (v: string) => void;
-  storyInspiration: string;
-  setStoryInspiration: (v: string) => void;
+  category: StoryCategory;
+  setCategory: (v: StoryCategory) => void;
+  topic: string;
+  setTopic: (v: string) => void;
+  storyGoal: string;
+  setStoryGoal: (v: string) => void;
   onSubmit: () => void;
   disabled: boolean;
   error: string;
+  /** When user taps a discovery chip, form can prefill category + topic */
+  onSuggestionSelect?: (category: StoryCategory, topic: string) => void;
 }
 
 export function StoryForm({
@@ -60,8 +75,12 @@ export function StoryForm({
   setTraitIdx,
   region,
   setRegion,
-  storyInspiration,
-  setStoryInspiration,
+  category,
+  setCategory,
+  topic,
+  setTopic,
+  storyGoal,
+  setStoryGoal,
   onSubmit,
   disabled,
   error,
@@ -75,11 +94,35 @@ export function StoryForm({
   };
 
   return (
-    <div className="rounded-[26px] border p-6 shadow-lg backdrop-blur-xl" style={{
-      background: "rgba(255,255,255,0.07)",
-      borderColor: "rgba(255,255,255,0.11)",
-      boxShadow: "0 18px 50px rgba(0,0,0,0.3)",
-    }}>
+    <div
+      className="rounded-[26px] border p-6 shadow-lg backdrop-blur-xl"
+      style={{
+        background: "rgba(255,255,255,0.07)",
+        borderColor: "rgba(255,255,255,0.11)",
+        boxShadow: "0 18px 50px rgba(0,0,0,0.3)",
+      }}
+    >
+      <div className="mb-4">
+        <label className="flex items-center gap-2 text-[13px] font-extrabold text-[#FFD700] mb-2">
+          {t.categoryLabel}
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {ALLOWED_STORY_CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              className="btn-hover rounded-xl border py-2 px-3 text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5"
+              style={btnStyle(category === cat, "purple")}
+              onClick={() => setCategory(cat)}
+              aria-pressed={category === cat}
+            >
+              <span aria-hidden>{CATEGORY_EMOJI[cat]}</span>
+              <span>{t.categoryOpts[ALLOWED_STORY_CATEGORIES.indexOf(cat)]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mb-4">
         <label
           className="flex items-center gap-2 text-[13px] font-extrabold text-[#FFD700] mb-2"
@@ -110,6 +153,29 @@ export function StoryForm({
           }}
           maxLength={80}
           aria-required
+        />
+      </div>
+
+      <div className="mb-4">
+        <label
+          htmlFor="story-topic"
+          className="flex items-center gap-2 text-[13px] font-extrabold text-[#FFD700] mb-2"
+        >
+          {t.topicLabel}
+        </label>
+        <input
+          id="story-topic"
+          type="text"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value.slice(0, 120))}
+          placeholder={t.topicPlaceholder}
+          className="w-full rounded-[13px] py-3 px-4 text-[14px] font-bold outline-none border"
+          style={{
+            background: "rgba(255,255,255,0.09)",
+            borderColor: "rgba(255,215,0,0.28)",
+            color: "#fff",
+            fontFamily: "'Nunito',sans-serif",
+          }}
         />
       </div>
 
@@ -153,7 +219,7 @@ export function StoryForm({
         </div>
       </div>
 
-      <div className="mb-5">
+      <div className="mb-4">
         <label className="flex items-center gap-2 text-[13px] font-extrabold text-[#FFD700] mb-2">
           {t.regionLabel}
         </label>
@@ -175,15 +241,15 @@ export function StoryForm({
 
       <div className="mb-5">
         <label
-          htmlFor="story-inspiration"
+          htmlFor="story-goal"
           className="flex items-center gap-2 text-[13px] font-extrabold text-[#FFD700] mb-2"
         >
-          {t.inspirationLabel}
+          {t.storyGoalLabel}
         </label>
         <select
-          id="story-inspiration"
-          value={storyInspiration}
-          onChange={(e) => setStoryInspiration(e.target.value)}
+          id="story-goal"
+          value={storyGoal}
+          onChange={(e) => setStoryGoal(e.target.value)}
           className="w-full rounded-[13px] py-3 px-4 text-[14px] font-bold outline-none border cursor-pointer"
           style={{
             background: "rgba(255,255,255,0.09)",
@@ -191,11 +257,13 @@ export function StoryForm({
             color: "#fff",
             fontFamily: "'Nunito',sans-serif",
           }}
-          aria-label={t.inspirationLabel}
         >
-          {ALLOWED_STORY_INSPIRATIONS.map((value, i) => (
-            <option key={value} value={value} style={{ background: "#1a1a4e", color: "#e8e0ff" }}>
-              {t.inspirationOpts[i]}
+          <option value="" style={{ background: "#1a1a4e", color: "#e8e0ff" }}>
+            —
+          </option>
+          {ALLOWED_STORY_GOALS.map((goal, i) => (
+            <option key={goal} value={goal} style={{ background: "#1a1a4e", color: "#e8e0ff" }}>
+              {t.storyGoalOpts[i]}
             </option>
           ))}
         </select>
@@ -213,13 +281,13 @@ export function StoryForm({
         disabled={disabled}
         className="gen-btn w-full py-4 rounded-[15px] border-none text-[17px] font-black font-fredoka tracking-wide transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80 disabled:transform-none"
         style={{
-          background: childName.trim() && !disabled
-            ? "linear-gradient(135deg,#FF8C00,#FFD700)"
-            : "rgba(255,255,255,0.09)",
+          background:
+            childName.trim() && !disabled
+              ? "linear-gradient(135deg,#FF8C00,#FFD700)"
+              : "rgba(255,255,255,0.09)",
           color: childName.trim() && !disabled ? "#1a1a4e" : "rgba(255,255,255,0.25)",
-          boxShadow: childName.trim() && !disabled
-            ? "0 4px 20px rgba(255,140,0,0.38)"
-            : "none",
+          boxShadow:
+            childName.trim() && !disabled ? "0 4px 20px rgba(255,140,0,0.38)" : "none",
           cursor: disabled ? "not-allowed" : "pointer",
         }}
         aria-busy={disabled}

@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AGES, REGIONS, TRAITS_EN, ALLOWED_AGES, ALLOWED_REGIONS, ALLOWED_STORY_INSPIRATIONS } from "@/lib/constants";
+import { AGES, REGIONS, TRAITS_EN, ALLOWED_AGES, ALLOWED_REGIONS, ALLOWED_STORY_INSPIRATIONS, ALLOWED_STORY_CATEGORIES, ALLOWED_STORY_GOALS, CATEGORY_TO_INSPIRATION } from "@/lib/constants";
 import {
   FREE_STORIES_PER_DAY,
   getSignedInUsageFromRow,
@@ -21,6 +21,7 @@ import {
 } from "@/lib/illustrationPrompts";
 import { checkRateLimit } from "@/lib/rateLimit";
 import type { StoryInspiration } from "@/types";
+import type { StoryCategory } from "@/types";
 
 /** Set to "true" or "1" to use AI for illustration prompts (extra Anthropic call). Default: local/deterministic. */
 const AI_ILLUSTRATION_PROMPTS =
@@ -42,7 +43,10 @@ const GenerateStorySchema = z.object({
     .string()
     .optional()
     .refine((v) => !v || (ALLOWED_REGIONS as readonly string[]).includes(v), "Invalid region"),
-  storyInspiration: z.enum(ALLOWED_STORY_INSPIRATIONS).default("ethiopian_folklore"),
+  storyInspiration: z.enum(ALLOWED_STORY_INSPIRATIONS).optional(),
+  category: z.enum(ALLOWED_STORY_CATEGORIES).optional(),
+  topic: z.string().max(120).optional().transform((s) => s?.trim() || undefined),
+  storyGoal: z.enum(ALLOWED_STORY_GOALS).optional(),
   language: z.enum(["am", "en", "es"]).optional().default("en"),
 });
 
@@ -52,9 +56,9 @@ const MIN_PAGES = 2;
 /** Model ID supported by Anthropic Messages API. Use a known-good value to avoid 400 invalid_request_error. */
 const ANTHROPIC_MODEL = "claude-3-haiku-20240307";
 
-const BEDTIME_SYSTEM_PROMPT = `
+const LEARNING_STORY_SYSTEM_PROMPT = `
 === INTRO ===
-You are Aya — an ancient Ethiopian storyteller. Write a SHORT bedtime story for children.
+You are Aya — a storyteller who helps children learn through stories. Write a SHORT story that teaches and delights. The story must feel like a real story first (engaging, imaginative, emotionally resonant), with learning woven naturally inside it.
 
 === LENGTH & STRUCTURE — CRITICAL ===
 • Exactly 4–6 pages total. No more.
@@ -62,17 +66,17 @@ You are Aya — an ancient Ethiopian storyteller. Write a SHORT bedtime story fo
 • Keep total output under 600 tokens.
 • Use short sentences. Avoid long paragraphs.
 • Use simple vocabulary. Avoid complex or rare words.
-• Avoid unnecessary narration. Be concise.
+• Be concise. Never sound like a textbook or worksheet.
 
 === CONTENT RATING ===
 G — STRICTLY ALL AGES.
 No violence, death, scary content, romance, or cruel villains. All conflicts resolve through kindness. Warm, comforting endings only.
 
-=== INSPIRATION ===
-{inspirationBlock}
+=== CATEGORY & LEARNING FOCUS ===
+{categoryBlock}
 
 === TONE ===
-Warm, gentle, bedtime-friendly. Include a positive moral lesson. Use Ethiopian cultural elements when relevant: names, injera, shiro, jebena, netela, gabi, eucalyptus trees, highland mist, Ethiopian animals (hyena, lion, fox, gelada baboon, ibis).
+Warm, gentle, story-first. The child should feel they are in a story, not in a lesson. Use Ethiopian cultural elements when relevant: names, injera, shiro, jebena, netela, gabi, eucalyptus trees, highland mist, Ethiopian animals (hyena, lion, fox, gelada baboon, ibis).
 
 === AGE GROUP ===
 {ageObj.detail}
@@ -89,38 +93,62 @@ Each page = one [AM], one [EN], one [ES]. Every paragraph group MUST have all th
 
 === STORY STRUCTURE (4–6 pages) ===
 1. Page 1: Open [AM] with "ተረት ተረት...". Set the scene briefly.
-2. Page 2–3: Child hero (exact name) meets a gentle challenge.
-3. Page 4–5: Kindness or friendship wins. Warm moment.
-4. Final page: End [AM] with "ተረቱ ሄደ ዘንቢሉ መጣ". Short moral.
+2. Page 2–3: Child hero (exact name) meets a gentle challenge or discovery.
+3. Page 4–5: Kindness, understanding, or friendship wins. Warm moment.
+4. Final page: End [AM] with "ተረቱ ሄደ ዘንቢሉ መጣ". Short takeaway if appropriate.
 
 === RULES ===
-NEVER use markdown. ONLY [AM]/[EN]/[ES] blocks.
+NEVER use markdown. ONLY [AM]/[EN]/[ES] blocks. The output must feel like a story, not a lesson plan.
 `.trim();
+
+function getCategoryBlock(category: StoryCategory): string {
+  switch (category) {
+    case "bedtime":
+      return `CATEGORY — BEDTIME:
+Generate a calm, cozy bedtime story. Emotionally warm, soothing pacing, gentle conflict only. The child should feel safe and ready to sleep. Include a positive moral or comfort. Ethiopian folklore and highland settings welcome.`;
+    case "math":
+      return `CATEGORY — MATH (learn through story):
+Teach a specific math concept (e.g. counting, addition, multiplication, shapes) through narrative. The concept must appear naturally in the story — characters discover or use it in a real situation. Age-appropriate. Do NOT make it feel like a textbook; the story drives, the math is embedded.`;
+    case "science":
+      return `CATEGORY — SCIENCE (learn through story):
+Explain a science concept through curiosity, discovery, and cause-and-effect in the story. Keep it scientifically correct but child-friendly. Examples: gravity, planets, plants, animals, weather, body, seasons. The child or characters discover something; the story makes the concept memorable.`;
+    case "history":
+      return `CATEGORY — HISTORY (learn through narrative):
+Teach a historical event or figure through story. Keep facts broadly accurate but simplify for children. Make it engaging — real people, real places, real courage or wisdom. Examples: Battle of Adwa, ancient civilizations, inventors, explorers. Not dry; the story brings history to life.`;
+    case "faith":
+      return `CATEGORY — FAITH / MORAL:
+Generate a respectful, gentle, child-friendly story that conveys a faith-based or moral lesson (e.g. courage, kindness, forgiveness, honesty, helping others). You may be inspired by Bible stories or universal values. Do NOT quote scripture directly; create an original story that teaches the value. Avoid preachy tone; the story and characters show the lesson.`;
+    case "language_learning":
+      return `CATEGORY — LANGUAGE LEARNING:
+Optimize for vocabulary exposure and comprehension. Use clear, relatable situations. Simple repetitive phrasing where it helps. The story can support dual-language or parallel-language learning (Amharic/English/Spanish). New words should appear in context so meaning is clear from the story.`;
+    case "culture_values":
+      return `CATEGORY — CULTURE & VALUES:
+Focus on tradition, identity, proverbs, kindness, courage, sharing, honesty, respect. Can be Ethiopian-rooted (highlands, family, community) or universal. The story teaches values through what characters do and feel, not through lectures. Warm and culturally rich.`;
+    default:
+      return getCategoryBlock("bedtime");
+  }
+}
 
 function getInspirationBlock(storyInspiration: string): string {
   switch (storyInspiration) {
     case "ethiopian_folklore":
-      return `STORY INSPIRATION — ETHIOPIAN FOLKLORE:
-Generate a bedtime story inspired by Ethiopian folklore traditions: landscapes, villages, animals, and cultural wisdom. Weave in familiar Ethiopian settings, proverbs, and a warm folkloric tone.`;
+      return getCategoryBlock("bedtime");
     case "bible_moral":
-      return `STORY INSPIRATION — BIBLE MORAL:
-Generate an original children's story inspired by the moral lessons of biblical stories, such as courage, kindness, forgiveness, faith, and helping others. Do NOT quote the Bible directly. Create a new, imaginative story that teaches these values in a child-friendly way.`;
+      return getCategoryBlock("faith");
     case "animal_adventure":
       return `STORY INSPIRATION — ANIMAL ADVENTURE:
 Generate an animal adventure story where animals are the main characters. They go on a gentle adventure and learn a positive life lesson. Keep the child as a friend or observer if needed, but the animals drive the story.`;
     case "friendship_story":
-      return `STORY INSPIRATION — FRIENDSHIP STORY:
-Generate a story about friendship, teamwork, kindness, and helping others. The child hero makes or strengthens friendships and learns how good it feels to be kind and work together.`;
+      return getCategoryBlock("culture_values");
     default:
-      return `STORY INSPIRATION — ETHIOPIAN FOLKLORE:
-Generate a bedtime story inspired by Ethiopian folklore traditions: landscapes, villages, animals, and cultural wisdom.`;
+      return getCategoryBlock("bedtime");
   }
 }
 
-function buildSystemPrompt(age: string, storyInspiration: string): string {
+function buildSystemPrompt(age: string, category: StoryCategory): string {
   const ageObj = AGES.find((a) => a.value === age) || AGES[1];
-  const inspirationBlock = getInspirationBlock(storyInspiration);
-  return BEDTIME_SYSTEM_PROMPT.replace("{inspirationBlock}", inspirationBlock).replace(
+  const categoryBlock = getCategoryBlock(category);
+  return LEARNING_STORY_SYSTEM_PROMPT.replace("{categoryBlock}", categoryBlock).replace(
     "{ageObj.detail}",
     ageObj.detail
   );
@@ -129,13 +157,33 @@ function buildSystemPrompt(age: string, storyInspiration: string): string {
 function buildUserPrompt(
   childName: string,
   trait: string | undefined,
-  region: string | undefined
+  region: string | undefined,
+  category: StoryCategory,
+  topic?: string,
+  storyGoal?: string
 ): string {
   const regionObj = region ? REGIONS.find((r) => r.name === region) : null;
   const setting = regionObj ? regionObj.detail : "the beautiful Ethiopian highlands";
   const traitPhrase = trait && TRAITS_EN.includes(trait) ? trait : "is kind and brave";
-  return `Write a short bedtime story (4–6 pages, 2–3 sentences per page) for a child named ${childName} who ${traitPhrase}. Set the story in ${setting}. Make ${childName} the clear hero. Keep it brief.`;
+  let out = `Write a short story (4–6 pages, 2–3 sentences per page) for a child named ${childName} who ${traitPhrase}. Set the story in ${setting}. Make ${childName} the clear hero.`;
+  if (topic?.trim()) {
+    out += ` The story should teach or explore: ${topic.trim()}.`;
+  }
+  if (storyGoal === "teach_concept") out += " Focus on explaining one clear concept through the narrative.";
+  if (storyGoal === "teach_moral") out += " Focus on a moral lesson (e.g. honesty, courage, sharing) shown through the story.";
+  if (storyGoal === "teach_vocabulary") out += " Weave in useful vocabulary naturally; the story should support language learning.";
+  if (storyGoal === "teach_history") out += " Teach a historical event or figure through an engaging narrative.";
+  if (storyGoal === "teach_faith_value") out += " Convey a faith or value lesson gently through the story.";
+  out += " Keep it brief and story-first.";
+  return out;
 }
+
+const INSPIRATION_TO_CATEGORY: Record<(typeof ALLOWED_STORY_INSPIRATIONS)[number], StoryCategory> = {
+  ethiopian_folklore: "bedtime",
+  bible_moral: "faith",
+  animal_adventure: "culture_values",
+  friendship_story: "culture_values",
+};
 
 function generateFallbackStory(childName: string, setting: string): string {
   const safeName = childName.slice(0, 40).trim() || "little one";
@@ -167,7 +215,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const { childName, ageGroup, trait, region, storyInspiration } = parsed.data;
+    const { childName, ageGroup, trait, region, storyInspiration, category: bodyCategory, topic, storyGoal } = parsed.data;
+    const category: StoryCategory = bodyCategory ?? INSPIRATION_TO_CATEGORY[storyInspiration ?? "ethiopian_folklore"];
+    const storyInspirationForIllustration = CATEGORY_TO_INSPIRATION[category];
 
     const { user } = await getOptionalUser();
 
@@ -233,8 +283,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const systemPrompt = buildSystemPrompt(ageGroup, storyInspiration);
-    const userPrompt = buildUserPrompt(childName, trait, region);
+    const systemPrompt = buildSystemPrompt(ageGroup, category);
+    const userPrompt = buildUserPrompt(childName, trait, region, category, topic, storyGoal);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), ANTHROPIC_TIMEOUT_MS);
@@ -284,7 +334,7 @@ export async function POST(request: Request) {
           const pageContents = result.en.length ? result.en : result.am;
           const illustrationPrompts = buildLocalIllustrationPrompts(
             pageContents,
-            storyInspiration as StoryInspiration,
+            storyInspirationForIllustration as StoryInspiration,
             regionObj?.name ?? undefined
           );
           result.illustrationPrompts = illustrationPrompts;
@@ -398,7 +448,7 @@ No other text. No markdown.`;
         const illSystem = buildIllustrationSystemPrompt();
         const illUser = buildIllustrationUserPrompt(
           pageContents,
-          storyInspiration as StoryInspiration,
+          storyInspirationForIllustration as StoryInspiration,
           regionName
         );
         const illResponse = await anthropic.messages.create(
@@ -421,14 +471,14 @@ No other text. No markdown.`;
         console.warn("[teret] AI illustration prompts failed, using local", illErr);
         illustrationPrompts = buildLocalIllustrationPrompts(
           pageContents,
-          storyInspiration as StoryInspiration,
+          storyInspirationForIllustration as StoryInspiration,
           regionName
         );
       }
     } else {
       illustrationPrompts = buildLocalIllustrationPrompts(
         pageContents,
-        storyInspiration as StoryInspiration,
+        storyInspirationForIllustration as StoryInspiration,
         regionName
       );
     }

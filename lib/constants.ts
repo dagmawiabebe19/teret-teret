@@ -17,6 +17,15 @@ export const UI: Record<
     regionLabel: string;
     inspirationLabel: string;
     inspirationOpts: string[];
+    categoryLabel: string;
+    categoryOpts: string[];
+    topicLabel: string;
+    topicPlaceholder: string;
+    storyGoalLabel: string;
+    storyGoalOpts: string[];
+    whyStoriesTeach: string;
+    learningTopicsLine: string;
+    categorySuggestions: string[];
     generateBtn: string;
     freeLeft: (n: number) => string;
     freeLeftToday: (n: number) => string;
@@ -188,7 +197,7 @@ export const UI: Record<
 > = {
   am: {
     appTitle: "ተረት ተረት",
-    subtitle: "አስማታዊ የኢትዮጵያ የጸሎተ ሌሊት ታሪኮች ✨",
+    subtitle: "በታሪክ ይማሩ ✨ አስማታዊ ታሪኮች የሚያስተምሩ",
     badge: "G · ለሁሉም ዕድሜ · ለልጆች ደህና",
     savedBtn: "📚 የተቀመጡ ታሪኮቼ",
     guestNotice: "በጥንቃቄ ለተቀመጡ ታሪኮች በዚህ መሣሪያ ላይ ይቆያሉ። ከመግቢያ በኋላ እንደገና ያስቀምጡ ብቻ በመሣሪያዎች መካከል ያዋህዱ።",
@@ -199,6 +208,23 @@ export const UI: Record<
     regionLabel: "🏔️ ታሪኩ የት ይካሄድ?",
     inspirationLabel: "✨ የታሪክ መነሻ",
     inspirationOpts: ["የኢትዮጵያ ተረት", "የመጽሐፍ ቅዱስ ርዕዮት", "የእንስሳት ወሬ", "የወዳጅነት ታሪክ"],
+    categoryLabel: "ምን ዓይነት ታሪክ?",
+    categoryOpts: ["መጽለፊያ", "ሒሳብ", "ሳይንስ", "ታሪክ", "እምነት", "ቋንቋ መማር", "ባህል እና እሴቶች"],
+    topicLabel: "ርዕስ ወይም ጽንሰ-ሀሳብ (አማራጭ)",
+    topicPlaceholder: "ለምሳሌ: ስለ ጭብጨባ ታሪክ፣ ስለ አድዋ፣ ማባዛት...",
+    storyGoalLabel: "የታሪኩ ግብ",
+    storyGoalOpts: ["ጽንሰ-ሀሳብ ማስተማር", "ርዕዮት ማስተማር", "ቃላት ማስተማር", "ታሪክ በታሪክ ማስተማር", "እምነት/እሴት ማስተማር"],
+    whyStoriesTeach: "ታሪኮች ይማራሉ። ትምህርት በታሪክ ይብራራል።",
+    learningTopicsLine: "መጽለፊያ · ሒሳብ · ሳይንስ · ታሪክ · እምነት · ቋንቋ · ባህል",
+    categorySuggestions: [
+      "ለዚህ ሌሊት ጨዋ ታሪክ",
+      "ማባዛት በታሪክ ውስጥ",
+      "ስበት ለምን ነገሮችን ወደ ታች ይጎትታል?",
+      "ስለ አድዋ ለልጆች ታሪክ",
+      "የመጽሐፍ ቅዱስ ተጨባቢ ብርታት",
+      "አማርኛ-እንግሊዝኛ ቃላት በታሪክ",
+      "የወዳጅነት እና ደግነት ታሪክ",
+    ],
     generateBtn: "🌙 ታሪክ ንገሩኝ!",
     freeLeft: (n) => `${n} ነፃ ታሪክ ቀሩ`,
     freeLeftToday: (n) => (n === 1 ? "1 ነፃ ታሪክ ዛሬ ቀርቷል" : `${n} ነፃ ታሪኮች ዛሬ ቀርተዋል`),
@@ -258,10 +284,10 @@ export const UI: Record<
     paywallLaterBtn: "ለቆይ",
     paywallValueLine: "የመጽለፊያ ልምድ · ቋንቋ መማር · የቤተሰብ ታሪኮች",
     paywallLimitTitle: "ነፃ ታሪኮችዎን ተጠቀሙ",
-    paywallLimitSubtitle: "ለቤተሰብዎ ያልተገደበ ተረት ይክፈቱ።",
-    paywallBenefit1: "ያልተወሰነ አስማታዊ ታሪኮች",
+    paywallLimitSubtitle: "ያልተገደበ ትምህርታዊ እና የመጽለፊያ ታሪኮች ለቤተሰብዎ ይክፈቱ።",
+    paywallBenefit1: "ያልተወሰነ ትምህርታዊ እና የመጽለፊያ ታሪኮች",
     paywallBenefit2: "ተወዳጅ ታሪኮች ያስቀምጡ እና እንደገና ይጎትቱ",
-    paywallBenefit3: "በታሪኮች በቋንቋ ይማሩ",
+    paywallBenefit3: "በታሪኮች ቋንቋ እና ባህል ይማሩ",
     paywallBenefit4: "ታሪኮችን በማንኛውም መሣሪያ ይድረሱ",
     paywallUpgradeCta: "በ$4.99/ወር ይለግሱ",
     paywallMaybeLater: "ለቆይ",
@@ -287,8 +313,8 @@ export const UI: Record<
     levelLabel: "ደረጃ",
     xpToNext: (n) => `ቀጣዩ ደረጃ ${n} XP`,
     heroLine: "አንድ ታሪክ በጊዜ፣ አንድ ሌሊት በጊዜ።",
-    createStoryHeading: "ለእነሱ ብቻ ታሪክ ፍጠር",
-    createStorySub: "የልጅዎን ስም ይግለጹ እና ከደጋ ታሪክ ውስጥ እናስገባቸዋለን።",
+    createStoryHeading: "ትምህርት በታሪክ ውስጥ ፍጠር",
+    createStorySub: "ምን ይማር እንደሚፈልጉ ይምረጡ፣ ስም ያስገቡ፣ ታሪክ ያግኙ።",
     readTonightBtn: "የዛሬ ሌሊት ታሪክ አንብብ",
     dailyTeretTryAgain: "የዛሬ ታሪክ በመንገድ ላይ ነው። ትንሽ በኋላ ይሞክሩ።",
     completionComeBack: "ለሌላ ነገ ተመልሰው ይግኙ።",
@@ -386,7 +412,7 @@ export const UI: Record<
   },
   en: {
     appTitle: "Teret Teret",
-    subtitle: "Magical Ethiopian Bedtime Stories ✨",
+    subtitle: "Learn through stories ✨ Magical tales that teach",
     badge: "G · ALL AGES · CHILD SAFE",
     savedBtn: "📚 My Saved Stories",
     guestNotice: "Stories you save as a guest stay on this device. Sign in and save again to sync across devices.",
@@ -397,6 +423,23 @@ export const UI: Record<
     regionLabel: "🏔️ Where should the story happen?",
     inspirationLabel: "✨ Story Inspiration",
     inspirationOpts: ["Ethiopian Folklore", "Bible Moral Story", "Animal Adventure", "Friendship Story"],
+    categoryLabel: "What kind of story?",
+    categoryOpts: ["Bedtime", "Math", "Science", "History", "Faith", "Language Learning", "Culture & Values"],
+    topicLabel: "Topic or concept (optional)",
+    topicPlaceholder: "e.g. gravity, multiplication, Battle of Adwa, kindness...",
+    storyGoalLabel: "Story goal",
+    storyGoalOpts: ["Teach a concept", "Teach a moral", "Teach vocabulary", "Teach history through narrative", "Teach faith or values"],
+    whyStoriesTeach: "Stories teach. Learning feels magical.",
+    learningTopicsLine: "Bedtime · Math · Science · History · Faith · Language · Culture",
+    categorySuggestions: [
+      "A gentle story for tonight",
+      "Multiplication through a story",
+      "Why does gravity pull things down?",
+      "The Battle of Adwa for children",
+      "A gentle Bible story about courage",
+      "Amharic–English vocabulary story",
+      "A story about friendship and kindness",
+    ],
     generateBtn: "🌙 Tell Me a Story!",
     freeLeft: (n) => `${n} free ${n === 1 ? "story" : "stories"} left`,
     freeLeftToday: (n) => `${n} free ${n === 1 ? "story" : "stories"} left today`,
@@ -456,10 +499,10 @@ export const UI: Record<
     paywallLaterBtn: "Maybe later",
     paywallValueLine: "Bedtime ritual · Language learning · Family stories · Cultural connection",
     paywallLimitTitle: "You've used your free stories",
-    paywallLimitSubtitle: "Unlock unlimited Teret for your family.",
-    paywallBenefit1: "Unlimited magical stories",
+    paywallLimitSubtitle: "Unlock unlimited learning and bedtime stories for your family.",
+    paywallBenefit1: "Unlimited educational & bedtime stories",
     paywallBenefit2: "Save and revisit favorite stories",
-    paywallBenefit3: "Learn languages through stories",
+    paywallBenefit3: "Learn language and culture through stories",
     paywallBenefit4: "Access stories on any device",
     paywallUpgradeCta: "Upgrade for $4.99/month",
     paywallMaybeLater: "Maybe later",
@@ -484,9 +527,9 @@ export const UI: Record<
     allStories: "All",
     levelLabel: "Level",
     xpToNext: (n) => `${n} XP to next level`,
-    heroLine: "One story at a time. One night at a time.",
-    createStoryHeading: "Create a story just for them",
-    createStorySub: "Tell us your child's name and we'll weave them into a tale from the highlands.",
+    heroLine: "One story at a time. Learning and bedtime in one place.",
+    createStoryHeading: "Create a story that teaches",
+    createStorySub: "Choose what to learn, add a name, and get a magical story.",
     readTonightBtn: "Read tonight's story",
     dailyTeretTryAgain: "Today's story is on its way. Try again in a moment.",
     completionComeBack: "Come back tomorrow for another.",
@@ -584,7 +627,7 @@ export const UI: Record<
   },
   es: {
     appTitle: "Teret Teret",
-    subtitle: "Cuentos mágicos etíopes para dormir ✨",
+    subtitle: "Aprende con cuentos ✨ Historias mágicas que enseñan",
     badge: "G · TODAS EDADES · SEGURO",
     savedBtn: "📚 Mis cuentos guardados",
     guestNotice: "Los cuentos que guardas como invitado se quedan en este dispositivo. Inicia sesión y guarda de nuevo para sincronizar.",
@@ -595,6 +638,23 @@ export const UI: Record<
     regionLabel: "🏔️ ¿Dónde ocurre el cuento?",
     inspirationLabel: "✨ Inspiración del cuento",
     inspirationOpts: ["Folclore etíope", "Historia moral bíblica", "Aventura de animales", "Historia de amistad"],
+    categoryLabel: "¿Qué tipo de cuento?",
+    categoryOpts: ["Para dormir", "Matemáticas", "Ciencia", "Historia", "Fe", "Idiomas", "Cultura y valores"],
+    topicLabel: "Tema o concepto (opcional)",
+    topicPlaceholder: "ej. gravedad, multiplicación, Batalla de Adwa, bondad...",
+    storyGoalLabel: "Objetivo del cuento",
+    storyGoalOpts: ["Enseñar un concepto", "Enseñar una moraleja", "Enseñar vocabulario", "Enseñar historia con relato", "Enseñar fe o valores"],
+    whyStoriesTeach: "Los cuentos enseñan. Aprender es mágico.",
+    learningTopicsLine: "Dormir · Matemáticas · Ciencia · Historia · Fe · Idiomas · Cultura",
+    categorySuggestions: [
+      "Un cuento suave para esta noche",
+      "La multiplicación en un cuento",
+      "¿Por qué la gravedad atrae las cosas?",
+      "La Batalla de Adwa para niños",
+      "Un cuento bíblico sobre el valor",
+      "Cuento de vocabulario amárico e inglés",
+      "Un cuento sobre amistad y bondad",
+    ],
     generateBtn: "🌙 ¡Cuéntame un cuento!",
     freeLeft: (n) =>
       `${n} cuento${n === 1 ? "" : "s"} gratis restante${n === 1 ? "" : "s"}`,
@@ -656,10 +716,10 @@ export const UI: Record<
     paywallLaterBtn: "Quizás luego",
     paywallValueLine: "Rutina de sueño · Aprender idiomas · Cuentos en familia · Conexión cultural",
     paywallLimitTitle: "Usaste tus cuentos gratis",
-    paywallLimitSubtitle: "Desbloquea Teret ilimitado para tu familia.",
-    paywallBenefit1: "Cuentos mágicos ilimitados",
+    paywallLimitSubtitle: "Desbloquea cuentos educativos y para dormir ilimitados para tu familia.",
+    paywallBenefit1: "Cuentos educativos y para dormir ilimitados",
     paywallBenefit2: "Guarda y vuelve a tus cuentos favoritos",
-    paywallBenefit3: "Aprende idiomas con los cuentos",
+    paywallBenefit3: "Aprende idiomas y cultura con los cuentos",
     paywallBenefit4: "Accede a tus cuentos en cualquier dispositivo",
     paywallUpgradeCta: "Suscribirse por $4.99/mes",
     paywallMaybeLater: "Quizás luego",
@@ -684,9 +744,9 @@ export const UI: Record<
     allStories: "Todos",
     levelLabel: "Nivel",
     xpToNext: (n) => `${n} XP al siguiente nivel`,
-    heroLine: "Un cuento a la vez. Una noche a la vez.",
-    createStoryHeading: "Crea un cuento solo para ellos",
-    createStorySub: "Dinos el nombre de tu hijo/a y lo tejemos en un cuento de las tierras altas.",
+    heroLine: "Un cuento a la vez. Aprendizaje y sueño en un solo lugar.",
+    createStoryHeading: "Crea un cuento que enseñe",
+    createStorySub: "Elige qué aprender, añade un nombre y recibe un cuento mágico.",
     readTonightBtn: "Leer el cuento de esta noche",
     dailyTeretTryAgain: "El cuento de hoy está en camino. Intenta en un momento.",
     completionComeBack: "Vuelve mañana por otro.",
@@ -918,4 +978,47 @@ export const ALLOWED_STORY_INSPIRATIONS = [
   "animal_adventure",
   "friendship_story",
 ] as const;
+
+/** Learning-through-storytelling categories. Order matches categoryOpts in UI. */
+export const ALLOWED_STORY_CATEGORIES = [
+  "bedtime",
+  "math",
+  "science",
+  "history",
+  "faith",
+  "language_learning",
+  "culture_values",
+] as const;
+
+/** Story goals (how the story teaches). */
+export const ALLOWED_STORY_GOALS = [
+  "teach_concept",
+  "teach_moral",
+  "teach_vocabulary",
+  "teach_history",
+  "teach_faith_value",
+] as const;
+
+/** Emoji per category for UI. */
+export const CATEGORY_EMOJI: Record<(typeof ALLOWED_STORY_CATEGORIES)[number], string> = {
+  bedtime: "🌙",
+  math: "🔢",
+  science: "🔬",
+  history: "📜",
+  faith: "🕊️",
+  language_learning: "🌍",
+  culture_values: "💫",
+};
+
+/** Map category to legacy inspiration for illustration/daily-teret when needed. */
+export const CATEGORY_TO_INSPIRATION: Record<(typeof ALLOWED_STORY_CATEGORIES)[number], (typeof ALLOWED_STORY_INSPIRATIONS)[number]> = {
+  bedtime: "ethiopian_folklore",
+  math: "animal_adventure",
+  science: "animal_adventure",
+  history: "ethiopian_folklore",
+  faith: "bible_moral",
+  language_learning: "friendship_story",
+  culture_values: "friendship_story",
+};
+
 export const TRAIT_INDICES = TRAITS_EN.map((_, i) => i);

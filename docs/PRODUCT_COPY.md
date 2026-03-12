@@ -1,6 +1,6 @@
 # Teret-Teret Product Copy
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Last Updated:** 2025-03-10  
 **Maintainer:** Walia Digital
 
@@ -14,6 +14,10 @@ This document is the single source of truth for all Teret-Teret UI and marketing
 
 ---
 
+## Product positioning (v2.0)
+
+Teret-Teret is a **learning-through-storytelling platform**. Education is explained through story; the experience remains story-first. Premium = unlimited learning and bedtime stories; language and educational value.
+
 ## Sections (below)
 
 Keep sentences short and feelings big.
@@ -24,12 +28,12 @@ Keep sentences short and feelings big.
 
 ### Hero
 - **App name:** Teret-Teret  
-- **Subtitle:** Magical Ethiopian bedtime stories ✨  
+- **Subtitle (en):** Learn through stories ✨ Magical tales that teach  
 - **Badge:** G · All ages · Child safe  
-- **Hero line (optional):** One story at a time. One night at a time.
+- **Hero line (en):** One story at a time. Learning and bedtime in one place.
 
 ### Create your story
-- **Section heading:** Create a story just for them  
+- **createStoryHeading (en):** Create a story that teaches  
 - **Section sub:** Tell us your child’s name and we’ll weave them into a tale from the highlands.  
 - **Primary CTA:** Tell me a story!
 
@@ -126,10 +130,10 @@ Keep sentences short and feelings big.
 ## Premium subscription & paywall
 
 - **paywallLimitTitle:** You’ve used your free stories  
-- **paywallLimitSubtitle:** Unlock unlimited Teret for your family.  
-- **paywallBenefit1:** Unlimited magical stories  
+- **paywallLimitSubtitle:** Unlock unlimited learning and bedtime stories for your family.  
+- **paywallBenefit1:** Unlimited educational & bedtime stories  
 - **paywallBenefit2:** Save and revisit favorite stories  
-- **paywallBenefit3:** Learn languages through stories  
+- **paywallBenefit3:** Learn language and culture through stories  
 - **paywallBenefit4:** Access stories on any device  
 - **paywallUpgradeCta:** Upgrade for $4.99/month  
 - **paywallMaybeLater:** Maybe later  
@@ -236,4 +240,10 @@ Keep sentences short and feelings big.
 
 ---
 
-*Last updated for Phase 1–3 product scope. Add Amharic and Spanish in `lib/constants.ts` from this English set.*
+*Last updated for learning-through-storytelling repositioning (v2.0). Amharic and Spanish in `lib/constants.ts`.*
+
+### New translation keys (v2.0)
+
+- **categoryLabel**, **categoryOpts** (7), **topicLabel**, **topicPlaceholder**, **storyGoalLabel**, **storyGoalOpts** (5)  
+- **whyStoriesTeach**, **learningTopicsLine**, **categorySuggestions** (7)  
+- Hero/subtitle/createStoryHeading/createStorySub and paywall benefits updated for learning positioning.
