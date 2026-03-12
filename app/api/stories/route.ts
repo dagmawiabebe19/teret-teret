@@ -28,6 +28,12 @@ export async function GET() {
     .limit(50);
   if (error) {
     console.error("[stories GET]", error);
+    if (error.code === "42703") {
+      return NextResponse.json(
+        { error: "Database schema needs migration. Please run the latest Supabase migrations." },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({ error: "Failed to load stories" }, { status: 500 });
   }
   const stories = (data ?? []).map((s: { id: string; child_name: string; region: string; age_group: string; trait: string | null; raw_story: string; parsed_pages: unknown; language_default: string | null; illustration_prompts: string[] | null; is_favorite: boolean | null; created_at: string }) => ({

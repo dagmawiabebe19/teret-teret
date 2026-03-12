@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AGES, REGIONS, TRAITS_EN, ALLOWED_AGES, ALLOWED_REGIONS, ALLOWED_STORY_INSPIRATIONS, ALLOWED_STORY_CATEGORIES, ALLOWED_STORY_GOALS, CATEGORY_TO_INSPIRATION } from "@/lib/constants";
@@ -53,8 +52,58 @@ const GenerateStorySchema = z.object({
 const ANTHROPIC_TIMEOUT_MS = 60_000;
 const MIN_PAGES = 2;
 
-/** Model ID supported by Anthropic Messages API. Use a known-good value to avoid 400 invalid_request_error. */
-const ANTHROPIC_MODEL = "claude-3-haiku-20240307";
+/** Anthropic Messages API: https://api.anthropic.com/v1/messages */
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_VERSION = "2023-06-01";
+const ANTHROPIC_MODEL = "claude-3-5-sonnet-20241022";
+const ANTHROPIC_MAX_TOKENS = 1500;
+
+/** Call Anthropic Messages API via fetch. Returns combined text from response content blocks. */
+async function anthropicMessages(
+  systemPrompt: string,
+  userContent: string,
+  options: { maxTokens?: number; signal?: AbortSignal; messages?: { role: "user" | "assistant"; content: string }[] } = {}
+): Promise<{ text: string; raw?: unknown }> {
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error("ANTHROPIC_API_KEY is not set");
+  }
+  const messages = options.messages ?? [{ role: "user" as const, content: userContent }];
+  const body = {
+    model: ANTHROPIC_MODEL,
+    max_tokens: options.maxTokens ?? ANTHROPIC_MAX_TOKENS,
+    system: systemPrompt,
+    messages,
+  };
+  const res = await fetch(ANTHROPIC_API_URL, {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": ANTHROPIC_VERSION,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+    signal: options.signal,
+  });
+  const raw = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const errMsg = (raw as { error?: { message?: string } })?.error?.message ?? res.statusText;
+    const err = new Error(errMsg) as Error & { status?: number; body?: unknown };
+    err.status = res.status;
+    err.body = raw;
+    throw err;
+  }
+  const content = (raw as { content?: { type: string; text?: string }[] })?.content;
+  if (!Array.isArray(content)) {
+    console.error("[generate-story] Anthropic response missing content", { hasContent: !!content, keys: raw && typeof raw === "object" ? Object.keys(raw) : [] });
+    return { text: "", raw };
+  }
+  const text = content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text ?? "")
+    .join("");
+  return { text, raw };
+}
 
 const LEARNING_STORY_SYSTEM_PROMPT = `
 === INTRO ===
@@ -289,19 +338,13 @@ export async function POST(request: Request) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), ANTHROPIC_TIMEOUT_MS);
 
-    const anthropic = new Anthropic({ apiKey });
-    let response: Awaited<ReturnType<Anthropic["messages"]["create"]>>;
+    let rawText: string;
     try {
-      response = await anthropic.messages.create(
-        {
-          model: ANTHROPIC_MODEL,
-          max_tokens: 700,
-          temperature: 0.7,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userPrompt }],
-        },
-        { signal: controller.signal }
-      );
+      const result = await anthropicMessages(systemPrompt, userPrompt, {
+        maxTokens: 700,
+        signal: controller.signal,
+      });
+      rawText = result.text;
     } catch (anthropicErr: unknown) {
       clearTimeout(timeout);
       const err = anthropicErr as { name?: string; status?: number; message?: string; error?: { type?: string; message?: string }; body?: unknown };
@@ -389,12 +432,6 @@ export async function POST(request: Request) {
     }
     clearTimeout(timeout);
 
-    const rawText =
-      response.content
-        ?.filter((b) => b.type === "text")
-        .map((b) => ("text" in b ? b.text : ""))
-        .join("") ?? "";
-
     let result = parseStory(rawText);
     if (!result || result.am.length < MIN_PAGES) {
       console.log("[teret] parse fallback: initial parse insufficient", { pageCount: result?.am?.length ?? 0 });
@@ -404,25 +441,16 @@ export async function POST(request: Request) {
 [ES] Spanish text
 No other text. No markdown.`;
       try {
-        const retry = await anthropic.messages.create(
-          {
-            model: ANTHROPIC_MODEL,
-            max_tokens: 700,
-            temperature: 0.7,
-            system: systemPrompt,
-            messages: [
-              { role: "user", content: userPrompt },
-              { role: "assistant", content: rawText || " " },
-              { role: "user", content: repairPrompt },
-            ],
-          },
-          { signal: controller.signal }
-        );
-        const retryText =
-          retry.content
-            ?.filter((b) => b.type === "text")
-            .map((b) => ("text" in b ? b.text : ""))
-            .join("") ?? "";
+        const retryResult = await anthropicMessages(systemPrompt, "", {
+          maxTokens: 700,
+          signal: controller.signal,
+          messages: [
+            { role: "user", content: userPrompt },
+            { role: "assistant", content: rawText || " " },
+            { role: "user", content: repairPrompt },
+          ],
+        });
+        const retryText = retryResult.text;
         result = parseStory(retryText);
         console.log("[teret] parse fallback:", (result?.am?.length ?? 0) >= MIN_PAGES ? "success" : "failed");
       } catch (retryErr) {
@@ -451,22 +479,11 @@ No other text. No markdown.`;
           storyInspirationForIllustration as StoryInspiration,
           regionName
         );
-        const illResponse = await anthropic.messages.create(
-          {
-            model: ANTHROPIC_MODEL,
-            max_tokens: 400,
-            temperature: 0.5,
-            system: illSystem,
-            messages: [{ role: "user", content: illUser }],
-          },
-          { signal: controller.signal }
-        );
-        const illText =
-          illResponse.content
-            ?.filter((b) => b.type === "text")
-            .map((b) => ("text" in b ? b.text : ""))
-            .join("") ?? "";
-        illustrationPrompts = parseIllustrationPrompts(illText, result.am.length);
+        const illResult = await anthropicMessages(illSystem, illUser, {
+          maxTokens: 400,
+          signal: controller.signal,
+        });
+        illustrationPrompts = parseIllustrationPrompts(illResult.text, result.am.length);
       } catch (illErr) {
         console.warn("[teret] AI illustration prompts failed, using local", illErr);
         illustrationPrompts = buildLocalIllustrationPrompts(
