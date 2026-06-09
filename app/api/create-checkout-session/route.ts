@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 /**
- * Creates a Stripe Checkout session for subscription ($4.99/month).
+ * Creates a Stripe Checkout session for subscription ($1.99/month).
  * Server-only: uses STRIPE_SECRET_KEY and STRIPE_PRICE_ID.
  * Webhook (checkout.session.completed, customer.subscription.updated/deleted) syncs
  * subscription status to profiles.subscription_status via app/api/stripe/webhook.

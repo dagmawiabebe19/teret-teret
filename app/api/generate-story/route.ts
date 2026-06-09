@@ -235,6 +235,78 @@ const INSPIRATION_TO_CATEGORY: Record<(typeof ALLOWED_STORY_INSPIRATIONS)[number
   friendship_story: "culture_values",
 };
 
+type ServerSupabase = NonNullable<Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>>;
+
+async function recordSignedInGeneration(
+  supabase: ServerSupabase,
+  userId: string,
+  story: {
+    childName: string;
+    ageGroup: string;
+    trait?: string;
+    region: string;
+    category: StoryCategory;
+    rawStory: string;
+    parsedPages: { am: string; en: string; es: string }[];
+    language: string;
+    illustrationPrompts: string[];
+  }
+) {
+  const { error: rpcError } = await supabase.rpc("increment_usage", { p_user_id: userId });
+  if (rpcError) {
+    const now = new Date();
+    const { data: usage } = await supabase
+      .from("usage_tracking")
+      .select("generation_count, first_story_at")
+      .eq("user_id", userId)
+      .single();
+    const { windowExpired } = getSignedInUsageFromRow(usage ?? null, now);
+    if (windowExpired) {
+      await supabase
+        .from("usage_tracking")
+        .update({
+          first_story_at: now.toISOString(),
+          generation_count: 1,
+          last_generated_at: now.toISOString(),
+        })
+        .eq("user_id", userId);
+    } else {
+      const next = (usage?.generation_count ?? 0) + 1;
+      await supabase
+        .from("usage_tracking")
+        .update({
+          generation_count: next,
+          last_generated_at: now.toISOString(),
+        })
+        .eq("user_id", userId);
+    }
+  }
+
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("story_generation_dates")
+    .eq("id", userId)
+    .single();
+  const dates = appendGenerationDate((prof?.story_generation_dates as string[] | null) ?? []);
+  await supabase.from("profiles").update({ story_generation_dates: dates }).eq("id", userId);
+
+  const { error: insertError } = await supabase.from("stories").insert({
+    user_id: userId,
+    child_name: story.childName,
+    age_group: story.ageGroup,
+    trait: story.trait ?? null,
+    region: story.region,
+    raw_story: story.rawStory,
+    parsed_pages: story.parsedPages.length ? story.parsedPages : null,
+    language_default: story.language,
+    illustration_prompts: story.illustrationPrompts.length ? story.illustrationPrompts : null,
+    category: story.category,
+  });
+  if (insertError) {
+    console.error("[generate-story] persist story failed", insertError);
+  }
+}
+
 function generateFallbackStory(childName: string, setting: string): string {
   const safeName = childName.slice(0, 40).trim() || "little one";
   return `[AM] ተረት ተረት! ${safeName} በውብ የኢትዮጵያ ደጋ ነበረ። ፀሐይ ብሩህ ነበረች።
@@ -265,7 +337,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const { childName, ageGroup, trait, region, storyInspiration, category: bodyCategory, topic, storyGoal } = parsed.data;
+    const {
+      childName,
+      ageGroup,
+      trait,
+      region,
+      storyInspiration,
+      category: bodyCategory,
+      topic,
+      storyGoal,
+      language,
+    } = parsed.data;
     const category: StoryCategory = bodyCategory ?? INSPIRATION_TO_CATEGORY[storyInspiration ?? "ethiopian_folklore"];
     const storyInspirationForIllustration = CATEGORY_TO_INSPIRATION[category];
 
@@ -389,28 +471,21 @@ export async function POST(request: Request) {
           result.illustrationPrompts = illustrationPrompts;
           const fallbackPages = parsedToPages(result);
           result.vocabulary = getVocabForStory(fallbackPages, "en").slice(0, 8);
+          const storyRegion = region ?? "Ethiopian highlands";
           if (user) {
             const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
             if (supabase) {
-              const { error: rpcError } = await supabase.rpc("increment_usage", { p_user_id: user.id });
-              if (rpcError) {
-                const now = new Date();
-                const { data: usage } = await supabase.from("usage_tracking").select("generation_count, first_story_at").eq("user_id", user.id).single();
-                const { windowExpired } = getSignedInUsageFromRow(usage ?? null, now);
-                if (windowExpired) {
-                  await supabase.from("usage_tracking").update({
-                    first_story_at: now.toISOString(),
-                    generation_count: 1,
-                    last_generated_at: now.toISOString(),
-                  }).eq("user_id", user.id);
-                } else {
-                  const next = (usage?.generation_count ?? 0) + 1;
-                  await supabase.from("usage_tracking").update({
-                    generation_count: next,
-                    last_generated_at: now.toISOString(),
-                  }).eq("user_id", user.id);
-                }
-              }
+              await recordSignedInGeneration(supabase, user.id, {
+                childName,
+                ageGroup,
+                trait,
+                region: storyRegion,
+                category,
+                rawStory: rawText,
+                parsedPages: fallbackPages,
+                language,
+                illustrationPrompts,
+              });
             }
           } else {
             const admin = createAdminClient();
@@ -419,7 +494,7 @@ export async function POST(request: Request) {
           return NextResponse.json({
             rawStory: rawText,
             parsed: result,
-            region: region ?? "Ethiopian highlands",
+            region: storyRegion,
           });
         }
       }
@@ -511,40 +586,21 @@ No other text. No markdown.`;
     const pagesForVocab = parsedToPages(result);
     result.vocabulary = getVocabForStory(pagesForVocab, "en").slice(0, 8);
 
+    const storyRegion = region ?? "Ethiopian highlands";
     if (user) {
       const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
       if (supabase) {
-        const { error: rpcError } = await supabase.rpc("increment_usage", { p_user_id: user.id });
-        if (rpcError) {
-          const now = new Date();
-          const { data: usage } = await supabase.from("usage_tracking").select("generation_count, first_story_at").eq("user_id", user.id).single();
-          const { windowExpired } = getSignedInUsageFromRow(usage ?? null, now);
-          if (windowExpired) {
-            await supabase.from("usage_tracking").update({
-              first_story_at: now.toISOString(),
-              generation_count: 1,
-              last_generated_at: now.toISOString(),
-            }).eq("user_id", user.id);
-          } else {
-            const next = (usage?.generation_count ?? 0) + 1;
-            await supabase.from("usage_tracking").update({
-              generation_count: next,
-              last_generated_at: now.toISOString(),
-            }).eq("user_id", user.id);
-          }
-        }
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("story_generation_dates")
-          .eq("id", user.id)
-          .single();
-        const dates = appendGenerationDate(
-          (prof?.story_generation_dates as string[] | null) ?? []
-        );
-        await supabase
-          .from("profiles")
-          .update({ story_generation_dates: dates })
-          .eq("id", user.id);
+        await recordSignedInGeneration(supabase, user.id, {
+          childName,
+          ageGroup,
+          trait,
+          region: storyRegion,
+          category,
+          rawStory: rawText,
+          parsedPages: pagesForVocab,
+          language,
+          illustrationPrompts,
+        });
       }
     } else {
       const admin = createAdminClient();
@@ -556,7 +612,7 @@ No other text. No markdown.`;
     return NextResponse.json({
       rawStory: rawText,
       parsed: result,
-      region: region ?? "Ethiopian highlands",
+      region: storyRegion,
     });
   } catch (err) {
     if (err instanceof Error) {

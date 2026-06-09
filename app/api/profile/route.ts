@@ -25,17 +25,30 @@ export async function GET() {
     }, { status: 200 });
   }
 
-  const [{ data: profile }, { data: stories }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("subscription_status, streak_count, last_daily_teret_viewed_at, completed_daily_teret_dates, xp, story_generation_dates")
-      .eq("id", user.id)
-      .single(),
-    supabase
-      .from("stories")
-      .select("region, category, created_at")
-      .eq("user_id", user.id),
-  ]);
+  const [{ data: profile }, { data: stories, error: storiesError }, { data: usage }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select(
+          "subscription_status, streak_count, last_daily_teret_viewed_at, completed_daily_teret_dates, xp, story_generation_dates"
+        )
+        .eq("id", user.id)
+        .single(),
+      supabase
+        .from("stories")
+        .select("region, category, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("usage_tracking")
+        .select("generation_count")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+
+  if (storiesError) {
+    console.error("[profile] stories query failed", storiesError);
+  }
 
   const progress = profile
     ? buildUserProgress(
@@ -47,6 +60,10 @@ export async function GET() {
     : null;
 
   const storyStats = computeStoryStats(stories ?? []);
+  const generationCount = usage?.generation_count ?? 0;
+  if (storyStats.totalStories < generationCount) {
+    storyStats.totalStories = generationCount;
+  }
   const generationDates = (profile?.story_generation_dates as string[] | null) ?? [];
   const generationStreak = computeGenerationStreak(generationDates);
 
