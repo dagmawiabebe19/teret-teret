@@ -7,6 +7,7 @@ import { Campfire } from "./Campfire";
 import { LangToggle } from "./LangToggle";
 import { AudioPlayer, highlightSentenceInText } from "./AudioPlayer";
 import { LanguageLearningPanel } from "./LanguageLearningPanel";
+import { useTTS } from "@/lib/useTTS";
 import { getT } from "@/lib/constants";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
@@ -46,7 +47,6 @@ interface StoryReaderProps {
 
 export function StoryReader({
   pages,
-  illustrationPrompts = [],
   childName,
   region,
   rawStory,
@@ -76,6 +76,7 @@ export function StoryReader({
   const [dailyCompleted, setDailyCompleted] = useState(false);
   const [viewMode, setViewMode] = useState<"read" | "listen" | "learn">("read");
   const touchStartX = useRef<number | null>(null);
+  const { speak, pause, resume, stop, isPlaying, isPaused, isSupported } = useTTS();
 
   const isPremium = subscriptionStatus === "premium";
   const audioAllowedThisPage = isPremium || page < 2;
@@ -97,7 +98,24 @@ export function StoryReader({
       : lang === "en"
         ? current.en || current.am
         : current.es || current.am;
-  const illustrationPrompt = illustrationPrompts[page];
+  useEffect(() => {
+    stop();
+  }, [page, lang, viewMode, stop]);
+
+  useEffect(() => {
+    return () => stop();
+  }, [stop]);
+
+  const handleTTS = useCallback(() => {
+    if (!text.trim() || !isSupported) return;
+    if (isPlaying && !isPaused) {
+      pause();
+    } else if (isPaused) {
+      resume();
+    } else {
+      speak(text, lang);
+    }
+  }, [text, lang, isSupported, isPlaying, isPaused, speak, pause, resume]);
 
   const goNext = useCallback(() => {
     if (page < total - 1) {
@@ -347,48 +365,6 @@ export function StoryReader({
           className={`${dir === "fwd" ? "page-fwd" : "page-bck"} transition-opacity duration-300`}
           style={{ width: "100%", maxWidth: 520, textAlign: "center" }}
         >
-          {/* Illustration card */}
-          <div
-            className="mb-5 rounded-[14px] overflow-hidden border transition-all duration-300"
-            style={{
-              background: "linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(196,77,255,0.06) 100%)",
-              borderColor: "rgba(196,77,255,0.12)",
-            }}
-          >
-            <div
-              className="relative w-full aspect-[4/3] flex items-center justify-center"
-              style={{
-                background: "linear-gradient(160deg, rgba(45,27,105,0.5) 0%, rgba(61,21,128,0.4) 50%, rgba(26,26,78,0.6) 100%)",
-              }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[42px] opacity-50" aria-hidden>📖</span>
-              </div>
-              <p
-                className="absolute bottom-2 left-2 right-2 text-center text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: "rgba(201,184,232,0.5)" }}
-              >
-                {t.illustrationLabel}
-              </p>
-            </div>
-            {illustrationPrompt && (
-              <details className="group" key={`prompt-${page}`}>
-                <summary
-                  className="cursor-pointer py-2 px-3 text-[11px] font-semibold flex items-center gap-1"
-                  style={{ color: "rgba(196,77,255,0.5)" }}
-                >
-                  <span className="group-open:rotate-90 transition-transform">›</span>
-                  <span>View prompt</span>
-                </summary>
-                <p
-                  className="px-3 pb-3 text-[11px] leading-relaxed italic"
-                  style={{ color: "rgba(200,180,255,0.55)" }}
-                >
-                  {illustrationPrompt}
-                </p>
-              </details>
-            )}
-          </div>
           <div className="flex items-center justify-center gap-2 mb-5">
             <div
               className="h-px flex-1"
@@ -496,7 +472,7 @@ export function StoryReader({
         </div>
       </div>
       <div className="relative z-[10] flex flex-col items-center pb-4 gap-2">
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={goPrev}
@@ -512,6 +488,21 @@ export function StoryReader({
           >
             ‹
           </button>
+          {isSupported && text.trim() && (
+            <button
+              type="button"
+              onClick={handleTTS}
+              className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-lg border transition-all duration-200 cursor-pointer"
+              style={{
+                background: isPlaying && !isPaused ? "rgba(255,215,0,0.15)" : "rgba(196,77,255,0.1)",
+                borderColor: isPlaying && !isPaused ? "rgba(255,215,0,0.35)" : "rgba(196,77,255,0.28)",
+                color: isPlaying && !isPaused ? "rgba(255,215,0,0.9)" : "rgba(200,160,255,0.8)",
+              }}
+              aria-label={isPlaying && !isPaused ? "Pause" : isPaused ? "Resume" : "Listen to page"}
+            >
+              {isPlaying && !isPaused ? "⏸" : "🔊"}
+            </button>
+          )}
           <Campfire size={0.8} />
           <button
             type="button"
