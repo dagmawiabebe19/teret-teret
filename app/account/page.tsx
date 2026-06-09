@@ -124,8 +124,12 @@ export default function AccountPage() {
       setMessageType("info");
     }
     if (searchParams.error === "auth") {
-      setMessage(t.authErrorGeneric);
+      const detail = searchParams.error_message?.trim();
+      setMessage(detail || t.authErrorGeneric);
       setMessageType("error");
+      if (detail) {
+        console.error("[account] Auth callback error:", detail);
+      }
     }
   }, [searchParams, t]);
 
