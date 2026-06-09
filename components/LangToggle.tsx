@@ -35,7 +35,7 @@ export function LangToggle({ lang, setLang, style = {} }: LangToggleProps) {
           className="min-w-[32px] text-center rounded-2xl border-none cursor-pointer text-[11px] font-extrabold transition-all duration-200"
           style={{
             padding: "5px 11px",
-            fontFamily: "'Nunito',sans-serif",
+            fontFamily: o.v === "am" ? "var(--font-amharic)" : "'Nunito',sans-serif",
             background:
               lang === o.v
                 ? "linear-gradient(135deg,#7b2d8b,#c44dff)"

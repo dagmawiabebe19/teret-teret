@@ -55,8 +55,8 @@ const MIN_PAGES = 2;
 /** Anthropic Messages API: https://api.anthropic.com/v1/messages */
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
-const ANTHROPIC_MODEL = "claude-3-5-sonnet-20241022";
-const ANTHROPIC_MAX_TOKENS = 1500;
+const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
+const ANTHROPIC_MAX_TOKENS = 2000;
 
 /** Call Anthropic Messages API via fetch. Returns combined text from response content blocks. */
 async function anthropicMessages(
@@ -320,9 +320,10 @@ export async function POST(request: Request) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
     const keyExists = Boolean(apiKey);
-    console.log("[generate-story] ANTHROPIC_API_KEY check:", {
-      exists: keyExists,
-      length: keyExists ? apiKey!.length : 0,
+    console.log("[generate-story] Anthropic config:", {
+      model: ANTHROPIC_MODEL,
+      apiKeyExists: keyExists,
+      apiKeyLength: keyExists ? apiKey!.length : 0,
     });
     if (!apiKey) {
       console.error("[generate-story] ANTHROPIC_API_KEY is missing or empty");
@@ -341,10 +342,14 @@ export async function POST(request: Request) {
     let rawText: string;
     try {
       const result = await anthropicMessages(systemPrompt, userPrompt, {
-        maxTokens: 700,
+        maxTokens: ANTHROPIC_MAX_TOKENS,
         signal: controller.signal,
       });
       rawText = result.text;
+      console.log("[generate-story] Anthropic response:", {
+        textLength: rawText.length,
+        preview: rawText.slice(0, 120),
+      });
     } catch (anthropicErr: unknown) {
       clearTimeout(timeout);
       const err = anthropicErr as { name?: string; status?: number; message?: string; error?: { type?: string; message?: string }; body?: unknown };
@@ -352,7 +357,7 @@ export async function POST(request: Request) {
       const message = err?.message ?? (err?.error as { message?: string } | undefined)?.message ?? String(anthropicErr);
       const useFallback =
         (status == null ||
-          [402, 429, 502, 503, 504].includes(status as number)) &&
+          [402, 404, 429, 502, 503, 504].includes(status as number)) &&
         ![400, 401, 403].includes(status as number);
       let fallbackTriggered = false;
       console.error("[generate-story] Anthropic request failed:", {
@@ -422,13 +427,14 @@ export async function POST(request: Request) {
           ? "Story request was invalid. Please try again."
           : status === 401 || status === 403
             ? "Story service authentication failed."
+            : status === 404
+              ? "Story service model unavailable. Please try again later."
             : status === 429
               ? "Too many requests. Please try again in a moment."
               : "Story service is temporarily unavailable. Please try again.";
-      return NextResponse.json(
-        { error: clientMessage },
-        { status: status && status >= 400 && status < 600 ? status : 502 }
-      );
+      const clientStatus =
+        status === 429 ? 429 : status === 401 || status === 403 ? 503 : 502;
+      return NextResponse.json({ error: clientMessage }, { status: clientStatus });
     }
     clearTimeout(timeout);
 
@@ -442,7 +448,7 @@ export async function POST(request: Request) {
 No other text. No markdown.`;
       try {
         const retryResult = await anthropicMessages(systemPrompt, "", {
-          maxTokens: 700,
+          maxTokens: ANTHROPIC_MAX_TOKENS,
           signal: controller.signal,
           messages: [
             { role: "user", content: userPrompt },

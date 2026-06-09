@@ -483,7 +483,7 @@ export function StoryReader({
             <p
               className="text-[#e8e0ff] font-medium"
               style={{
-                fontFamily: "'Lora',Georgia,serif",
+                fontFamily: lang === "am" ? "var(--font-amharic)" : "'Lora',Georgia,serif",
                 fontSize: lang === "am" ? "clamp(18px,5vw,24px)" : "clamp(16px,4.5vw,21px)",
                 lineHeight: lang === "am" ? 2.1 : 1.95,
                 letterSpacing: lang === "am" ? "0.02em" : "0.015em",
