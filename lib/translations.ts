@@ -316,6 +316,12 @@ export const translations: Record<
     globalCapBreak: string;
     upgradeToSaveStories: string;
     upgradeForChildProfiles: string;
+    premiumMemberBadge: string;
+    premiumBadgeShort: string;
+    freeAccountLabel: string;
+    upgradeUnlockFeatures: string;
+    nextBilling: string;
+    currentPlan: string;
   }
 > = {
   am: {
@@ -641,6 +647,12 @@ export const translations: Record<
     globalCapBreak: "አጭር እረፍት እየወሰድን ነው — ነገ እንመለሳለን! 🌙",
     upgradeToSaveStories: "ታሪኮችዎን ለማስቀመጥ ወደ ፕሪሚየም ይለግሱ",
     upgradeForChildProfiles: "የልጅ መገለጫዎችን ለመፍጠር ወደ ፕሪሚየም ይለግሱ",
+    premiumMemberBadge: "✨ ፕሪሚየም አባል",
+    premiumBadgeShort: "✨ ፕሪሚየም",
+    freeAccountLabel: "ነፃ መለያ",
+    upgradeUnlockFeatures: "ሁሉንም ባህሪያት ለመክፈት ይለግሱ",
+    nextBilling: "ቀጣይ ክፍያ",
+    currentPlan: "የአሁኑ እቅድ",
   },
   en: {
     appTitle: "Teret Teret",
@@ -965,6 +977,12 @@ export const translations: Record<
     globalCapBreak: "We're taking a short break — check back tomorrow! 🌙",
     upgradeToSaveStories: "Upgrade to Premium to save your stories",
     upgradeForChildProfiles: "Upgrade to Premium to create child profiles",
+    premiumMemberBadge: "✨ Premium Member",
+    premiumBadgeShort: "✨ Premium",
+    freeAccountLabel: "Free account",
+    upgradeUnlockFeatures: "Upgrade to unlock all features",
+    nextBilling: "Next billing",
+    currentPlan: "Current plan",
   },
   es: {
     appTitle: "Teret Teret",
@@ -1291,6 +1309,12 @@ export const translations: Record<
     globalCapBreak: "Tomamos un breve descanso — ¡vuelve mañana! 🌙",
     upgradeToSaveStories: "Mejora a Premium para guardar tus cuentos",
     upgradeForChildProfiles: "Mejora a Premium para crear perfiles de niños",
+    premiumMemberBadge: "✨ Miembro Premium",
+    premiumBadgeShort: "✨ Premium",
+    freeAccountLabel: "Cuenta gratis",
+    upgradeUnlockFeatures: "Mejora para desbloquear todas las funciones",
+    nextBilling: "Próximo cobro",
+    currentPlan: "Plan actual",
   },
 };
 

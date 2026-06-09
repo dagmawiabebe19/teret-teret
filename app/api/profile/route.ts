@@ -25,7 +25,7 @@ export async function GET() {
     }, { status: 200 });
   }
 
-  const [{ data: profile }, { data: stories, error: storiesError }, { data: usage }] =
+  const [{ data: profile }, { data: stories, error: storiesError }, { data: usage }, { data: subscription }] =
     await Promise.all([
       supabase
         .from("profiles")
@@ -42,6 +42,11 @@ export async function GET() {
       supabase
         .from("usage_tracking")
         .select("generation_count")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("subscriptions")
+        .select("current_period_end, status")
         .eq("user_id", user.id)
         .maybeSingle(),
     ]);
@@ -75,6 +80,7 @@ export async function GET() {
       avatarUrl: user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null,
     },
     subscriptionStatus: profile?.subscription_status ?? "free",
+    nextBillingDate: subscription?.current_period_end ?? null,
     progress,
     stats: {
       ...storyStats,

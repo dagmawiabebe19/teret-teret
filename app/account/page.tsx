@@ -9,6 +9,19 @@ import type { UITranslations } from "@/lib/translations";
 import { useTranslation } from "@/lib/useTranslation";
 import { startStripeCheckout } from "@/lib/stripeCheckout";
 
+function formatBillingDate(iso: string, lang: "am" | "en" | "es"): string {
+  try {
+    const locale = lang === "am" ? "am-ET" : lang === "es" ? "es" : "en-US";
+    return new Date(iso).toLocaleDateString(locale, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 function getFriendlyAuthError(
   error: { message?: string; status?: number; code?: string },
   t: UITranslations
@@ -47,6 +60,7 @@ export default function AccountPage() {
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [signOutLoading, setSignOutLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [nextBillingDate, setNextBillingDate] = useState<string | null>(null);
   const [lang] = useState<"am" | "en" | "es">(() => {
     if (typeof window === "undefined") return "en";
     const s = localStorage.getItem("teret_lang");
@@ -98,6 +112,7 @@ export default function AccountPage() {
         const sub = d.subscriptionStatus ?? null;
         const isPremium = sub === "premium" || sub === "active";
         setStatus(isPremium ? "premium" : "free");
+        setNextBillingDate(d.nextBillingDate ?? null);
         return isPremium;
       })
       .catch(() => {
@@ -401,42 +416,83 @@ export default function AccountPage() {
                 </div>
               </div>
             )}
-            <div className="p-4 rounded-xl border border-[rgba(255,215,0,0.2)] bg-[rgba(255,255,255,0.05)]">
-              <p className="text-sm font-bold text-[#FFD700]">{t.subscriptionLabel}</p>
-              <p className="text-lg font-fredoka">
-                {status === "premium" ? t.planPremium : t.planFree}
+            <div
+              className="p-5 rounded-[14px] border"
+              style={{
+                background:
+                  status === "premium"
+                    ? "linear-gradient(135deg,rgba(255,140,0,0.12),rgba(255,215,0,0.08))"
+                    : "rgba(255,255,255,0.05)",
+                borderColor:
+                  status === "premium"
+                    ? "rgba(255,215,0,0.45)"
+                    : "rgba(255,215,0,0.2)",
+                boxShadow:
+                  status === "premium"
+                    ? "0 4px 24px rgba(255,215,0,0.12)"
+                    : undefined,
+              }}
+            >
+              <p className="text-[11px] font-bold text-[rgba(200,180,255,0.5)] uppercase tracking-wide mb-2">
+                {t.subscriptionLabel}
               </p>
-              {status === "premium" && (
-                <p className="text-sm text-[#c9b8e8] mt-1">{t.unlimitedStories} {t.unlimitedStoriesLabel}</p>
-              )}
-              {stripeEnabled && status === "premium" && (
-                <a
-                  href="/api/stripe/portal"
-                  className="inline-block mt-2 text-sm text-[#c44dff] hover:underline"
-                >
-                  {t.manageSubscription} →
-                </a>
-              )}
-              {stripeEnabled && status !== "premium" && (
-                <button
-                  type="button"
-                  disabled={checkoutLoading}
-                  onClick={async () => {
-                    setCheckoutLoading(true);
-                    const result = await startStripeCheckout("/account");
-                    if (!result.ok && result.error) {
-                      setMessage(result.error);
-                      setMessageType("error");
-                    }
-                    setCheckoutLoading(false);
-                  }}
-                  className="inline-block mt-2 px-4 py-2 rounded-xl text-sm font-bold bg-[linear-gradient(135deg,#FF8C00,#FFD700)] text-[#1a1a4e] disabled:opacity-70"
-                >
-                  {checkoutLoading ? "…" : `${t.upgradeToPremium} — ${t.pricePerMonth}`}
-                </button>
-              )}
-              {!stripeEnabled && status !== "premium" && (
-                <p className="mt-2 text-xs text-[rgba(255,255,255,0.5)]">{t.subscriptionComingSoon}</p>
+              {status === "premium" ? (
+                <>
+                  <span
+                    className="inline-block px-3.5 py-1 rounded-full text-[12px] font-black tracking-wide"
+                    style={{
+                      background: "linear-gradient(135deg,#FF8C00,#FFD700)",
+                      color: "#1a1a4e",
+                      boxShadow: "0 2px 12px rgba(255,215,0,0.35)",
+                    }}
+                  >
+                    {t.premiumBadgeShort}
+                  </span>
+                  <p className="text-sm text-[#c9b8e8] mt-3">
+                    {t.planPremium} · {t.unlimitedStories} {t.unlimitedStoriesLabel}
+                  </p>
+                  {nextBillingDate && (
+                    <p className="text-sm text-[#c9b8e8] mt-1">
+                      {t.nextBilling}: {formatBillingDate(nextBillingDate, lang)}
+                    </p>
+                  )}
+                  {stripeEnabled && (
+                    <a
+                      href="/api/stripe/portal"
+                      className="inline-block mt-3 w-full text-center py-2.5 rounded-xl text-sm font-bold border text-[#FFD700] hover:bg-[rgba(255,215,0,0.08)] transition-colors"
+                      style={{ borderColor: "rgba(255,215,0,0.3)" }}
+                    >
+                      {t.manageSubscription}
+                    </a>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-lg font-fredoka text-[#c9b8e8]">{t.planFree}</p>
+                  <p className="text-[12px] text-[rgba(200,180,255,0.65)] mt-1 mb-3">
+                    {t.freeAccountLabel} · {t.upgradeUnlockFeatures}
+                  </p>
+                  {stripeEnabled ? (
+                    <button
+                      type="button"
+                      disabled={checkoutLoading}
+                      onClick={async () => {
+                        setCheckoutLoading(true);
+                        const result = await startStripeCheckout("/account");
+                        if (!result.ok && result.error) {
+                          setMessage(result.error);
+                          setMessageType("error");
+                        }
+                        setCheckoutLoading(false);
+                      }}
+                      className="w-full py-2.5 rounded-xl text-sm font-black bg-[linear-gradient(135deg,#FF8C00,#FFD700)] text-[#1a1a4e] disabled:opacity-70"
+                    >
+                      {checkoutLoading ? "…" : `${t.upgradeToPremium} — ${t.pricePerMonth}`}
+                    </button>
+                  ) : (
+                    <p className="text-xs text-[rgba(255,255,255,0.5)]">{t.subscriptionComingSoon}</p>
+                  )}
+                </>
               )}
             </div>
             <button

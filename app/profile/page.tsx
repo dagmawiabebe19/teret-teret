@@ -10,12 +10,26 @@ import { AppNav } from "@/components/AppNav";
 import { ChildProfileManager } from "@/components/ChildProfileManager";
 import { PaywallModal } from "@/components/PaywallModal";
 import { isPremiumStatus } from "@/lib/premium";
+import { startStripeCheckout } from "@/lib/stripeCheckout";
 import {
   ALLOWED_STORY_CATEGORIES,
   getRegionLabel,
 } from "@/lib/constants";
 import { useTranslation } from "@/lib/useTranslation";
 import type { ChildProfile, Lang, ProfileStats, StoryCategory } from "@/types";
+
+function formatBillingDate(iso: string, lang: Lang): string {
+  try {
+    const locale = lang === "am" ? "am-ET" : lang === "es" ? "es" : "en-US";
+    return new Date(iso).toLocaleDateString(locale, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
 
 function initials(name: string | null, email: string | null): string {
   const src = name?.trim() || email?.trim() || "?";
@@ -48,9 +62,11 @@ export default function ProfilePage() {
   const [stats, setStats] = useState<ProfileStats | null>(null);
   const [childProfiles, setChildProfiles] = useState<ChildProfile[]>([]);
   const [subscriptionStatus, setSubscriptionStatus] = useState<"free" | "premium">("free");
+  const [nextBillingDate, setNextBillingDate] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [signOutLoading, setSignOutLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const refresh = useCallback(() => {
     Promise.all([
@@ -67,6 +83,7 @@ export default function ProfilePage() {
       setStats(profileData.stats);
       const premium = isPremiumStatus(profileData.subscriptionStatus);
       setSubscriptionStatus(premium ? "premium" : "free");
+      setNextBillingDate(profileData.nextBillingDate ?? null);
       setChildProfiles(premium ? (childData.profiles ?? []) : []);
       setLoading(false);
     });
@@ -93,6 +110,16 @@ export default function ProfilePage() {
       refresh();
     });
   }, [router, refresh]);
+
+  const handleUpgrade = async () => {
+    if (!stripeEnabled) {
+      setShowPaywall(true);
+      return;
+    }
+    setCheckoutLoading(true);
+    await startStripeCheckout("/profile");
+    setCheckoutLoading(false);
+  };
 
   const handleSignOut = async () => {
     setSignOutLoading(true);
@@ -165,6 +192,91 @@ export default function ProfilePage() {
           </h1>
           {email && (
             <p className="text-[13px] text-[rgba(200,180,255,0.65)] mt-1">{email}</p>
+          )}
+          {subscriptionStatus === "premium" ? (
+            <span
+              className="inline-block mt-3 px-3.5 py-1 rounded-full text-[11px] font-black tracking-wide"
+              style={{
+                background: "linear-gradient(135deg,#FF8C00,#FFD700)",
+                color: "#1a1a4e",
+                boxShadow: "0 2px 12px rgba(255,215,0,0.35)",
+              }}
+            >
+              {t.premiumMemberBadge}
+            </span>
+          ) : (
+            <p className="text-[12px] text-[rgba(200,180,255,0.7)] mt-3">
+              {t.freeAccountLabel}
+              {" · "}
+              <button
+                type="button"
+                onClick={handleUpgrade}
+                disabled={checkoutLoading}
+                className="text-[#FFD700] font-bold hover:underline disabled:opacity-70"
+              >
+                {t.upgradeUnlockFeatures}
+              </button>
+            </p>
+          )}
+        </div>
+
+        <div
+          className="rounded-[14px] border p-4 mb-6"
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            borderColor:
+              subscriptionStatus === "premium"
+                ? "rgba(255,215,0,0.35)"
+                : "rgba(255,215,0,0.12)",
+          }}
+        >
+          <p className="text-[11px] font-bold text-[rgba(200,180,255,0.5)] uppercase tracking-wide mb-2">
+            {t.subscriptionLabel}
+          </p>
+          <p className="text-[13px] text-[rgba(200,180,255,0.65)] mb-0.5">{t.currentPlan}</p>
+          <p className="text-[18px] font-fredoka text-[#FFD700] mb-2">
+            {subscriptionStatus === "premium" ? t.planPremium : t.planFree}
+          </p>
+          {subscriptionStatus === "premium" && nextBillingDate && (
+            <p className="text-[12px] text-[#c9b8e8] mb-3">
+              {t.nextBilling}: {formatBillingDate(nextBillingDate, lang)}
+            </p>
+          )}
+          {subscriptionStatus === "premium" && stripeEnabled && (
+            <a
+              href="/api/stripe/portal"
+              className="inline-block w-full text-center py-2.5 rounded-xl text-[12px] font-bold border text-[#FFD700] hover:bg-[rgba(255,215,0,0.08)] transition-colors"
+              style={{ borderColor: "rgba(255,215,0,0.3)" }}
+            >
+              {t.manageSubscription}
+            </a>
+          )}
+          {subscriptionStatus !== "premium" && stripeEnabled && (
+            <button
+              type="button"
+              disabled={checkoutLoading}
+              onClick={handleUpgrade}
+              className="w-full py-2.5 rounded-xl text-[12px] font-black disabled:opacity-70"
+              style={{
+                background: "linear-gradient(135deg,#FF8C00,#FFD700)",
+                color: "#1a1a4e",
+              }}
+            >
+              {checkoutLoading ? "…" : `${t.upgradeToPremium} — ${t.pricePerMonth}`}
+            </button>
+          )}
+          {subscriptionStatus !== "premium" && !stripeEnabled && (
+            <button
+              type="button"
+              onClick={() => setShowPaywall(true)}
+              className="w-full py-2.5 rounded-xl text-[12px] font-black"
+              style={{
+                background: "linear-gradient(135deg,#FF8C00,#FFD700)",
+                color: "#1a1a4e",
+              }}
+            >
+              {t.upgradeToPremium}
+            </button>
           )}
         </div>
 
