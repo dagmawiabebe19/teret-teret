@@ -58,8 +58,7 @@ const MIN_PAGES = 2;
 /** Anthropic Messages API: https://api.anthropic.com/v1/messages */
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
-const MODEL_FREE = "claude-haiku-4-5-20251001";
-const MODEL_PREMIUM = "claude-sonnet-4-20250514";
+const STORY_MODEL = "claude-sonnet-4-20250514";
 const ANTHROPIC_MAX_TOKENS = 2000;
 
 /** Call Anthropic Messages API via fetch. Returns combined text from response content blocks. */
@@ -79,7 +78,7 @@ async function anthropicMessages(
   }
   const messages = options.messages ?? [{ role: "user" as const, content: userContent }];
   const body = {
-    model: options.model ?? MODEL_FREE,
+    model: options.model ?? STORY_MODEL,
     max_tokens: options.maxTokens ?? ANTHROPIC_MAX_TOKENS,
     system: systemPrompt,
     messages,
@@ -419,12 +418,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const storyModel = isPremium ? MODEL_PREMIUM : MODEL_FREE;
-
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
     const keyExists = Boolean(apiKey);
     console.log("[generate-story] Anthropic config:", {
-      model: storyModel,
+      model: STORY_MODEL,
       isPremium,
       apiKeyExists: keyExists,
       apiKeyLength: keyExists ? apiKey!.length : 0,
@@ -446,7 +443,7 @@ export async function POST(request: Request) {
     let rawText: string;
     try {
       const result = await anthropicMessages(systemPrompt, userPrompt, {
-        model: storyModel,
+        model: STORY_MODEL,
         maxTokens: ANTHROPIC_MAX_TOKENS,
         signal: controller.signal,
       });
@@ -546,7 +543,7 @@ export async function POST(request: Request) {
 No other text. No markdown.`;
       try {
         const retryResult = await anthropicMessages(systemPrompt, "", {
-          model: storyModel,
+          model: STORY_MODEL,
           maxTokens: ANTHROPIC_MAX_TOKENS,
           signal: controller.signal,
           messages: [
@@ -585,7 +582,7 @@ No other text. No markdown.`;
           regionName
         );
         const illResult = await anthropicMessages(illSystem, illUser, {
-          model: storyModel,
+          model: STORY_MODEL,
           maxTokens: 400,
           signal: controller.signal,
         });
