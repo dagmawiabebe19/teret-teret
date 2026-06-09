@@ -44,7 +44,8 @@ export function AppNav({
       <div className="max-w-[640px] mx-auto px-4 h-14 flex items-center justify-between gap-2">
         <Link
           href="/"
-          className="font-fredoka text-[#FFD700] text-[15px] sm:text-[17px] shrink-0 hover:opacity-90 transition-opacity"
+          aria-label={t.homeBtn}
+          className="font-fredoka text-[#FFD700] text-[15px] sm:text-[17px] shrink-0 hover:opacity-90 transition-opacity no-underline"
           style={{ textShadow: "0 0 20px rgba(255,215,0,0.25)" }}
         >
           {t.appTitle}
