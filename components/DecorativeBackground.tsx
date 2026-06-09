@@ -26,7 +26,7 @@ export function DecorativeBackground() {
         </div>
       ))}
       <div
-        className="fixed top-4 right-4 text-[44px] z-[2] pointer-events-none"
+        className="fixed top-[4.5rem] right-4 text-[44px] z-[2] pointer-events-none"
         style={{
           animation: "pulse 4s ease-in-out infinite",
           filter: "drop-shadow(0 0 16px rgba(255,220,100,0.4))",
