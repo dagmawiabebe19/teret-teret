@@ -56,14 +56,24 @@ const MIN_PAGES = 2;
 /** Anthropic Messages API: https://api.anthropic.com/v1/messages */
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
-const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
+const MODEL_FREE = "claude-haiku-4-5-20251001";
+const MODEL_PREMIUM = "claude-sonnet-4-20250514";
 const ANTHROPIC_MAX_TOKENS = 2000;
+
+function isPremiumStatus(status: string | null | undefined): boolean {
+  return status === "premium" || status === "active";
+}
 
 /** Call Anthropic Messages API via fetch. Returns combined text from response content blocks. */
 async function anthropicMessages(
   systemPrompt: string,
   userContent: string,
-  options: { maxTokens?: number; signal?: AbortSignal; messages?: { role: "user" | "assistant"; content: string }[] } = {}
+  options: {
+    model?: string;
+    maxTokens?: number;
+    signal?: AbortSignal;
+    messages?: { role: "user" | "assistant"; content: string }[];
+  } = {}
 ): Promise<{ text: string; raw?: unknown }> {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
@@ -71,7 +81,7 @@ async function anthropicMessages(
   }
   const messages = options.messages ?? [{ role: "user" as const, content: userContent }];
   const body = {
-    model: ANTHROPIC_MODEL,
+    model: options.model ?? MODEL_FREE,
     max_tokens: options.maxTokens ?? ANTHROPIC_MAX_TOKENS,
     system: systemPrompt,
     messages,
@@ -352,6 +362,7 @@ export async function POST(request: Request) {
     const storyInspirationForIllustration = CATEGORY_TO_INSPIRATION[category];
 
     const { user } = await getOptionalUser();
+    let isPremium = false;
 
     // Signed-in: rolling 24h free limit (usage_tracking); premium = unlimited
     if (user) {
@@ -362,7 +373,7 @@ export async function POST(request: Request) {
           { onConflict: "user_id", ignoreDuplicates: true }
         );
         const { data: profile } = await supabase.from("profiles").select("subscription_status").eq("id", user.id).single();
-        const isPremium = profile?.subscription_status === "premium" || profile?.subscription_status === "active";
+        isPremium = isPremiumStatus(profile?.subscription_status);
         if (!isPremium) {
           const { data: usage } = await supabase.from("usage_tracking").select("generation_count, first_story_at").eq("user_id", user.id).single();
           const { storiesUsed, remaining } = getSignedInUsageFromRow(usage ?? null);
@@ -401,10 +412,13 @@ export async function POST(request: Request) {
       );
     }
 
+    const storyModel = isPremium ? MODEL_PREMIUM : MODEL_FREE;
+
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
     const keyExists = Boolean(apiKey);
     console.log("[generate-story] Anthropic config:", {
-      model: ANTHROPIC_MODEL,
+      model: storyModel,
+      isPremium,
       apiKeyExists: keyExists,
       apiKeyLength: keyExists ? apiKey!.length : 0,
     });
@@ -425,6 +439,7 @@ export async function POST(request: Request) {
     let rawText: string;
     try {
       const result = await anthropicMessages(systemPrompt, userPrompt, {
+        model: storyModel,
         maxTokens: ANTHROPIC_MAX_TOKENS,
         signal: controller.signal,
       });
@@ -524,6 +539,7 @@ export async function POST(request: Request) {
 No other text. No markdown.`;
       try {
         const retryResult = await anthropicMessages(systemPrompt, "", {
+          model: storyModel,
           maxTokens: ANTHROPIC_MAX_TOKENS,
           signal: controller.signal,
           messages: [
@@ -562,6 +578,7 @@ No other text. No markdown.`;
           regionName
         );
         const illResult = await anthropicMessages(illSystem, illUser, {
+          model: storyModel,
           maxTokens: 400,
           signal: controller.signal,
         });
