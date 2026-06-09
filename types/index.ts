@@ -91,3 +91,34 @@ export interface UserProgress {
 }
 
 export const FREE_STORY_LIMIT = 3;
+
+export interface ChildProfile {
+  id: string;
+  name: string;
+  ageGroup: string;
+  trait: string | null;
+  avatarEmoji: string;
+  createdAt: string;
+}
+
+export interface ProfileStats {
+  totalStories: number;
+  favoriteLocation: string | null;
+  favoriteCategory: StoryCategory | null;
+  generationStreak: number;
+}
+
+export interface LibraryStory {
+  id: string;
+  childName: string;
+  region: string;
+  category: StoryCategory | null;
+  languageDefault: Lang;
+  rawStory: string;
+  parsedPages?: StoryPage[];
+  illustrationPrompts?: string[];
+  isFavorite: boolean;
+  createdAt: string;
+  ageGroup?: string;
+  trait?: string | null;
+}

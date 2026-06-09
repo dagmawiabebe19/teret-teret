@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Stars } from "@/components/Stars";
 import { Fireflies } from "@/components/Fireflies";
 import { DecorativeBackground } from "@/components/DecorativeBackground";
-import { LangToggle } from "@/components/LangToggle";
 import { StoryForm } from "@/components/StoryForm";
 import { StoryReader } from "@/components/StoryReader";
 import { SavedStoriesPanel, type SavedStoryItem } from "@/components/SavedStoriesPanel";
@@ -24,6 +24,11 @@ import type { StoryPage } from "@/types";
 import type { VocabWord } from "@/types";
 import type { StoryCategory } from "@/types";
 import { ALLOWED_STORY_CATEGORIES } from "@/lib/constants";
+import { AppNav } from "@/components/AppNav";
+import { ChildProfilePicker, applyChildToForm } from "@/components/ChildProfilePicker";
+import { RecentlyPlayed } from "@/components/RecentlyPlayed";
+import { libraryStoryToReader } from "@/lib/openLibraryStory";
+import type { ChildProfile, LibraryStory } from "@/types";
 
 const STORAGE_SAVED = "teret_saved";
 
@@ -40,6 +45,7 @@ function getStoredSaved(): SavedStoryItem[] {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [screen, setScreen] = useState<"home" | "loading" | "story">("home");
   const [childName, setChildName] = useState("");
   const [trait, setTrait] = useState("");
@@ -88,6 +94,12 @@ export default function HomePage() {
   const [isDailyTeretView, setIsDailyTeretView] = useState(false);
   const [storyVocabulary, setStoryVocabulary] = useState<VocabWord[]>([]);
   const [savedWords, setSavedWords] = useState<VocabWord[]>([]);
+  const [libraryStories, setLibraryStories] = useState<LibraryStory[]>([]);
+  const [childProfiles, setChildProfiles] = useState<ChildProfile[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const generatingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -148,23 +160,29 @@ export default function HomePage() {
     supabase.auth.getUser().then(({ data: { user: u } }) => {
       setIsGuest(!u);
       if (!u) return;
+      setUserEmail(u.email ?? null);
+      setDisplayName(
+        (u.user_metadata?.full_name as string) ??
+          (u.user_metadata?.name as string) ??
+          null
+      );
+      setAvatarUrl(
+        (u.user_metadata?.avatar_url as string) ??
+          (u.user_metadata?.picture as string) ??
+          null
+      );
       Promise.all([
         fetch("/api/profile").then((r) => (r.ok ? r.json() : { progress: null })),
         fetch("/api/stories").then((r) => r.json()),
-      ]).then(([profileData, storiesData]) => {
+        fetch("/api/child-profiles").then((r) => r.json()),
+      ]).then(([profileData, storiesData, childData]) => {
         setUserProgress(profileData.progress ?? null);
         const status = profileData.subscriptionStatus;
         setSubscriptionStatus(status === "premium" || status === "active" ? "premium" : "free");
-        const dbStories = ((storiesData.stories ?? []) as {
-          id: string;
-          childName: string;
-          region: string;
-          rawStory: string;
-          parsedPages?: { am: string; en: string; es: string }[];
-          illustrationPrompts?: string[];
-          isFavorite?: boolean;
-          createdAt: string;
-        }[]).map((s) => ({
+        setChildProfiles(childData.profiles ?? []);
+        const apiStories = (storiesData.stories ?? []) as LibraryStory[];
+        setLibraryStories(apiStories);
+        const dbStories = apiStories.map((s) => ({
           id: s.id,
           name: s.childName,
           region: s.region,
@@ -252,6 +270,7 @@ export default function HomePage() {
               parsedPages: pages.length ? pages : undefined,
               languageDefault: lang,
               illustrationPrompts: illustrationPrompts.length ? illustrationPrompts : undefined,
+              category,
             }),
           });
           const data = await res.json();
@@ -260,6 +279,21 @@ export default function HomePage() {
             entry.date = data.createdAt ?? entry.date;
             const updated = [entry, ...savedStories.filter((s) => s.id !== entry.id)].slice(0, 50);
             setSavedStories(updated);
+            const libEntry: LibraryStory = {
+              id: data.id,
+              childName,
+              region: storyRegion || "Ethiopian highlands",
+              category,
+              languageDefault: lang,
+              rawStory,
+              parsedPages: pages.length ? pages : undefined,
+              illustrationPrompts: illustrationPrompts.length ? illustrationPrompts : undefined,
+              isFavorite: false,
+              createdAt: data.createdAt ?? new Date().toISOString(),
+              ageGroup: age,
+              trait: trait || null,
+            };
+            setLibraryStories((prev) => [libEntry, ...prev.filter((s) => s.id !== data.id)].slice(0, 50));
             toast.showToast(getT(lang).savedConfirm, "success");
             return;
           }
@@ -275,7 +309,7 @@ export default function HomePage() {
       localStorage.setItem(STORAGE_SAVED, JSON.stringify(updated));
     } catch {}
     toast.showToast(getT(lang).savedConfirm, "success");
-  }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, savedStories, toast, t]);
+  }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, category, savedStories, toast, t]);
 
   const copyStory = useCallback(() => {
     try {
@@ -404,6 +438,40 @@ export default function HomePage() {
       setIsGenerating(false);
     }
   }, [childName, age, trait, region, category, topic, storyGoal, lang, usage, subscriptionStatus, refreshUsage, toast, t]);
+
+  const openLibraryStory = useCallback((story: LibraryStory) => {
+    const payload = libraryStoryToReader(story, lang);
+    if (!payload) {
+      setError(t.errorStoryDisplayFailed);
+      setScreen("home");
+      return;
+    }
+    setIsDailyTeretView(false);
+    setRawStory(payload.rawStory);
+    setChildName(payload.childName);
+    setStoryRegion(payload.region);
+    setIllustrationPrompts(payload.illustrationPrompts);
+    setPages(payload.pages);
+    setStoryVocabulary(payload.vocabulary);
+    setScreen("story");
+  }, [lang, t]);
+
+  const handleChildSelect = useCallback(
+    (profile: ChildProfile | null) => {
+      if (!profile) {
+        setSelectedChildId(null);
+        return;
+      }
+      setSelectedChildId(profile.id);
+      applyChildToForm(profile, {
+        setChildName,
+        setAge,
+        setTrait,
+        setTraitIdx,
+      });
+    },
+    []
+  );
 
   const openSavedStory = useCallback((story: SavedStoryItem) => {
     setIsDailyTeretView(false);
@@ -585,15 +653,14 @@ export default function HomePage() {
         <DecorativeBackground />
 
         {screen !== "story" && (
-          <div className="fixed top-4 right-4 z-[10] flex items-center gap-2">
-            <a
-              href="/account"
-              className="text-[11px] font-bold text-[#c9b8e8] hover:text-[#FFD700] transition-colors duration-200"
-            >
-              {t.navAccount}
-            </a>
-            <LangToggle lang={lang} setLang={setLang} />
-          </div>
+          <AppNav
+            lang={lang}
+            setLang={setLang}
+            isSignedIn={!isGuest}
+            avatarUrl={avatarUrl}
+            displayName={displayName}
+            email={userEmail}
+          />
         )}
 
         {screen === "home" && (
@@ -688,6 +755,24 @@ export default function HomePage() {
                 >
                   {savedStories.length > 0 ? t.guestNotice : t.signInToSync}
                 </p>
+              )}
+
+              {!isGuest && (
+                <ChildProfilePicker
+                  lang={lang}
+                  profiles={childProfiles}
+                  selectedId={selectedChildId}
+                  onSelect={handleChildSelect}
+                  onAddChild={() => router.push("/profile")}
+                />
+              )}
+
+              {!isGuest && libraryStories.length > 0 && (
+                <RecentlyPlayed
+                  lang={lang}
+                  stories={libraryStories}
+                  onOpen={openLibraryStory}
+                />
               )}
 
               <h2 className="text-center font-fredoka text-[#FFD700] text-lg mb-1 mt-2">

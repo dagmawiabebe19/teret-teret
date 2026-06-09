@@ -264,6 +264,23 @@ export const translations: Record<
     selectLanguageAria: string;
     dailyTeretLoadError: string;
     dailyTeretDisplayError: string;
+    navMyStories: string;
+    navProfile: string;
+    whoIsStoryFor: string;
+    libraryEmptyPrompt: string;
+    recentlyPlayedTitle: string;
+    statTotalStories: string;
+    statFavoriteLocation: string;
+    statFavoriteCategory: string;
+    generationStreakNights: (n: number) => string;
+    linkToMyStories: string;
+    manageChildren: string;
+    editChild: string;
+    deleteChild: string;
+    saveChild: string;
+    cancel: string;
+    selectAvatar: string;
+    noneYet: string;
   }
 > = {
   am: {
@@ -538,6 +555,23 @@ export const translations: Record<
     selectLanguageAria: "ቋንቋ ምረጥ",
     dailyTeretLoadError: "የዛሬ ታሪክ መጫን አልተሳካም።",
     dailyTeretDisplayError: "ታሪኩ ማሳየት አልተቻለም።",
+    navMyStories: "የእኔ ታሪኮች",
+    navProfile: "መገለጫ",
+    whoIsStoryFor: "ተረቱ ለማን ነው?",
+    libraryEmptyPrompt: "ገና ታሪክ የለም — የመጀመሪያዎን ዛሬ ሌሊት ይፍጠሩ 🌙",
+    recentlyPlayedTitle: "በቅርብ የተነበቡ",
+    statTotalStories: "ጠቅላላ ታሪኮች",
+    statFavoriteLocation: "ተወዳጅ ቦታ",
+    statFavoriteCategory: "ተወዳጅ ምድብ",
+    generationStreakNights: (n) => `${n} ሌሊቶች በተከታታይ 🔥`,
+    linkToMyStories: "የእኔ ታሪኮች ቤተ-መጽሐፍት →",
+    manageChildren: "የልጆች መገለጫዎች",
+    editChild: "አርትዕ",
+    deleteChild: "ሰርዝ",
+    saveChild: "አስቀምጥ",
+    cancel: "ሰርዝ",
+    selectAvatar: "አቫታር ምረጥ",
+    noneYet: "ገና የለም",
   },
   en: {
     appTitle: "Teret Teret",
@@ -811,6 +845,23 @@ export const translations: Record<
     selectLanguageAria: "Select language",
     dailyTeretLoadError: "Could not load today's story.",
     dailyTeretDisplayError: "Story could not be displayed.",
+    navMyStories: "My Stories",
+    navProfile: "Profile",
+    whoIsStoryFor: "Who's the story for?",
+    libraryEmptyPrompt: "No stories yet — generate your first tonight 🌙",
+    recentlyPlayedTitle: "Recently played",
+    statTotalStories: "Stories created",
+    statFavoriteLocation: "Favorite place",
+    statFavoriteCategory: "Favorite type",
+    generationStreakNights: (n) => `${n} nights in a row 🔥`,
+    linkToMyStories: "My Stories library →",
+    manageChildren: "Child profiles",
+    editChild: "Edit",
+    deleteChild: "Delete",
+    saveChild: "Save",
+    cancel: "Cancel",
+    selectAvatar: "Choose avatar",
+    noneYet: "None yet",
   },
   es: {
     appTitle: "Teret Teret",
@@ -1086,6 +1137,23 @@ export const translations: Record<
     selectLanguageAria: "Seleccionar idioma",
     dailyTeretLoadError: "No se pudo cargar el cuento de hoy.",
     dailyTeretDisplayError: "No se pudo mostrar el cuento.",
+    navMyStories: "Mis cuentos",
+    navProfile: "Perfil",
+    whoIsStoryFor: "¿Para quién es el cuento?",
+    libraryEmptyPrompt: "Aún no hay cuentos — crea el primero esta noche 🌙",
+    recentlyPlayedTitle: "Reproducidos recientemente",
+    statTotalStories: "Cuentos creados",
+    statFavoriteLocation: "Lugar favorito",
+    statFavoriteCategory: "Tipo favorito",
+    generationStreakNights: (n) => `${n} noches seguidas 🔥`,
+    linkToMyStories: "Biblioteca de cuentos →",
+    manageChildren: "Perfiles de niños",
+    editChild: "Editar",
+    deleteChild: "Eliminar",
+    saveChild: "Guardar",
+    cancel: "Cancelar",
+    selectAvatar: "Elegir avatar",
+    noneYet: "Ninguno aún",
   },
 };
 

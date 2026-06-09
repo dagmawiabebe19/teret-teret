@@ -19,6 +19,7 @@ import {
   parseIllustrationPrompts,
 } from "@/lib/illustrationPrompts";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { appendGenerationDate } from "@/lib/streaks";
 import type { StoryInspiration } from "@/types";
 import type { StoryCategory } from "@/types";
 
@@ -532,6 +533,18 @@ No other text. No markdown.`;
             }).eq("user_id", user.id);
           }
         }
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("story_generation_dates")
+          .eq("id", user.id)
+          .single();
+        const dates = appendGenerationDate(
+          (prof?.story_generation_dates as string[] | null) ?? []
+        );
+        await supabase
+          .from("profiles")
+          .update({ story_generation_dates: dates })
+          .eq("id", user.id);
       }
     } else {
       const admin = createAdminClient();

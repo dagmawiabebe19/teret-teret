@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOptionalUser } from "@/lib/supabase/server";
 import { z } from "zod";
+import { ALLOWED_STORY_CATEGORIES } from "@/lib/constants";
 
 const SaveStorySchema = z.object({
   childName: z.string().min(1).max(80),
@@ -11,6 +12,7 @@ const SaveStorySchema = z.object({
   parsedPages: z.array(z.object({ am: z.string(), en: z.string(), es: z.string() })).optional(),
   languageDefault: z.enum(["am", "en", "es"]).optional(),
   illustrationPrompts: z.array(z.string()).optional(),
+  category: z.enum(ALLOWED_STORY_CATEGORIES).optional(),
 });
 
 export async function GET() {
@@ -22,7 +24,7 @@ export async function GET() {
   if (!supabase) return NextResponse.json({ stories: [] }, { status: 200 });
   const { data, error } = await supabase
     .from("stories")
-    .select("id, child_name, region, age_group, trait, raw_story, parsed_pages, language_default, illustration_prompts, is_favorite, created_at")
+    .select("id, child_name, region, age_group, trait, raw_story, parsed_pages, language_default, illustration_prompts, is_favorite, category, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -36,7 +38,20 @@ export async function GET() {
     }
     return NextResponse.json({ error: "Failed to load stories" }, { status: 500 });
   }
-  const stories = (data ?? []).map((s: { id: string; child_name: string; region: string; age_group: string; trait: string | null; raw_story: string; parsed_pages: unknown; language_default: string | null; illustration_prompts: string[] | null; is_favorite: boolean | null; created_at: string }) => ({
+  const stories = (data ?? []).map((s: {
+    id: string;
+    child_name: string;
+    region: string;
+    age_group: string;
+    trait: string | null;
+    raw_story: string;
+    parsed_pages: unknown;
+    language_default: string | null;
+    illustration_prompts: string[] | null;
+    is_favorite: boolean | null;
+    category: string | null;
+    created_at: string;
+  }) => ({
     id: s.id,
     childName: s.child_name,
     region: s.region,
@@ -44,9 +59,10 @@ export async function GET() {
     trait: s.trait,
     rawStory: s.raw_story,
     parsedPages: s.parsed_pages,
-    languageDefault: s.language_default,
+    languageDefault: s.language_default ?? "en",
     illustrationPrompts: s.illustration_prompts ?? undefined,
     isFavorite: s.is_favorite ?? false,
+    category: s.category,
     createdAt: s.created_at,
   }));
   return NextResponse.json({ stories });
@@ -76,6 +92,7 @@ export async function POST(request: Request) {
       parsed_pages: parsed.data.parsedPages ?? null,
       language_default: parsed.data.languageDefault ?? "en",
       illustration_prompts: parsed.data.illustrationPrompts ?? null,
+      category: parsed.data.category ?? null,
     })
     .select("id, created_at")
     .single();
