@@ -62,6 +62,7 @@ export default function ProfilePage() {
   const [stats, setStats] = useState<ProfileStats | null>(null);
   const [childProfiles, setChildProfiles] = useState<ChildProfile[]>([]);
   const [subscriptionStatus, setSubscriptionStatus] = useState<"free" | "premium">("free");
+  const [rawSubscriptionStatus, setRawSubscriptionStatus] = useState<string | null>(null);
   const [nextBillingDate, setNextBillingDate] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [stripeEnabled, setStripeEnabled] = useState(false);
@@ -70,9 +71,10 @@ export default function ProfilePage() {
 
   const refresh = useCallback(() => {
     Promise.all([
-      fetch("/api/profile").then((r) => r.json()),
-      fetch("/api/child-profiles").then((r) => r.json()),
+      fetch("/api/profile", { cache: "no-store", credentials: "same-origin" }).then((r) => r.json()),
+      fetch("/api/child-profiles", { cache: "no-store", credentials: "same-origin" }).then((r) => r.json()),
     ]).then(([profileData, childData]) => {
+      console.log("[profile] /api/profile response:", profileData);
       if (!profileData.user) {
         router.replace("/account?signin=1");
         return;
@@ -81,13 +83,22 @@ export default function ProfilePage() {
       setDisplayName(profileData.user.displayName);
       setAvatarUrl(profileData.user.avatarUrl);
       setStats(profileData.stats);
-      const premium = isPremiumStatus(profileData.subscriptionStatus);
+      const rawStatus = profileData.subscriptionStatus ?? null;
+      setRawSubscriptionStatus(rawStatus);
+      const premium = isPremiumStatus(rawStatus);
+      console.log("[profile] subscription:", {
+        raw: rawStatus,
+        isPremium: premium,
+        nextBillingDate: profileData.nextBillingDate ?? null,
+      });
       setSubscriptionStatus(premium ? "premium" : "free");
       setNextBillingDate(profileData.nextBillingDate ?? null);
       setChildProfiles(premium ? (childData.profiles ?? []) : []);
       setLoading(false);
     });
   }, [router]);
+
+  const isPremium = isPremiumStatus(rawSubscriptionStatus) || subscriptionStatus === "premium";
 
   useEffect(() => {
     fetch("/api/config")
@@ -193,7 +204,7 @@ export default function ProfilePage() {
           {email && (
             <p className="text-[13px] text-[rgba(200,180,255,0.65)] mt-1">{email}</p>
           )}
-          {subscriptionStatus === "premium" ? (
+          {isPremium ? (
             <span
               className="inline-block mt-3 px-3.5 py-1 rounded-full text-[11px] font-black tracking-wide"
               style={{
@@ -225,7 +236,7 @@ export default function ProfilePage() {
           style={{
             background: "rgba(255,255,255,0.05)",
             borderColor:
-              subscriptionStatus === "premium"
+              isPremium
                 ? "rgba(255,215,0,0.35)"
                 : "rgba(255,215,0,0.12)",
           }}
@@ -235,14 +246,14 @@ export default function ProfilePage() {
           </p>
           <p className="text-[13px] text-[rgba(200,180,255,0.65)] mb-0.5">{t.currentPlan}</p>
           <p className="text-[18px] font-fredoka text-[#FFD700] mb-2">
-            {subscriptionStatus === "premium" ? t.planPremium : t.planFree}
+            {isPremium ? t.planPremium : t.planFree}
           </p>
-          {subscriptionStatus === "premium" && nextBillingDate && (
+          {isPremium && nextBillingDate && (
             <p className="text-[12px] text-[#c9b8e8] mb-3">
               {t.nextBilling}: {formatBillingDate(nextBillingDate, lang)}
             </p>
           )}
-          {subscriptionStatus === "premium" && stripeEnabled && (
+          {isPremium && stripeEnabled && (
             <a
               href="/api/stripe/portal"
               className="inline-block w-full text-center py-2.5 rounded-xl text-[12px] font-bold border text-[#FFD700] hover:bg-[rgba(255,215,0,0.08)] transition-colors"
@@ -251,7 +262,7 @@ export default function ProfilePage() {
               {t.manageSubscription}
             </a>
           )}
-          {subscriptionStatus !== "premium" && stripeEnabled && (
+          {!isPremium && stripeEnabled && (
             <button
               type="button"
               disabled={checkoutLoading}
@@ -265,7 +276,7 @@ export default function ProfilePage() {
               {checkoutLoading ? "…" : `${t.upgradeToPremium} — ${t.pricePerMonth}`}
             </button>
           )}
-          {subscriptionStatus !== "premium" && !stripeEnabled && (
+          {!isPremium && !stripeEnabled && (
             <button
               type="button"
               onClick={() => setShowPaywall(true)}
@@ -330,7 +341,7 @@ export default function ProfilePage() {
           lang={lang}
           profiles={childProfiles}
           onRefresh={refresh}
-          isPremium={subscriptionStatus === "premium"}
+          isPremium={isPremium}
           onUpgrade={() => setShowPaywall(true)}
         />
 
