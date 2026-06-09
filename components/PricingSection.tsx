@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { useTranslation } from "@/lib/useTranslation";
+import { startStripeCheckout } from "@/lib/stripeCheckout";
 import type { Lang } from "@/types";
 
 interface PricingSectionProps {
@@ -12,6 +13,18 @@ interface PricingSectionProps {
 
 export function PricingSection({ lang, isSignedIn, stripeEnabled }: PricingSectionProps) {
   const { t } = useTranslation(lang);
+  const [loading, setLoading] = useState(false);
+
+  const handleCta = async () => {
+    if (!isSignedIn) {
+      document.getElementById("create")?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    if (!stripeEnabled) return;
+    setLoading(true);
+    await startStripeCheckout("/");
+    setLoading(false);
+  };
 
   return (
     <section className="mb-12 mt-8">
@@ -59,30 +72,18 @@ export function PricingSection({ lang, isSignedIn, stripeEnabled }: PricingSecti
         </div>
       </div>
       <div className="text-center mt-6">
-        {isSignedIn && stripeEnabled ? (
-          <Link
-            href="/account"
-            className="inline-block px-8 py-3 rounded-[14px] font-black font-fredoka text-[#1a1a4e]"
-            style={{
-              background: "linear-gradient(135deg,#FF8C00,#FFD700)",
-              boxShadow: "0 4px 20px rgba(255,140,0,0.35)",
-            }}
-          >
-            {t.pricingCta}
-          </Link>
-        ) : (
-          <button
-            type="button"
-            onClick={() => document.getElementById("create")?.scrollIntoView({ behavior: "smooth" })}
-            className="inline-block px-8 py-3 rounded-[14px] font-black font-fredoka text-[#1a1a4e]"
-            style={{
-              background: "linear-gradient(135deg,#FF8C00,#FFD700)",
-              boxShadow: "0 4px 20px rgba(255,140,0,0.35)",
-            }}
-          >
-            {t.pricingCta}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={handleCta}
+          disabled={loading}
+          className="inline-block px-8 py-3 rounded-[14px] font-black font-fredoka text-[#1a1a4e] disabled:opacity-70"
+          style={{
+            background: "linear-gradient(135deg,#FF8C00,#FFD700)",
+            boxShadow: "0 4px 20px rgba(255,140,0,0.35)",
+          }}
+        >
+          {loading ? "…" : t.pricingCta}
+        </button>
       </div>
     </section>
   );

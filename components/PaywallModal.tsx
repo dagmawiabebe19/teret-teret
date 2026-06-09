@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslation } from "@/lib/useTranslation";
+import { startStripeCheckout } from "@/lib/stripeCheckout";
 import type { Lang } from "@/types";
 
 interface PaywallModalProps {
@@ -31,25 +32,10 @@ export function PaywallModal({ onClose, lang, stripeEnabled = false, isGuest = f
     setLoading(true);
     try {
       const returnTo = typeof window !== "undefined" ? window.location.pathname || "/" : "/";
-      const res = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ returnTo }),
-      });
-      const data = await res.json();
-      if (res.ok && data.url) {
-        window.location.href = data.url;
-        return;
+      const result = await startStripeCheckout(returnTo);
+      if (!result.ok && result.error) {
+        setError(result.error);
       }
-      if (res.status === 401 && data.redirect) {
-        window.location.href = data.redirect;
-        return;
-      }
-      if (res.status === 503 && data.redirect) {
-        window.location.href = data.redirect;
-        return;
-      }
-      setError(data.error || t.errorGeneric);
     } catch {
       setError(t.errorGeneric);
     } finally {

@@ -7,6 +7,7 @@ import type { User } from "@supabase/supabase-js";
 import type { UserProgress } from "@/types";
 import type { UITranslations } from "@/lib/translations";
 import { useTranslation } from "@/lib/useTranslation";
+import { startStripeCheckout } from "@/lib/stripeCheckout";
 
 function getFriendlyAuthError(
   error: { message?: string; status?: number; code?: string },
@@ -45,6 +46,7 @@ export default function AccountPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [signOutLoading, setSignOutLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [lang] = useState<"am" | "en" | "es">(() => {
     if (typeof window === "undefined") return "en";
     const s = localStorage.getItem("teret_lang");
@@ -134,7 +136,9 @@ export default function AccountPage() {
   }, [searchParams, t]);
 
   useEffect(() => {
-    if (searchParams.success !== "1" || !user?.id) return;
+    const checkoutComplete =
+      searchParams.upgraded === "true" || searchParams.success === "1";
+    if (!checkoutComplete || !user?.id) return;
     setMessage(t.subscriptionSuccessMessage);
     setMessageType("success");
     let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -161,7 +165,7 @@ export default function AccountPage() {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [searchParams.success, user?.id, t, refreshProfile]);
+  }, [searchParams.upgraded, searchParams.success, user?.id, t, refreshProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -414,12 +418,22 @@ export default function AccountPage() {
                 </a>
               )}
               {stripeEnabled && status !== "premium" && (
-                <a
-                  href="/api/stripe/checkout"
-                  className="inline-block mt-2 px-4 py-2 rounded-xl text-sm font-bold bg-[linear-gradient(135deg,#FF8C00,#FFD700)] text-[#1a1a4e]"
+                <button
+                  type="button"
+                  disabled={checkoutLoading}
+                  onClick={async () => {
+                    setCheckoutLoading(true);
+                    const result = await startStripeCheckout("/account");
+                    if (!result.ok && result.error) {
+                      setMessage(result.error);
+                      setMessageType("error");
+                    }
+                    setCheckoutLoading(false);
+                  }}
+                  className="inline-block mt-2 px-4 py-2 rounded-xl text-sm font-bold bg-[linear-gradient(135deg,#FF8C00,#FFD700)] text-[#1a1a4e] disabled:opacity-70"
                 >
-                  {t.upgradeToPremium} — {t.pricePerMonth}
-                </a>
+                  {checkoutLoading ? "…" : `${t.upgradeToPremium} — ${t.pricePerMonth}`}
+                </button>
               )}
               {!stripeEnabled && status !== "premium" && (
                 <p className="mt-2 text-xs text-[rgba(255,255,255,0.5)]">{t.subscriptionComingSoon}</p>
