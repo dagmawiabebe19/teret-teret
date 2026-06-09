@@ -12,6 +12,7 @@ interface AppNavProps {
   avatarUrl?: string | null;
   displayName?: string | null;
   email?: string | null;
+  onStartFree?: () => void;
 }
 
 function initials(name: string | null | undefined, email: string | null | undefined): string {
@@ -28,45 +29,77 @@ export function AppNav({
   avatarUrl,
   displayName,
   email,
+  onStartFree,
 }: AppNavProps) {
   const { t } = useTranslation(lang);
 
   return (
-    <div className="fixed top-4 right-4 z-[10] flex items-center gap-2">
-      {isSignedIn && (
-        <>
-          <Link
-            href="/my-stories"
-            className="text-[11px] font-bold text-[#c9b8e8] hover:text-[#FFD700] transition-colors duration-200"
-          >
-            {t.navMyStories}
-          </Link>
-          <Link
-            href="/profile"
-            className="w-8 h-8 rounded-full overflow-hidden border border-[rgba(255,215,0,0.35)] flex items-center justify-center bg-[rgba(255,255,255,0.08)] hover:border-[#FFD700] transition-colors"
-            aria-label={t.navProfile}
-            title={t.navProfile}
-          >
-            {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-[10px] font-black text-[#FFD700]">
-                {initials(displayName, email)}
-              </span>
-            )}
-          </Link>
-        </>
-      )}
-      {!isSignedIn && (
+    <header
+      className="fixed top-0 left-0 right-0 z-[20] border-b border-[rgba(255,215,0,0.08)]"
+      style={{
+        background: "rgba(13,13,43,0.85)",
+        backdropFilter: "blur(12px)",
+      }}
+    >
+      <div className="max-w-[640px] mx-auto px-4 h-14 flex items-center justify-between gap-2">
         <Link
-          href="/account"
-          className="text-[11px] font-bold text-[#c9b8e8] hover:text-[#FFD700] transition-colors duration-200"
+          href="/"
+          className="font-fredoka text-[#FFD700] text-[15px] sm:text-[17px] shrink-0 hover:opacity-90 transition-opacity"
+          style={{ textShadow: "0 0 20px rgba(255,215,0,0.25)" }}
         >
-          {t.navAccount}
+          {t.appTitle}
         </Link>
-      )}
-      <LangToggle lang={lang} setLang={setLang} />
-    </div>
+
+        <div className="flex-1 flex justify-center">
+          <LangToggle lang={lang} setLang={setLang} />
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {isSignedIn ? (
+            <>
+              <Link
+                href="/my-stories"
+                className="hidden sm:inline text-[11px] font-bold text-[#c9b8e8] hover:text-[#FFD700] transition-colors"
+              >
+                {t.navMyStories}
+              </Link>
+              <Link
+                href="/profile"
+                className="w-8 h-8 rounded-full overflow-hidden border border-[rgba(255,215,0,0.35)] flex items-center justify-center bg-[rgba(255,255,255,0.08)] hover:border-[#FFD700] transition-colors"
+                aria-label={t.navProfile}
+              >
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[10px] font-black text-[#FFD700]">
+                    {initials(displayName, email)}
+                  </span>
+                )}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/account"
+                className="text-[11px] font-bold text-[#c9b8e8] hover:text-[#FFD700] transition-colors"
+              >
+                {t.navSignIn}
+              </Link>
+              <button
+                type="button"
+                onClick={onStartFree}
+                className="py-1.5 px-3 rounded-lg text-[11px] font-black text-[#1a1a4e]"
+                style={{
+                  background: "linear-gradient(135deg,#FF8C00,#FFD700)",
+                }}
+              >
+                {t.navStartFree}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
   );
 }

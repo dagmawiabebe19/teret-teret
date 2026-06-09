@@ -6,7 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import { Stars } from "@/components/Stars";
 import { Fireflies } from "@/components/Fireflies";
 import { DecorativeBackground } from "@/components/DecorativeBackground";
-import { StoryForm } from "@/components/StoryForm";
+import { QuickStoryForm } from "@/components/QuickStoryForm";
+import { LandingHero } from "@/components/LandingHero";
+import { SampleStoryPreview } from "@/components/SampleStoryPreview";
+import { SocialProof } from "@/components/SocialProof";
+import { PricingSection } from "@/components/PricingSection";
 import { StoryReader } from "@/components/StoryReader";
 import { SavedStoriesPanel, type SavedStoryItem } from "@/components/SavedStoriesPanel";
 import { DailyTeretCard } from "@/components/DailyTeretCard";
@@ -23,7 +27,7 @@ import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
 import type { VocabWord } from "@/types";
 import type { StoryCategory } from "@/types";
-import { ALLOWED_STORY_CATEGORIES } from "@/lib/constants";
+import { REGIONS, TRAITS_EN } from "@/lib/constants";
 import { AppNav } from "@/components/AppNav";
 import { ChildProfilePicker, applyChildToForm } from "@/components/ChildProfilePicker";
 import { RecentlyPlayed } from "@/components/RecentlyPlayed";
@@ -100,14 +104,22 @@ export default function HomePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [showSample, setShowSample] = useState(false);
   const generatingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const toast = useToast();
 
-  const remainingForBadge = usage?.remainingStoriesToday ?? 0;
-  const isLimitReachedBadge =
-    subscriptionStatus !== "premium" && usage !== null && remainingForBadge <= 0;
+  const scrollToCreate = useCallback(() => {
+    document.getElementById("create")?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const scrollToSample = useCallback(() => {
+    setShowSample(true);
+    setTimeout(() => {
+      document.getElementById("sample")?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+  }, []);
 
   useEffect(() => {
     setSavedStories(getStoredSaved());
@@ -382,6 +394,12 @@ export default function HomePage() {
     setError("");
     setPages([]);
 
+    const effectiveRegion =
+      region || REGIONS[Math.floor(Math.random() * REGIONS.length)]?.name;
+    const effectiveTrait =
+      trait || TRAITS_EN[Math.floor(Math.random() * TRAITS_EN.length)];
+    const effectiveGoal = storyGoal || "teach_moral";
+
     try {
       const res = await fetch("/api/generate-story", {
         method: "POST",
@@ -389,11 +407,11 @@ export default function HomePage() {
         body: JSON.stringify({
           childName: childName.trim(),
           ageGroup: age,
-          trait: trait || undefined,
-          region: region || undefined,
+          trait: effectiveTrait,
+          region: effectiveRegion,
           category,
           topic: topic.trim() || undefined,
-          storyGoal: storyGoal || undefined,
+          storyGoal: effectiveGoal,
           language: lang,
         }),
       });
@@ -660,65 +678,33 @@ export default function HomePage() {
             avatarUrl={avatarUrl}
             displayName={displayName}
             email={userEmail}
+            onStartFree={scrollToCreate}
           />
-        )}
-
-        {screen === "home" && (
-          <div
-            className="fixed top-[18px] left-[18px] z-[2] rounded-[10px] py-1.5 px-2.5 text-[10px] font-bold border transition-all duration-300"
-            style={{
-              background: subscriptionStatus === "premium" ? "rgba(255,255,255,0.07)" : isLimitReachedBadge ? "rgba(255,100,100,0.1)" : "rgba(255,255,255,0.07)",
-              borderColor: subscriptionStatus === "premium" ? "rgba(255,215,0,0.2)" : isLimitReachedBadge ? "rgba(255,140,140,0.25)" : "rgba(255,215,0,0.2)",
-              color: subscriptionStatus === "premium" ? "rgba(255,215,0,0.85)" : isLimitReachedBadge ? "rgba(255,180,180,0.9)" : "rgba(255,215,0,0.65)",
-            }}
-          >
-            {subscriptionStatus === "premium"
-              ? t.unlimitedStories
-              : usage === null
-                ? "…"
-                : remainingForBadge <= 0
-                  ? t.limitReachedToday
-                  : t.freeLeftToday(remainingForBadge)}
-          </div>
         )}
 
         <div
           className="max-w-[600px] mx-auto px-5 pb-24 relative z-[1]"
-          style={{ paddingTop: 24 }}
+          style={{ paddingTop: screen === "home" ? 72 : 24 }}
         >
           {screen === "home" && (
             <div style={{ animation: "fadeSlideUp 0.6s ease forwards" }}>
-              <div className="text-center pt-10 pb-8">
-                <div
-                  className="text-[56px] mb-2 inline-block"
-                  style={{ animation: "wiggle 2.5s ease-in-out infinite" }}
-                  aria-hidden
-                >
-                  📖
-                </div>
-                <h1
-                  className="font-fredoka text-[#FFD700] leading-tight mb-1"
-                  style={{
-                    fontSize: "clamp(30px,8vw,46px)",
-                    textShadow:
-                      "0 4px 0 rgba(0,0,0,0.3),0 0 26px rgba(255,215,0,0.35)",
-                  }}
-                >
-                  {t.appTitle}
-                </h1>
-                <p className="text-[13px] text-[#c9b8e8] font-semibold mb-2">
-                  {t.subtitle}
-                </p>
-                <span
-                  className="inline-block rounded-lg py-1 px-3 text-[11px] font-black text-white tracking-wide border"
-                  style={{
-                    background: "rgba(255,255,255,0.09)",
-                    borderColor: "rgba(255,255,255,0.18)",
-                  }}
-                >
-                  {t.badge}
-                </span>
-              </div>
+              <LandingHero
+                lang={lang}
+                onCreateClick={scrollToCreate}
+                onSeeExample={scrollToSample}
+                remainingStories={usage?.remainingStoriesToday ?? null}
+                isPremium={subscriptionStatus === "premium"}
+                onUpgrade={() => setShowPaywall(true)}
+              />
+
+              <SocialProof lang={lang} />
+
+              <SampleStoryPreview
+                lang={lang}
+                setLang={setLang}
+                visible={showSample}
+                onGenerateOwn={scrollToCreate}
+              />
 
               {userProgress != null && (
                 <div
@@ -775,68 +761,32 @@ export default function HomePage() {
                 />
               )}
 
-              <h2 className="text-center font-fredoka text-[#FFD700] text-lg mb-1 mt-2">
-                {t.createStoryHeading}
-              </h2>
-              <p className="text-center text-[12px] text-[#c9b8e8] mb-2 px-1">
-                {t.createStorySub}
-              </p>
-              <p className="text-center text-[11px] text-[rgba(200,180,255,0.5)] mb-3">
-                {t.learningTopicsLine}
-              </p>
+              <QuickStoryForm
+                lang={lang}
+                childName={childName}
+                setChildName={setChildName}
+                age={age}
+                setAge={setAge}
+                trait={trait}
+                traitIdx={traitIdx}
+                setTrait={setTrait}
+                setTraitIdx={setTraitIdx}
+                region={region}
+                setRegion={setRegion}
+                category={category}
+                setCategory={setCategory}
+                storyGoal={storyGoal}
+                setStoryGoal={setStoryGoal}
+                onSubmit={generateStory}
+                disabled={!childName.trim() || isGenerating}
+                error={error}
+              />
 
-              <div className="flex flex-wrap gap-2 justify-center mb-4">
-                {t.categorySuggestions.map((label, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => {
-                      setCategory(ALLOWED_STORY_CATEGORIES[i]);
-                      setTopic(label);
-                    }}
-                    className="rounded-full py-2 px-3 text-[11px] font-bold border transition-all"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      borderColor: "rgba(196,77,255,0.25)",
-                      color: "#c9b8e8",
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-3">
-                <StoryForm
-                  lang={lang}
-                  childName={childName}
-                  setChildName={setChildName}
-                  age={age}
-                  setAge={setAge}
-                  trait={trait}
-                  traitIdx={traitIdx}
-                  setTrait={setTrait}
-                  setTraitIdx={setTraitIdx}
-                  region={region}
-                  setRegion={setRegion}
-                  category={category}
-                  setCategory={setCategory}
-                  topic={topic}
-                  setTopic={setTopic}
-                  storyGoal={storyGoal}
-                  setStoryGoal={setStoryGoal}
-                  onSubmit={generateStory}
-                  disabled={!childName.trim() || isGenerating}
-                  error={error}
-                />
-              </div>
-
-              <div
-                className="text-center mt-5 text-2xl tracking-[6px] opacity-40"
-                aria-hidden
-              >
-                🦁 🐘 🦒 🦅 🦊
-              </div>
+              <PricingSection
+                lang={lang}
+                isSignedIn={!isGuest}
+                stripeEnabled={stripeEnabled}
+              />
             </div>
           )}
 

@@ -281,6 +281,38 @@ export const translations: Record<
     cancel: string;
     selectAvatar: string;
     noneYet: string;
+    // Landing page
+    heroHeadline: string;
+    heroSubheadline: string;
+    ctaCreateFree: string;
+    ctaSeeExample: string;
+    trustTrilingual: string;
+    trustEthiopian: string;
+    trustChildSafe: string;
+    freeBannerDefault: string;
+    freeBannerOneLeft: string;
+    freeBannerUpgrade: string;
+    tellMeStoryTonight: string;
+    quickNamePlaceholder: string;
+    customizeStoryToggle: string;
+    socialProofHeading: string;
+    testimonial1Quote: string;
+    testimonial1Author: string;
+    testimonial2Quote: string;
+    testimonial2Author: string;
+    testimonial3Quote: string;
+    testimonial3Author: string;
+    pricingHeading: string;
+    pricingFreeTitle: string;
+    pricingFreeFeatures: string[];
+    pricingPremiumTitle: string;
+    pricingPremiumFeatures: string[];
+    pricingCta: string;
+    navSignIn: string;
+    navStartFree: string;
+    sampleStoryLabel: string;
+    sampleReadFull: string;
+    generateYourOwn: string;
   }
 > = {
   am: {
@@ -572,6 +604,37 @@ export const translations: Record<
     cancel: "ሰርዝ",
     selectAvatar: "አቫታር ምረጥ",
     noneYet: "ገና የለም",
+    heroHeadline: "ልጅዎ ለዘለቄታ አይረሱት የመጽለፊያ ታሪኮች",
+    heroSubheadline: "በአማርኛ፣ በእንግሊዝኛ እና በስፓኒሽ የተለዩ የኢትዮጵያ ታሪኮች — በሰከንዶች ውስጥ",
+    ctaCreateFree: "✨ ነፃ ታሪክ ፍጠር",
+    ctaSeeExample: "ምሳሌ ይመልከቱ",
+    trustTrilingual: "🌍 ሶስት ቋንቋ",
+    trustEthiopian: "🦁 የኢትዮጵያ ቦታዎች",
+    trustChildSafe: "✅ ለልጆች ደህንነት",
+    freeBannerDefault: "ዛሬ 3 ነፃ ታሪኮች — መለያ አያስፈልግም",
+    freeBannerOneLeft: "ዛሬ 1 ነፃ ታሪክ ቀርቷል",
+    freeBannerUpgrade: "የዛሬ ነፃ ታሪኮች አልቀሩም — ያልተገደበ ታሪኮች ይክፈቱ",
+    tellMeStoryTonight: "✨ ዛሬ ሌሊት ታሪክ ንገሩኝ!",
+    quickNamePlaceholder: "ካሳ፣ ሊያ፣ ዳዊት...",
+    customizeStoryToggle: "ወይም ታሪክዎን ያብጁ",
+    socialProofHeading: "በዓለም ዙሪያ በኢትዮጵያ ቤተሰቦች የተወደደ",
+    testimonial1Quote: "ካሳ አሁን በየሌሊቱ ተረት ተረት ይጠይቃል 🥹",
+    testimonial1Author: "መቅዱስ፣ LA",
+    testimonial2Quote: "ልጆቼን በታሪክ አማርኛ ለማስተማር መንገድ አገኘሁ",
+    testimonial2Author: "ዳዊት፣ ለንደን",
+    testimonial3Quote: "ልጅቴ ስለ አድዋ ታሪክ ተማረች እና ተጨማሪ መማር ፈለገች",
+    testimonial3Author: "ሳራ፣ DC",
+    pricingHeading: "ቀላል ዋጋ",
+    pricingFreeTitle: "ነፃ",
+    pricingFreeFeatures: ["በቀን 3 ታሪኮች", "እንግሊዝኛ ብቻ", "ማስቀመጥ የለም"],
+    pricingPremiumTitle: "ፕሪሚየም",
+    pricingPremiumFeatures: ["ያልተገደበ ታሪኮች", "ሶስት ቋንቋዎች", "ተወዳጆችን አስቀምጥ", "የልጅ መገለጫዎች"],
+    pricingCta: "ነፃ ይጀምሩ፣ በማንኛውም ጊዜ ይለግሱ",
+    navSignIn: "ግባ",
+    navStartFree: "ነፃ ጀምር",
+    sampleStoryLabel: "የምሳሌ ታሪክ",
+    sampleReadFull: "ሙሉውን አንብብ",
+    generateYourOwn: "የራስዎን ይፍጠሩ →",
   },
   en: {
     appTitle: "Teret Teret",
@@ -862,6 +925,37 @@ export const translations: Record<
     cancel: "Cancel",
     selectAvatar: "Choose avatar",
     noneYet: "None yet",
+    heroHeadline: "Bedtime stories your child will never forget",
+    heroSubheadline: "Personalized Ethiopian tales in Amharic, English & Spanish — generated in seconds",
+    ctaCreateFree: "✨ Create a story free",
+    ctaSeeExample: "See an example",
+    trustTrilingual: "🌍 Trilingual",
+    trustEthiopian: "🦁 Ethiopian settings",
+    trustChildSafe: "✅ Child safe",
+    freeBannerDefault: "3 free stories today — no account needed",
+    freeBannerOneLeft: "1 free story left today",
+    freeBannerUpgrade: "No free stories left today — unlock unlimited",
+    tellMeStoryTonight: "✨ Tell me a story tonight!",
+    quickNamePlaceholder: "Kasa, Liya, Dawit...",
+    customizeStoryToggle: "or customize your story",
+    socialProofHeading: "Loved by Ethiopian families worldwide",
+    testimonial1Quote: "Kasa asks for Teret Teret every night now 🥹",
+    testimonial1Author: "Mekdes, LA",
+    testimonial2Quote: "Finally a way to teach my kids Amharic through stories",
+    testimonial2Author: "Dawit, London",
+    testimonial3Quote: "My daughter learned about the Battle of Adwa and wanted to know more",
+    testimonial3Author: "Sara, DC",
+    pricingHeading: "Simple pricing",
+    pricingFreeTitle: "Free",
+    pricingFreeFeatures: ["3 stories per day", "English only", "No saving"],
+    pricingPremiumTitle: "Premium",
+    pricingPremiumFeatures: ["Unlimited stories", "All 3 languages", "Save favorites", "Child profiles"],
+    pricingCta: "Start free, upgrade anytime",
+    navSignIn: "Sign in",
+    navStartFree: "Start free",
+    sampleStoryLabel: "Sample story",
+    sampleReadFull: "Read full story",
+    generateYourOwn: "Generate your own →",
   },
   es: {
     appTitle: "Teret Teret",
@@ -1154,6 +1248,37 @@ export const translations: Record<
     cancel: "Cancelar",
     selectAvatar: "Elegir avatar",
     noneYet: "Ninguno aún",
+    heroHeadline: "Cuentos para dormir que tu hijo nunca olvidará",
+    heroSubheadline: "Cuentos etíopes personalizados en amárico, inglés y español — generados en segundos",
+    ctaCreateFree: "✨ Crear un cuento gratis",
+    ctaSeeExample: "Ver un ejemplo",
+    trustTrilingual: "🌍 Trilingüe",
+    trustEthiopian: "🦁 Escenarios etíopes",
+    trustChildSafe: "✅ Seguro para niños",
+    freeBannerDefault: "3 cuentos gratis hoy — sin cuenta",
+    freeBannerOneLeft: "1 cuento gratis queda hoy",
+    freeBannerUpgrade: "No quedan cuentos gratis hoy — desbloquea ilimitados",
+    tellMeStoryTonight: "✨ ¡Cuéntame un cuento esta noche!",
+    quickNamePlaceholder: "Kasa, Liya, Dawit...",
+    customizeStoryToggle: "o personaliza tu cuento",
+    socialProofHeading: "Amado por familias etíopes en todo el mundo",
+    testimonial1Quote: "Kasa pide Teret Teret cada noche 🥹",
+    testimonial1Author: "Mekdes, LA",
+    testimonial2Quote: "Por fin una forma de enseñar amárico a mis hijos con cuentos",
+    testimonial2Author: "Dawit, Londres",
+    testimonial3Quote: "Mi hija aprendió sobre la Batalla de Adwa y quiso saber más",
+    testimonial3Author: "Sara, DC",
+    pricingHeading: "Precios simples",
+    pricingFreeTitle: "Gratis",
+    pricingFreeFeatures: ["3 cuentos al día", "Solo inglés", "Sin guardar"],
+    pricingPremiumTitle: "Premium",
+    pricingPremiumFeatures: ["Cuentos ilimitados", "Los 3 idiomas", "Guardar favoritos", "Perfiles de niños"],
+    pricingCta: "Empieza gratis, mejora cuando quieras",
+    navSignIn: "Iniciar sesión",
+    navStartFree: "Empezar gratis",
+    sampleStoryLabel: "Cuento de ejemplo",
+    sampleReadFull: "Leer cuento completo",
+    generateYourOwn: "Crea el tuyo →",
   },
 };
 
