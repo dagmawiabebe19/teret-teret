@@ -322,6 +322,11 @@ export const translations: Record<
     upgradeUnlockFeatures: string;
     nextBilling: string;
     currentPlan: string;
+    installPromptIos: string;
+    installPromptAndroid: string;
+    installPromptInstallBtn: string;
+    installPromptDismiss: string;
+    installPromptAriaLabel: string;
   }
 > = {
   am: {
@@ -653,6 +658,12 @@ export const translations: Record<
     upgradeUnlockFeatures: "ሁሉንም ባህሪያት ለመክፈት ይለግሱ",
     nextBilling: "ቀጣይ ክፍያ",
     currentPlan: "የአሁኑ እቅድ",
+    installPromptIos:
+      "አንድ-ጠቅታ የመደበኛ ምሽት ታሪኮች — ተረት ተረትን ወደ መነሻ ማያ ገጽዎ ያክሉ ↓ የማጋራት አዶን ነካው ከዚያ «Add to Home Screen» ይምረጡ",
+    installPromptAndroid: "ተረት ተረትን ወደ መነሻ ማያ ገጽዎ ያክሉ",
+    installPromptInstallBtn: "ጫን",
+    installPromptDismiss: "ዝጋ",
+    installPromptAriaLabel: "ወደ መነሻ ማያ ገጽ ለመጨመር መመሪያ",
   },
   en: {
     appTitle: "Teret Teret",
@@ -983,6 +994,12 @@ export const translations: Record<
     upgradeUnlockFeatures: "Upgrade to unlock all features",
     nextBilling: "Next billing",
     currentPlan: "Current plan",
+    installPromptIos:
+      "Add Teret Teret to your home screen for one-tap bedtime stories ↓ Tap the share icon then 'Add to Home Screen'",
+    installPromptAndroid: "Add Teret Teret to your home screen",
+    installPromptInstallBtn: "Install",
+    installPromptDismiss: "Dismiss",
+    installPromptAriaLabel: "Add to home screen instructions",
   },
   es: {
     appTitle: "Teret Teret",
@@ -1315,6 +1332,12 @@ export const translations: Record<
     upgradeUnlockFeatures: "Mejora para desbloquear todas las funciones",
     nextBilling: "Próximo cobro",
     currentPlan: "Plan actual",
+    installPromptIos:
+      "Añade Teret Teret a tu pantalla de inicio para cuentos con un toque ↓ Toca compartir y luego «Añadir a pantalla de inicio»",
+    installPromptAndroid: "Añade Teret Teret a tu pantalla de inicio",
+    installPromptInstallBtn: "Instalar",
+    installPromptDismiss: "Cerrar",
+    installPromptAriaLabel: "Instrucciones para añadir a la pantalla de inicio",
   },
 };
 
