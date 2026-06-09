@@ -1,6 +1,7 @@
 "use client";
 
 import type { Lang } from "@/types";
+import { useTranslation } from "@/lib/useTranslation";
 
 const opts: { v: Lang; label: string }[] = [
   { v: "am", label: "አማ" },
@@ -15,6 +16,7 @@ interface LangToggleProps {
 }
 
 export function LangToggle({ lang, setLang, style = {} }: LangToggleProps) {
+  const { t } = useTranslation(lang);
   return (
     <div
       className="flex rounded-[22px] p-[3px] gap-0.5 border border-[rgba(255,215,0,0.18)]"
@@ -23,7 +25,7 @@ export function LangToggle({ lang, setLang, style = {} }: LangToggleProps) {
         ...style,
       }}
       role="group"
-      aria-label="Select language"
+      aria-label={t.selectLanguageAria}
     >
       {opts.map((o) => (
         <button
@@ -31,7 +33,7 @@ export function LangToggle({ lang, setLang, style = {} }: LangToggleProps) {
           type="button"
           onClick={() => setLang(o.v)}
           aria-pressed={lang === o.v}
-          aria-label={o.v === "am" ? "Amharic" : o.v === "en" ? "English" : "Spanish"}
+          aria-label={o.v === "am" ? t.langNameAm : o.v === "en" ? t.langNameEn : t.langNameEs}
           className="min-w-[32px] text-center rounded-2xl border-none cursor-pointer text-[11px] font-extrabold transition-all duration-200"
           style={{
             padding: "5px 11px",

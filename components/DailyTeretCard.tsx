@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { getT } from "@/lib/constants";
+import { getRegionLabel } from "@/lib/constants";
+import { useTranslation } from "@/lib/useTranslation";
 import { parsedToPages } from "@/lib/parseStory";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
@@ -25,6 +26,7 @@ export function DailyTeretCard({
   progress,
   onOpenDailyStory,
 }: DailyTeretCardProps) {
+  const { t } = useTranslation(lang);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,7 +37,7 @@ export function DailyTeretCard({
       const res = await fetch("/api/daily-teret");
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not load today's story.");
+        setError(data.error ?? t.dailyTeretLoadError);
         return;
       }
       const parsed = data.parsed;
@@ -44,25 +46,23 @@ export function DailyTeretCard({
         ? parsed.illustrationPrompts
         : [];
       if (pages.length === 0) {
-        setError("Story could not be displayed.");
+        setError(t.dailyTeretDisplayError);
         return;
       }
       onOpenDailyStory({
         pages,
         illustrationPrompts,
         childName: "",
-        region: data.region ?? "Ethiopian highlands",
+        region: getRegionLabel(data.region ?? "Ethiopian highlands", lang),
         rawStory: data.rawStory ?? "",
         isDailyTeret: true,
       });
     } catch {
-      setError("Could not load today's story.");
+      setError(t.dailyTeretLoadError);
     } finally {
       setLoading(false);
     }
-  }, [onOpenDailyStory]);
-
-  const t = getT(lang);
+  }, [onOpenDailyStory, t, lang]);
   const streak = progress?.streakCount ?? 0;
 
   return (

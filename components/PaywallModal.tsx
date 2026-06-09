@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getT } from "@/lib/constants";
+import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/types";
 
 interface PaywallModalProps {
@@ -13,7 +13,7 @@ interface PaywallModalProps {
 }
 
 export function PaywallModal({ onClose, lang, stripeEnabled = false, isGuest = false }: PaywallModalProps) {
-  const t = getT(lang);
+  const { t } = useTranslation(lang);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -49,9 +49,9 @@ export function PaywallModal({ onClose, lang, stripeEnabled = false, isGuest = f
         window.location.href = data.redirect;
         return;
       }
-      setError(data.error || "Something went wrong. Try again.");
+      setError(data.error || t.errorGeneric);
     } catch {
-      setError("Something went wrong. Try again.");
+      setError(t.errorGeneric);
     } finally {
       setLoading(false);
     }

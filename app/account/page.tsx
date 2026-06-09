@@ -5,8 +5,8 @@ import Link from "next/link";
 import { createClient, isAuthConfigured } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { UserProgress } from "@/types";
-import { getT } from "@/lib/constants";
-import type { UITranslations } from "@/lib/constants";
+import type { UITranslations } from "@/lib/translations";
+import { useTranslation } from "@/lib/useTranslation";
 
 function getFriendlyAuthError(
   error: { message?: string; status?: number; code?: string },
@@ -50,7 +50,7 @@ export default function AccountPage() {
     const s = localStorage.getItem("teret_lang");
     return s === "am" || s === "en" || s === "es" ? s : "en";
   });
-  const t = getT(lang);
+  const { t } = useTranslation(lang);
 
   const authConfigured = isAuthConfigured();
 
@@ -321,11 +321,11 @@ export default function AccountPage() {
           }
           className="inline-flex items-center gap-1 mb-8 text-[#c9b8e8] font-bold text-sm hover:text-[#FFD700] transition-colors duration-200"
         >
-          ← Back to Teret Teret
+          {t.backToApp}
         </Link>
 
         <h1 className="font-fredoka text-[28px] text-[#FFD700] mb-1" style={{ textShadow: "0 2px 12px rgba(255,215,0,0.2)" }}>
-          Account
+          {t.accountTitle}
         </h1>
         <p className="text-[13px] text-[rgba(200,180,255,0.65)] mb-3">
           {t.accountSubtitle}
@@ -394,12 +394,12 @@ export default function AccountPage() {
               </div>
             )}
             <div className="p-4 rounded-xl border border-[rgba(255,215,0,0.2)] bg-[rgba(255,255,255,0.05)]">
-              <p className="text-sm font-bold text-[#FFD700]">Subscription</p>
+              <p className="text-sm font-bold text-[#FFD700]">{t.subscriptionLabel}</p>
               <p className="text-lg font-fredoka">
                 {status === "premium" ? t.planPremium : t.planFree}
               </p>
               {status === "premium" && (
-                <p className="text-sm text-[#c9b8e8] mt-1">{t.unlimitedStories} stories</p>
+                <p className="text-sm text-[#c9b8e8] mt-1">{t.unlimitedStories} {t.unlimitedStoriesLabel}</p>
               )}
               {stripeEnabled && status === "premium" && (
                 <a
@@ -414,7 +414,7 @@ export default function AccountPage() {
                   href="/api/stripe/checkout"
                   className="inline-block mt-2 px-4 py-2 rounded-xl text-sm font-bold bg-[linear-gradient(135deg,#FF8C00,#FFD700)] text-[#1a1a4e]"
                 >
-                  {t.upgradeToPremium} — $4.99/month
+                  {t.upgradeToPremium} — {t.pricePerMonth}
                 </a>
               )}
               {!stripeEnabled && status !== "premium" && (
@@ -452,11 +452,11 @@ export default function AccountPage() {
                 </>
               )}
             </button>
-            <p className="text-[11px] text-center text-[rgba(200,180,255,0.5)]">— or sign in with email —</p>
+            <p className="text-[11px] text-center text-[rgba(200,180,255,0.5)]">{t.orSignInWithEmail}</p>
             <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-bold text-[#FFD700] mb-1">
-                Email
+                {t.emailLabel}
               </label>
               <input
                 id="email"
@@ -470,7 +470,7 @@ export default function AccountPage() {
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-bold text-[#FFD700] mb-1">
-                Password
+                {t.passwordLabel}
               </label>
               <input
                 id="password"
@@ -488,7 +488,7 @@ export default function AccountPage() {
               disabled={authLoading}
               className="w-full py-3 rounded-xl font-bold bg-[linear-gradient(135deg,#7b2d8b,#c44dff)] text-white disabled:opacity-70"
             >
-              {authLoading ? t.authLoading : isSignUp ? "Sign up" : "Sign in"}
+              {authLoading ? t.authLoading : isSignUp ? t.signUpBtn : t.signInBtn}
             </button>
             <button
               type="button"
@@ -496,7 +496,7 @@ export default function AccountPage() {
               className="w-full text-sm text-[#c9b8e8] hover:underline disabled:opacity-70"
               disabled={authLoading}
             >
-              {isSignUp ? "Already have an account? Sign in" : "Create an account"}
+              {isSignUp ? t.alreadyHaveAccount : t.createAccount}
             </button>
             {!isSignUp && (
               <button

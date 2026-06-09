@@ -5,6 +5,7 @@ import { VocabCard } from "./VocabCard";
 import type { VocabWord } from "@/types";
 import type { StoryPage } from "@/types";
 import type { Lang } from "@/types";
+import { useTranslation } from "@/lib/useTranslation";
 
 function splitSentences(text: string): string[] {
   if (!text.trim()) return [];
@@ -35,6 +36,7 @@ export function LanguageLearningPanel({
   savedWordKeys = new Set(),
   onSaveWord,
 }: LanguageLearningPanelProps) {
+  const { t } = useTranslation(storyLang);
   const [learningLang, setLearningLang] = useState<Lang>(storyLang === "am" ? "en" : "am");
   const [tappedSentenceIndex, setTappedSentenceIndex] = useState<number | null>(null);
 
@@ -63,11 +65,11 @@ export function LanguageLearningPanel({
       }}
     >
       <p className="text-xs font-bold uppercase tracking-wider text-[rgba(255,215,0,0.7)] mb-3">
-        🌍 Words in this story
+        {t.wordsInStory}
       </p>
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-thin" style={{ scrollbarWidth: "thin" }}>
         {vocabulary.length === 0 ? (
-          <p className="text-sm text-[rgba(200,180,255,0.5)] italic py-4">No vocabulary for this story yet.</p>
+          <p className="text-sm text-[rgba(200,180,255,0.5)] italic py-4">{t.noVocabYet}</p>
         ) : (
           vocabulary.map((v) => (
             <VocabCard
@@ -83,12 +85,12 @@ export function LanguageLearningPanel({
 
       {onSaveWord && (
         <p className="text-[11px] text-[rgba(200,180,255,0.6)] mt-2 mb-3">
-          Words you&apos;ve saved: <span className="font-bold text-[#FFD700]">{savedWordKeys.size}</span>
+          {t.wordsSavedLabel}: <span className="font-bold text-[#FFD700]">{savedWordKeys.size}</span>
         </p>
       )}
 
       <div className="flex gap-2 mb-3">
-        <span className="text-[10px] uppercase text-[rgba(200,180,255,0.5)] self-center">Learning:</span>
+        <span className="text-[10px] uppercase text-[rgba(200,180,255,0.5)] self-center">{t.learningLabel}</span>
         {(["am", "en", "es"] as const).map((l) => (
           <button
             key={l}
@@ -107,11 +109,11 @@ export function LanguageLearningPanel({
       </div>
 
       <p className="text-xs font-bold uppercase tracking-wider text-[rgba(255,215,0,0.6)] mb-2">
-        Tap any sentence to see translation
+        {t.tapSentenceTranslation}
       </p>
       <div className="space-y-3">
         {storySentences.length === 0 ? (
-          <p className="text-sm text-[rgba(200,180,255,0.5)] italic">No sentences on this page.</p>
+          <p className="text-sm text-[rgba(200,180,255,0.5)] italic">{t.noSentencesPage}</p>
         ) : (
           storySentences.map((sent, i) => (
             <button

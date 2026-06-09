@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { getT } from "@/lib/constants";
+import { getRegionLabel } from "@/lib/constants";
+import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/types";
 
 export interface SavedStoryItem {
@@ -38,7 +39,7 @@ export function SavedStoriesPanel({
   onToggleFavorite,
   isGuest = false,
 }: SavedStoriesPanelProps) {
-  const t = getT(lang);
+  const { t } = useTranslation(lang);
   const [filter, setFilter] = useState<LibraryFilter>("all");
   const filtered =
     filter === "favorites"
@@ -136,7 +137,7 @@ export function SavedStoriesPanel({
                       onToggleFavorite(s.id, !s.isFavorite);
                     }}
                     className="flex-shrink-0 p-1 rounded text-[16px] focus:outline-none"
-                    aria-label={s.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                    aria-label={s.isFavorite ? t.removeFavoriteAria : t.addFavoriteAria}
                   >
                     {s.isFavorite ? "⭐" : "☆"}
                   </button>
@@ -152,13 +153,13 @@ export function SavedStoriesPanel({
                   }}
                   role="button"
                   tabIndex={0}
-                  aria-label={`Open story for ${s.name}`}
+                  aria-label={t.openStoryAria(s.name)}
                 >
                   <p className="text-[#FFD700] text-[13px] font-extrabold">
-                    {s.name}&apos;s story
+                    {t.storyForName(s.name)}
                   </p>
                   <p className="text-[rgba(255,255,255,0.3)] text-[11px]">
-                    {s.region} · {s.date}
+                    {getRegionLabel(s.region, lang)} · {s.date}
                   </p>
                 </div>
                 {onDelete && !isGuest ? (
@@ -169,7 +170,7 @@ export function SavedStoriesPanel({
                       onDelete(s.id);
                     }}
                     className="flex-shrink-0 p-1.5 rounded text-[12px] text-[rgba(255,150,150,0.9)] hover:bg-[rgba(255,100,100,0.1)]"
-                    aria-label="Delete story"
+                    aria-label={t.deleteStoryAria}
                   >
                     🗑
                   </button>

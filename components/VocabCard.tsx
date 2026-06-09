@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { VocabWord } from "@/types";
 import type { Lang } from "@/types";
+import { useTranslation } from "@/lib/useTranslation";
 
 interface VocabCardProps {
   vocab: VocabWord;
@@ -38,6 +39,7 @@ function displayTranslation(vocab: VocabWord, learningLang: Lang): string {
 }
 
 export function VocabCard({ vocab, storyLang, isSaved = false, onSave }: VocabCardProps) {
+  const { t } = useTranslation(storyLang);
   const [flipped, setFlipped] = useState(false);
 
   const wordSide = displayWord(vocab, storyLang);
@@ -78,7 +80,7 @@ export function VocabCard({ vocab, storyLang, isSaved = false, onSave }: VocabCa
           >
             {wordSide}
           </p>
-          <p className="text-[10px] text-[rgba(200,180,255,0.5)] uppercase tracking-wider">Tap to reveal</p>
+          <p className="text-[10px] text-[rgba(200,180,255,0.5)] uppercase tracking-wider">{t.tapToReveal}</p>
         </div>
         <div
           className="absolute inset-0 w-full p-4 flex flex-col items-center justify-center rounded-2xl"
@@ -116,7 +118,7 @@ export function VocabCard({ vocab, storyLang, isSaved = false, onSave }: VocabCa
             color: isSaved ? "#FFD700" : "rgba(200,180,255,0.6)",
           }}
         >
-          {isSaved ? "★ Saved" : "☆ Save this word"}
+          {isSaved ? `★ ${t.wordSaved}` : `☆ ${t.saveWord}`}
         </button>
       )}
     </div>

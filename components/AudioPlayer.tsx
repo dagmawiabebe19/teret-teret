@@ -1,6 +1,7 @@
 "use client";
 
 import { useTTS, getSentenceStarts } from "@/lib/useTTS";
+import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/types";
 
 const LANG_FLAG: Record<Lang, string> = {
@@ -28,6 +29,7 @@ export function AudioPlayer({
   onEnd,
   renderHighlightedText,
 }: AudioPlayerProps) {
+  const { t } = useTranslation(lang);
   const {
     speak,
     pause,
@@ -75,7 +77,7 @@ export function AudioPlayer({
         }}
       >
         <p className="text-sm text-[rgba(200,180,255,0.7)]">
-          Audio not supported on this browser. Try Chrome or Safari.
+          {t.audioError}
         </p>
       </div>
     );
@@ -95,7 +97,7 @@ export function AudioPlayer({
           {LANG_FLAG[lang]}
         </span>
         <span className="text-xs font-bold uppercase tracking-wider text-[rgba(255,215,0,0.7)]">
-          {lang === "am" ? "Amharic" : lang === "es" ? "Spanish" : "English"}
+          {lang === "am" ? t.langNameAm : lang === "es" ? t.langNameEs : t.langNameEn}
         </span>
       </div>
 
@@ -114,14 +116,14 @@ export function AudioPlayer({
               ? "0 0 24px rgba(255,215,0,0.35)"
               : "0 4px 16px rgba(0,0,0,0.2)",
           }}
-          aria-label={isPlaying ? (isPaused ? "Resume" : "Pause") : "Play"}
+          aria-label={isPlaying ? (isPaused ? t.ttsResumeAria : t.ttsPauseAria) : t.playBtn}
         >
           {!isPlaying || isPaused ? "▶" : "⏸"}
         </button>
 
         {isPlaying && (
           <p className="text-sm font-semibold text-[rgba(255,215,0,0.9)]">
-            🎙️ Listening...
+            {t.listeningActive}
           </p>
         )}
 
@@ -137,7 +139,7 @@ export function AudioPlayer({
               color: "#c9b8e8",
             }}
           >
-            Stop
+            {t.stopBtn}
           </button>
           <button
             type="button"
@@ -150,13 +152,13 @@ export function AudioPlayer({
               color: "#c9b8e8",
             }}
           >
-            Restart
+            {t.restartBtn}
           </button>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-[10px] uppercase tracking-wider text-[rgba(200,180,255,0.5)]">
-            Speed
+            {t.speedLabel}
           </span>
           {SPEEDS.map((s) => (
             <button

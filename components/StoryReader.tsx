@@ -8,7 +8,8 @@ import { LangToggle } from "./LangToggle";
 import { AudioPlayer, highlightSentenceInText } from "./AudioPlayer";
 import { LanguageLearningPanel } from "./LanguageLearningPanel";
 import { useTTS } from "@/lib/useTTS";
-import { getT } from "@/lib/constants";
+import { getRegionLabel } from "@/lib/constants";
+import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
 import type { VocabWord } from "@/types";
@@ -88,7 +89,7 @@ export function StoryReader({
     }
   }, [showEnd, isDailyTeret, onCompleteDailyTeret, dailyCompleted]);
 
-  const t = getT(lang);
+  const { t } = useTranslation(lang);
   const total = pages.length;
   const progress = total > 0 ? (page + 1) / total : 0;
   const current = pages[page] || { am: "", en: "", es: "" };
@@ -292,7 +293,7 @@ export function StoryReader({
                     fontFamily: "'Nunito',sans-serif",
                   }}
                 >
-                  📄 Export .txt
+                  {t.exportTxtBtn}
                 </button>
               )}
             </div>
@@ -353,7 +354,7 @@ export function StoryReader({
           className="text-[11px] text-[rgba(200,180,255,0.35)] italic"
           style={{ fontFamily: "'Lora',Georgia,serif" }}
         >
-          🏔️ {region || "Ethiopian highlands"}
+          🏔️ {getRegionLabel(region || "Ethiopian highlands", lang)}
         </p>
       </div>
       <div
@@ -411,7 +412,7 @@ export function StoryReader({
                   }}
                 >
                   <p className="text-sm text-[rgba(200,180,255,0.8)] mb-3">
-                    Listen to more of this story with Premium.
+                    {t.premiumAudioGate}
                   </p>
                   <div className="flex gap-2 justify-center flex-wrap">
                     <button
@@ -424,7 +425,7 @@ export function StoryReader({
                         color: "#c9b8e8",
                       }}
                     >
-                      📖 Read instead
+                      {t.readInsteadBtn}
                     </button>
                     {onShowPaywall && (
                       <button
@@ -437,7 +438,7 @@ export function StoryReader({
                           color: "#FFD700",
                         }}
                       >
-                        Upgrade
+                        {t.upgradeBtn}
                       </button>
                     )}
                   </div>
@@ -484,7 +485,7 @@ export function StoryReader({
               color: page > 0 ? "rgba(200,160,255,0.8)" : "rgba(255,255,255,0.08)",
               cursor: page > 0 ? "pointer" : "default",
             }}
-            aria-label="Previous page"
+            aria-label={t.prevPageAria}
           >
             ‹
           </button>
@@ -498,7 +499,7 @@ export function StoryReader({
                 borderColor: isPlaying && !isPaused ? "rgba(255,215,0,0.35)" : "rgba(196,77,255,0.28)",
                 color: isPlaying && !isPaused ? "rgba(255,215,0,0.9)" : "rgba(200,160,255,0.8)",
               }}
-              aria-label={isPlaying && !isPaused ? "Pause" : isPaused ? "Resume" : "Listen to page"}
+              aria-label={isPlaying && !isPaused ? t.ttsPauseAria : isPaused ? t.ttsResumeAria : t.ttsListenAria}
             >
               {isPlaying && !isPaused ? "⏸" : "🔊"}
             </button>
@@ -522,7 +523,7 @@ export function StoryReader({
                   ? "rgba(200,160,255,0.9)"
                   : "rgba(255,215,0,0.9)",
             }}
-            aria-label={page < total - 1 ? "Next page" : "Finish story"}
+            aria-label={page < total - 1 ? t.nextPageAria : t.finishStoryAria}
           >
             {page < total - 1 ? "›" : "★"}
           </button>

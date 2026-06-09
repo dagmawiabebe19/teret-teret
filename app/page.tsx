@@ -13,6 +13,7 @@ import { DailyTeretCard } from "@/components/DailyTeretCard";
 import { PaywallModal } from "@/components/PaywallModal";
 import { LoadingState } from "@/components/LoadingState";
 import { getT } from "@/lib/constants";
+import { useTranslation } from "@/lib/useTranslation";
 import type { UserProgress } from "@/types";
 import { parseStory, parsedToPages } from "@/lib/parseStory";
 import { getVocabForStory } from "@/lib/vocabulary";
@@ -68,6 +69,7 @@ export default function HomePage() {
       // ignore
     }
   }, []);
+  const { t } = useTranslation(lang);
   const [usage, setUsage] = useState<{
     subscriptionStatus: "free" | "premium" | null;
     freeStoriesPerDay: number;
@@ -262,7 +264,7 @@ export default function HomePage() {
             return;
           }
         } catch {
-          toast.showToast("Save failed", "error");
+          toast.showToast(t.errorSaveFailed, "error");
           return;
         }
       }
@@ -273,7 +275,7 @@ export default function HomePage() {
       localStorage.setItem(STORAGE_SAVED, JSON.stringify(updated));
     } catch {}
     toast.showToast(getT(lang).savedConfirm, "success");
-  }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, savedStories, toast]);
+  }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, savedStories, toast, t]);
 
   const copyStory = useCallback(() => {
     try {
@@ -282,7 +284,7 @@ export default function HomePage() {
       setTimeout(() => setCopied(false), 2000);
       toast.showToast(getT(lang).copiedBtn, "success");
     } catch {
-      toast.showToast("Copy failed", "error");
+      toast.showToast(t.copyFailed, "error");
     }
   }, [rawStory, lang, toast]);
 
@@ -319,11 +321,11 @@ export default function HomePage() {
       a.download = `teret-teret-${childName.replace(/\s+/g, "-")}-${Date.now()}.txt`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.showToast("Exported!", "success");
+      toast.showToast(t.errorExported, "success");
     } catch {
-      toast.showToast("Export failed", "error");
+      toast.showToast(t.errorExportFailed, "error");
     }
-  }, [rawStory, childName, toast]);
+  }, [rawStory, childName, toast, t]);
 
   const generateStory = useCallback(async () => {
     if (generatingRef.current) return;
@@ -368,9 +370,9 @@ export default function HomePage() {
       setLoadingProgress(100);
 
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Please try again.");
+        setError(data.error ?? t.errorGeneric);
         setScreen("home");
-        toast.showToast(data.error ?? "Try again", "error");
+        toast.showToast(data.error ?? t.errorTryAgain, "error");
         if (res.status === 402) {
           setShowPaywall(true);
           refreshUsage();
@@ -392,16 +394,16 @@ export default function HomePage() {
       setStoryVocabulary(Array.isArray(data.parsed?.vocabulary) ? data.parsed.vocabulary : []);
       setTimeout(() => setScreen("story"), 500);
     } catch (e) {
-      setError("Something went wrong. Please try again.");
+      setError(t.errorGeneric);
       setScreen("home");
-      toast.showToast("Network error. Try again.", "error");
+      toast.showToast(t.errorNetwork, "error");
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (progressRef.current) clearInterval(progressRef.current);
     } finally {
       generatingRef.current = false;
       setIsGenerating(false);
     }
-  }, [childName, age, trait, region, category, topic, storyGoal, lang, usage, subscriptionStatus, refreshUsage, toast]);
+  }, [childName, age, trait, region, category, topic, storyGoal, lang, usage, subscriptionStatus, refreshUsage, toast, t]);
 
   const openSavedStory = useCallback((story: SavedStoryItem) => {
     setIsDailyTeretView(false);
@@ -421,11 +423,11 @@ export default function HomePage() {
     if (pageList.length > 0) {
       setScreen("story");
     } else {
-      setError("This saved story could not be displayed as pages.");
+      setError(t.errorStoryDisplayFailed);
       setScreen("home");
     }
     setShowSaved(false);
-  }, [lang]);
+  }, [lang, t]);
 
   const openDailyStory = useCallback((payload: {
     pages: StoryPage[];
@@ -443,7 +445,7 @@ export default function HomePage() {
     setRawStory(payload.rawStory);
     setStoryVocabulary(getVocabForStory(payload.pages, lang));
     setScreen("story");
-  }, [lang]);
+  }, [lang, t]);
 
   const completeDailyTeret = useCallback(async () => {
     try {
@@ -496,7 +498,7 @@ export default function HomePage() {
       if (isGuest) {
         saveWord(word);
         setSavedWords(getSavedWords());
-        toast.showToast("Word saved!", "success");
+        toast.showToast(t.wordSaved, "success");
         return;
       }
       try {
@@ -508,16 +510,14 @@ export default function HomePage() {
         const data = await res.json();
         if (res.ok && Array.isArray(data.words)) {
           setSavedWords(data.words);
-          toast.showToast("Word saved!", "success");
+          toast.showToast(t.wordSaved, "success");
         }
       } catch {
-        toast.showToast("Could not save word", "error");
+        toast.showToast(t.errorCouldNotSaveWord, "error");
       }
     },
-    [isGuest, toast]
+    [isGuest, toast, t]
   );
-
-  const t = getT(lang);
 
   return (
     <>
@@ -590,7 +590,7 @@ export default function HomePage() {
               href="/account"
               className="text-[11px] font-bold text-[#c9b8e8] hover:text-[#FFD700] transition-colors duration-200"
             >
-              Account
+              {t.navAccount}
             </a>
             <LangToggle lang={lang} setLang={setLang} />
           </div>

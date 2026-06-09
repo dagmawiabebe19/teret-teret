@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  getT,
   AGES,
   REGIONS,
   TRAITS_EN,
@@ -9,6 +8,7 @@ import {
   ALLOWED_STORY_GOALS,
   CATEGORY_EMOJI,
 } from "@/lib/constants";
+import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/types";
 import type { StoryCategory } from "@/types";
 
@@ -85,7 +85,7 @@ export function StoryForm({
   disabled,
   error,
 }: StoryFormProps) {
-  const t = getT(lang);
+  const { t } = useTranslation(lang);
 
   const handleTraitSelect = (idx: number) => {
     const next = traitIdx === idx ? null : idx;
@@ -224,7 +224,7 @@ export function StoryForm({
           {t.regionLabel}
         </label>
         <div className="flex flex-wrap gap-1.5">
-          {REGIONS.map((r) => (
+          {REGIONS.map((r, i) => (
             <button
               key={r.name}
               type="button"
@@ -233,7 +233,7 @@ export function StoryForm({
               onClick={() => setRegion(region === r.name ? "" : r.name)}
               aria-pressed={region === r.name}
             >
-              {r.name}
+              {t.regionNames[i]}
             </button>
           ))}
         </div>
@@ -259,7 +259,7 @@ export function StoryForm({
           }}
         >
           <option value="" style={{ background: "#1a1a4e", color: "#e8e0ff" }}>
-            —
+            {t.storyGoalNone}
           </option>
           {ALLOWED_STORY_GOALS.map((goal, i) => (
             <option key={goal} value={goal} style={{ background: "#1a1a4e", color: "#e8e0ff" }}>
