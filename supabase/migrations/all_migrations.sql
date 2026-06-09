@@ -1,5 +1,5 @@
 -- =============================================================================
--- Teret Teret — all migrations combined (run in order)
+-- Teret Stories — all migrations combined (run in order)
 -- Generated from supabase/migrations/*.sql
 -- =============================================================================
 

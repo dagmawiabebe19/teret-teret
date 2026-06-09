@@ -345,7 +345,7 @@ export default function HomePage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `teret-teret-${childName.replace(/\s+/g, "-")}-${Date.now()}.txt`;
+      a.download = `teret-stories-${childName.replace(/\s+/g, "-")}-${Date.now()}.txt`;
       a.click();
       URL.revokeObjectURL(url);
       toast.showToast(t.errorExported, "success");

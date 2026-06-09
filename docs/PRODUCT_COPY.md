@@ -1,4 +1,4 @@
-# Teret-Teret Product Copy
+# Teret Stories Product Copy
 
 **Version:** 2.0  
 **Last Updated:** 2025-03-10  
@@ -8,7 +8,7 @@
 Warm · Magical · Family-friendly · Culturally rooted · Trustworthy · Premium but not corporate
 
 **Purpose:**  
-This document is the single source of truth for all Teret-Teret UI and marketing copy. Whenever UI wording changes, update this version and keep `lib/constants.ts` in sync.
+This document is the single source of truth for all Teret Stories UI and marketing copy. Whenever UI wording changes, update this version and keep `lib/constants.ts` in sync.
 
 > **Process:** Any new UI text must be added to this document first (with the key and English copy), then added to `lib/constants.ts` for all supported languages (am, en, es). This keeps copy consistent and avoids missing translations.
 
@@ -16,7 +16,7 @@ This document is the single source of truth for all Teret-Teret UI and marketing
 
 ## Product positioning (v2.0)
 
-Teret-Teret is a **learning-through-storytelling platform**. Education is explained through story; the experience remains story-first. Premium = unlimited learning and bedtime stories; language and educational value.
+Teret Stories is a **learning-through-storytelling platform**. Education is explained through story; the experience remains story-first. Premium = unlimited learning and bedtime stories; language and educational value.
 
 ## Sections (below)
 
@@ -27,7 +27,7 @@ Keep sentences short and feelings big.
 ## Homepage
 
 ### Hero
-- **App name:** Teret-Teret  
+- **App name:** Teret Stories  
 - **Subtitle (en):** Learn through stories ✨ Magical tales that teach  
 - **Badge:** G · All ages · Child safe  
 - **Hero line (en):** One story at a time. Learning and bedtime in one place.
@@ -194,7 +194,7 @@ Keep sentences short and feelings big.
 ## Schools & teachers
 
 - **Page title:** For schools & teachers  
-- **Subtitle:** Bring Teret-Teret into your classroom. Stories, language, and culture in one place.  
+- **Subtitle:** Bring Teret Stories into your classroom. Stories, language, and culture in one place.  
 - **Section: Offer**  
   - **Heading:** Classroom storytelling & language learning  
   - **Body:** One simple plan for your class. Ethiopian stories, multiple languages, and printable resources. Perfect for cultural studies and bilingual programs.  
@@ -202,7 +202,7 @@ Keep sentences short and feelings big.
   - **Heading:** Get in touch  
   - **Sub:** Tell us about your class or school. We’ll help you get set up.  
   - **CTA:** I’m interested  
-- **Form placeholder (optional):** Your name, school, and how you’d like to use Teret-Teret.
+- **Form placeholder (optional):** Your name, school, and how you’d like to use Teret Stories.
 
 ---
 
@@ -221,7 +221,7 @@ Keep sentences short and feelings big.
 ## Share this Teret (story completion)
 
 - **Button:** Share this Teret  
-- **Share title:** Tonight's Teret from Teret-Teret 📖  
+- **Share title:** Tonight's Teret from Teret Stories 📖  
 - **Share text:** A magical bedtime story that also teaches language.  
 - **Success (Web Share):** Shared!  
 - **Success (copy fallback):** Link copied to clipboard  

@@ -1,4 +1,4 @@
-# Teret-Teret Production Readiness Audit
+# Teret Stories Production Readiness Audit
 
 **Date:** 2025-03-10  
 **Scope:** Full app audit with focus on Stripe $4.99/month subscription, sign-up/sign-in/account flow, and production polish.
@@ -40,7 +40,7 @@ The app is in good shape for a soft launch: core flows (story generation, free l
 
 ### What was weak (and fixed)
 
-- Success URL always went to `/account?success=1`; **fixed** to include `returnTo` so “Back to Teret Teret” can take the user to the path they came from (e.g. home).
+- Success URL always went to `/account?success=1`; **fixed** to include `returnTo` so “Back to Teret Stories” can take the user to the path they came from (e.g. home).
 - Portal could throw when admin client was missing; **fixed** with an explicit null check and redirect.
 - Webhook treated only `active` as premium; **fixed** to treat `trialing` as premium.
 - Paywall “Coming soon” and account “Subscription coming soon” were hardcoded; **fixed** with `t.paywallSubSoon` and `t.subscriptionComingSoon` (am, en, es).
@@ -68,7 +68,7 @@ The app is in good shape for a soft launch: core flows (story generation, free l
 ### What was weak (and fixed)
 
 - **Post-checkout retry:** When `success=1` was present before `user` was set, `refreshProfile()` returned without a promise and the retry interval used a stale closure; **fixed** by returning `Promise.resolve(false)` when `!user?.id` and using `refreshProfileRef.current()` in the interval.
-- **Google + returnTo:** After paywall guest flow, user went to account; “Back to Teret Teret” used returnTo, but post-Google they always landed on account; **fixed** by using `redirectTo: /auth/callback?next=<returnTo>` when returnTo is present so they can land on home (or the path they came from) after OAuth.
+- **Google + returnTo:** After paywall guest flow, user went to account; “Back to Teret Stories” used returnTo, but post-Google they always landed on account; **fixed** by using `redirectTo: /auth/callback?next=<returnTo>` when returnTo is present so they can land on home (or the path they came from) after OAuth.
 - **Subscription “coming soon”:** **Fixed** with `t.subscriptionComingSoon`.
 
 ### What still needs external setup
@@ -96,7 +96,7 @@ The app is in good shape for a soft launch: core flows (story generation, free l
 
 ### Remaining improvements (non-blocking)
 
-- **i18n:** Account page still has hardcoded “Sign up”, “Sign in”, “Create an account”, “Already have an account? Sign in”, “— or sign in with email —”, “Back to Teret Teret”, “Email”, “Password”. Consider moving to `lib/constants.ts` and PRODUCT_COPY for full am/en/es.
+- **i18n:** Account page still has hardcoded “Sign up”, “Sign in”, “Create an account”, “Already have an account? Sign in”, “— or sign in with email —”, “Back to Teret Stories”, “Email”, “Password”. Consider moving to `lib/constants.ts` and PRODUCT_COPY for full am/en/es.
 - **Paywall conversion:** Optional: add a short trust line (e.g. “Cancel anytime” or “Secure payment”) and ensure $4.99/month is visible (already in CTA).
 - **Error messages:** Some generic strings (“Save failed”, “Export failed”, “Try again”) could be translation keys for consistency.
 - **Mobile:** Account and paywall already use responsive classes; no critical layout bugs found.
@@ -173,7 +173,7 @@ Existing keys used: `paywallSubSoon` (already present; now used in PaywallModal)
 
 ## 9. Final recommendation
 
-### Is Teret-Teret ready for real users?
+### Is Teret Stories ready for real users?
 
 **Yes, for a soft launch**, provided:
 
@@ -182,7 +182,7 @@ Existing keys used: `paywallSubSoon` (already present; now used in PaywallModal)
 
 ### Top 3 things left (if you want to go from 7.5 → 9)
 
-1. **Finish account page i18n** – Move “Sign up”, “Sign in”, “Create an account”, “Back to Teret Teret”, “Email”, “Password”, and “— or sign in with email —” into constants (am, en, es) and use `lang`/locale so the account page is fully translatable.
+1. **Finish account page i18n** – Move “Sign up”, “Sign in”, “Create an account”, “Back to Teret Stories”, “Email”, “Password”, and “— or sign in with email —” into constants (am, en, es) and use `lang`/locale so the account page is fully translatable.
 2. **Stripe test run** – Do a full test: sign in → upgrade → pay with test card → confirm webhook updates profile → see premium on account and home; cancel or manage subscription via portal.
 3. **Auth callback in redirect allowlist** – Ensure Supabase redirect URLs include the exact callback URL you use with `?next=` (or a wildcard) so returnTo-after-Google works in production.
 

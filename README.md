@@ -1,4 +1,4 @@
-# ተረት ተረት — Teret Teret
+# ተረት ተረት — Teret Stories
 
 Magical Ethiopian bedtime stories for children. Personalized stories in **Amharic**, **English**, and **Spanish**, with a child-safe G-rated experience.
 
@@ -31,7 +31,7 @@ cp .env.example .env.local
 - **Anthropic**: Get an API key from [console.anthropic.com](https://console.anthropic.com). Set `ANTHROPIC_API_KEY` in `.env.local`. This key is **only** used in the `/api/generate-story` route (server); it is never exposed to the client.
 - **Illustration prompts** (optional): By default, illustration prompts are generated locally (no extra API calls). Set `AI_ILLUSTRATION_PROMPTS=true` to use Claude for richer, AI-generated prompts (adds one Anthropic call per story).
 - **Stripe**: In the [Stripe Dashboard](https://dashboard.stripe.com/products), create a product (e.g. “Teret Premium”) and add a **recurring monthly price of $4.99/month**. Copy the **Price ID** (starts with `price_`) into `STRIPE_PRICE_ID`. Also set `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, and `STRIPE_WEBHOOK_SECRET` (see Stripe section below).
-- **App URL**: Set `NEXT_PUBLIC_APP_URL` to your production URL (e.g. `https://teret-teret.vercel.app`). For local dev, `http://localhost:3000` is fine.
+- **App URL**: Set `NEXT_PUBLIC_APP_URL` to your production URL (e.g. `https://www.teretstories.com`). For local dev, `http://localhost:3000` is fine.
 
 ### 3. Supabase database
 
@@ -46,7 +46,7 @@ This creates `profiles`, `stories`, `usage_tracking`, `subscriptions`, RLS polic
 In Supabase Dashboard → Authentication → URL Configuration:
 
 - **Site URL**: `http://localhost:3000` (or your production URL)
-- **Redirect URLs**: add `http://localhost:3000/auth/callback`, `http://localhost:3000/account`, and your production equivalents (e.g. `https://teret-teret.vercel.app/auth/callback`, `https://teret-teret.vercel.app/account`).
+- **Redirect URLs**: add `http://localhost:3000/auth/callback`, `http://localhost:3000/account`, and your production equivalents (e.g. `https://www.teretstories.com/auth/callback`, `https://www.teretstories.com/account`).
 
 For **Google OAuth**: Authentication → Providers → Google → enable and add your OAuth client ID and secret from Google Cloud Console. The app’s “Continue with Google” button redirects back to `/account` after sign-in.
 
@@ -80,7 +80,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 1. Push the repo and import the project in Vercel.
 2. Add all env vars from `.env.example` in Vercel (Project → Settings → Environment Variables).
-3. Set `NEXT_PUBLIC_APP_URL` to your Vercel URL (e.g. `https://teret-teret.vercel.app`).
+3. Set `NEXT_PUBLIC_APP_URL` to your Vercel URL (e.g. `https://www.teretstories.com`).
 4. Run the Supabase migration if you haven’t already.
 5. Configure Supabase redirect URLs to include `https://your-app.vercel.app/auth/callback`.
 6. Configure the Stripe webhook to `https://your-app.vercel.app/api/stripe/webhook` and set `STRIPE_WEBHOOK_SECRET` in Vercel.

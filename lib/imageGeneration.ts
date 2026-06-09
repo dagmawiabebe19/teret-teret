@@ -1,5 +1,5 @@
 /**
- * Image generation service abstraction for Teret-Teret.
+ * Image generation service abstraction for Teret Stories.
  *
  * Pluggable with:
  * - OpenAI DALL·E / Image API

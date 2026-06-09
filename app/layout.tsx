@@ -9,7 +9,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "ተረት ተረት — Teret Teret | Magical Ethiopian Bedtime Stories",
+  title: "ተረት ተረት — Teret Stories | Magical Ethiopian Bedtime Stories",
   description:
     "Magical Ethiopian bedtime stories for children. Tell personalized stories in Amharic, English, and Spanish. Child-safe, G-rated.",
   manifest: "/manifest.json",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
-    title: "ተረት ተረት — Teret Teret | Magical Ethiopian Bedtime Stories",
+    title: "ተረት ተረት — Teret Stories | Magical Ethiopian Bedtime Stories",
     description:
       "Magical Ethiopian bedtime stories for children. Tell personalized stories in Amharic, English, and Spanish.",
     type: "website",

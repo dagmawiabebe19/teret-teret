@@ -1,5 +1,5 @@
 /**
- * Illustration prompt builder for Teret-Teret bedtime stories.
+ * Illustration prompt builder for Teret Stories bedtime stories.
  * Generates child-safe, culturally relevant prompts for each page.
  *
  * Designed to be easily pluggable with:
