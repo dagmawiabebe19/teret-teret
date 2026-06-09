@@ -11,6 +11,8 @@ interface ChildProfilePickerProps {
   selectedId: string | null;
   onSelect: (profile: ChildProfile | null) => void;
   onAddChild: () => void;
+  isPremium?: boolean;
+  onUpgrade?: () => void;
 }
 
 export function ChildProfilePicker({
@@ -19,8 +21,32 @@ export function ChildProfilePicker({
   selectedId,
   onSelect,
   onAddChild,
+  isPremium = true,
+  onUpgrade,
 }: ChildProfilePickerProps) {
   const { t } = useTranslation(lang);
+
+  if (!isPremium) {
+    return (
+      <div
+        className="rounded-[18px] p-4 mb-4 border"
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          borderColor: "rgba(255,215,0,0.15)",
+        }}
+      >
+        <p className="text-[13px] font-bold text-[#FFD700] mb-2">{t.whoIsStoryFor}</p>
+        <button
+          type="button"
+          onClick={onUpgrade}
+          className="w-full py-2.5 rounded-xl border text-[12px] font-bold text-[#c9b8e8] hover:bg-[rgba(255,215,0,0.08)] transition-colors"
+          style={{ borderColor: "rgba(255,215,0,0.35)" }}
+        >
+          {t.upgradeForChildProfiles}
+        </button>
+      </div>
+    );
+  }
 
   if (profiles.length === 0) {
     return (

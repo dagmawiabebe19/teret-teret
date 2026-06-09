@@ -1,7 +1,7 @@
 import type { Lang } from "@/types";
 import { translations, getT, getTranslations, getRegionLabel, type UITranslations } from "./translations";
 
-export const FREE_STORY_LIMIT = 3;
+export const FREE_STORY_LIMIT = 1;
 
 export { translations as UI, getT, getTranslations, getRegionLabel, type UITranslations };
 

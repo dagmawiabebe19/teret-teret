@@ -11,9 +11,17 @@ interface ChildProfileManagerProps {
   lang: Lang;
   profiles: ChildProfile[];
   onRefresh: () => void;
+  isPremium?: boolean;
+  onUpgrade?: () => void;
 }
 
-export function ChildProfileManager({ lang, profiles, onRefresh }: ChildProfileManagerProps) {
+export function ChildProfileManager({
+  lang,
+  profiles,
+  onRefresh,
+  isPremium = true,
+  onUpgrade,
+}: ChildProfileManagerProps) {
   const { t } = useTranslation(lang);
   const [editing, setEditing] = useState<ChildProfile | "new" | null>(null);
   const [name, setName] = useState("");
@@ -68,6 +76,28 @@ export function ChildProfileManager({ lang, profiles, onRefresh }: ChildProfileM
     await fetch(`/api/child-profiles/${id}`, { method: "DELETE" });
     onRefresh();
   };
+
+  if (!isPremium) {
+    return (
+      <div
+        className="rounded-[18px] border p-4"
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          borderColor: "rgba(255,215,0,0.15)",
+        }}
+      >
+        <h2 className="text-[15px] font-bold text-[#FFD700] mb-3">{t.manageChildren}</h2>
+        <button
+          type="button"
+          onClick={onUpgrade}
+          className="w-full py-2.5 rounded-xl border text-[12px] font-bold text-[#c9b8e8] hover:bg-[rgba(255,215,0,0.08)] transition-colors"
+          style={{ borderColor: "rgba(255,215,0,0.35)" }}
+        >
+          {t.upgradeForChildProfiles}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div

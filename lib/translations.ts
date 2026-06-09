@@ -314,6 +314,8 @@ export const translations: Record<
     sampleReadFull: string;
     generateYourOwn: string;
     globalCapBreak: string;
+    upgradeToSaveStories: string;
+    upgradeForChildProfiles: string;
   }
 > = {
   am: {
@@ -612,7 +614,7 @@ export const translations: Record<
     trustTrilingual: "🌍 ሶስት ቋንቋ",
     trustEthiopian: "🦁 የኢትዮጵያ ቦታዎች",
     trustChildSafe: "✅ ለልጆች ደህንነት",
-    freeBannerDefault: "ዛሬ 3 ነፃ ታሪኮች — መለያ አያስፈልግም",
+    freeBannerDefault: "ዛሬ 1 ነፃ ታሪክ — መለያ አያስፈልግም",
     freeBannerOneLeft: "ዛሬ 1 ነፃ ታሪክ ቀርቷል",
     freeBannerUpgrade: "የዛሬ ነፃ ታሪኮች አልቀሩም — ያልተገደበ ታሪኮች ይክፈቱ",
     tellMeStoryTonight: "✨ ዛሬ ሌሊት ታሪክ ንገሩኝ!",
@@ -627,7 +629,7 @@ export const translations: Record<
     testimonial3Author: "ሳራ፣ DC",
     pricingHeading: "ቀላል ዋጋ",
     pricingFreeTitle: "ነፃ",
-    pricingFreeFeatures: ["በቀን 3 ታሪኮች", "ሶስት ቋንቋዎች", "መደበኛ ጥራት ታሪኮች", "ከ3 በላይ ማስቀመጥ የለም"],
+    pricingFreeFeatures: ["በቀን 1 ታሪክ", "ሶስት ቋንቋዎች", "መደበኛ ጥራት ታሪኮች", "ማስቀመጥ የለም"],
     pricingPremiumTitle: "ፕሪሚየም",
     pricingPremiumFeatures: ["ያልተገደበ ታሪኮች", "ሶስት ቋንቋዎች", "ፕሪሚየም ጥራት ታሪኮች (Claude Sonnet)", "ተወዳጆችን አስቀምጥ", "የልጅ መገለጫዎች"],
     pricingCta: "ነፃ ይጀምሩ፣ በማንኛውም ጊዜ ይለግሱ",
@@ -637,6 +639,8 @@ export const translations: Record<
     sampleReadFull: "ሙሉውን አንብብ",
     generateYourOwn: "የራስዎን ይፍጠሩ →",
     globalCapBreak: "አጭር እረፍት እየወሰድን ነው — ነገ እንመለሳለን! 🌙",
+    upgradeToSaveStories: "ታሪኮችዎን ለማስቀመጥ ወደ ፕሪሚየም ይለግሱ",
+    upgradeForChildProfiles: "የልጅ መገለጫዎችን ለመፍጠር ወደ ፕሪሚየም ይለግሱ",
   },
   en: {
     appTitle: "Teret Teret",
@@ -934,7 +938,7 @@ export const translations: Record<
     trustTrilingual: "🌍 Trilingual",
     trustEthiopian: "🦁 Ethiopian settings",
     trustChildSafe: "✅ Child safe",
-    freeBannerDefault: "3 free stories today — no account needed",
+    freeBannerDefault: "1 free story today — no account needed",
     freeBannerOneLeft: "1 free story left today",
     freeBannerUpgrade: "No free stories left today — unlock unlimited",
     tellMeStoryTonight: "✨ Tell me a story tonight!",
@@ -949,7 +953,7 @@ export const translations: Record<
     testimonial3Author: "Sara, DC",
     pricingHeading: "Simple pricing",
     pricingFreeTitle: "Free",
-    pricingFreeFeatures: ["3 stories per day", "All 3 languages", "Standard quality stories", "No saving beyond 3 stories"],
+    pricingFreeFeatures: ["1 story per day", "All 3 languages", "Standard quality stories", "No saving"],
     pricingPremiumTitle: "Premium",
     pricingPremiumFeatures: ["Unlimited stories", "All 3 languages", "Premium quality stories (Claude Sonnet)", "Save favorites", "Child profiles"],
     pricingCta: "Start free, upgrade anytime",
@@ -959,6 +963,8 @@ export const translations: Record<
     sampleReadFull: "Read full story",
     generateYourOwn: "Generate your own →",
     globalCapBreak: "We're taking a short break — check back tomorrow! 🌙",
+    upgradeToSaveStories: "Upgrade to Premium to save your stories",
+    upgradeForChildProfiles: "Upgrade to Premium to create child profiles",
   },
   es: {
     appTitle: "Teret Teret",
@@ -1258,7 +1264,7 @@ export const translations: Record<
     trustTrilingual: "🌍 Trilingüe",
     trustEthiopian: "🦁 Escenarios etíopes",
     trustChildSafe: "✅ Seguro para niños",
-    freeBannerDefault: "3 cuentos gratis hoy — sin cuenta",
+    freeBannerDefault: "1 cuento gratis hoy — sin cuenta",
     freeBannerOneLeft: "1 cuento gratis queda hoy",
     freeBannerUpgrade: "No quedan cuentos gratis hoy — desbloquea ilimitados",
     tellMeStoryTonight: "✨ ¡Cuéntame un cuento esta noche!",
@@ -1273,7 +1279,7 @@ export const translations: Record<
     testimonial3Author: "Sara, DC",
     pricingHeading: "Precios simples",
     pricingFreeTitle: "Gratis",
-    pricingFreeFeatures: ["3 cuentos al día", "Los 3 idiomas", "Cuentos de calidad estándar", "Sin guardar más de 3 cuentos"],
+    pricingFreeFeatures: ["1 cuento al día", "Los 3 idiomas", "Cuentos de calidad estándar", "Sin guardar"],
     pricingPremiumTitle: "Premium",
     pricingPremiumFeatures: ["Cuentos ilimitados", "Los 3 idiomas", "Cuentos premium (Claude Sonnet)", "Guardar favoritos", "Perfiles de niños"],
     pricingCta: "Empieza gratis, mejora cuando quieras",
@@ -1283,6 +1289,8 @@ export const translations: Record<
     sampleReadFull: "Leer cuento completo",
     generateYourOwn: "Crea el tuyo →",
     globalCapBreak: "Tomamos un breve descanso — ¡vuelve mañana! 🌙",
+    upgradeToSaveStories: "Mejora a Premium para guardar tus cuentos",
+    upgradeForChildProfiles: "Mejora a Premium para crear perfiles de niños",
   },
 };
 

@@ -8,6 +8,8 @@ import { Stars } from "@/components/Stars";
 import { DecorativeBackground } from "@/components/DecorativeBackground";
 import { AppNav } from "@/components/AppNav";
 import { ChildProfileManager } from "@/components/ChildProfileManager";
+import { PaywallModal } from "@/components/PaywallModal";
+import { isPremiumStatus } from "@/lib/premium";
 import {
   ALLOWED_STORY_CATEGORIES,
   getRegionLabel,
@@ -45,6 +47,9 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [stats, setStats] = useState<ProfileStats | null>(null);
   const [childProfiles, setChildProfiles] = useState<ChildProfile[]>([]);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<"free" | "premium">("free");
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [stripeEnabled, setStripeEnabled] = useState(false);
   const [signOutLoading, setSignOutLoading] = useState(false);
 
   const refresh = useCallback(() => {
@@ -60,10 +65,19 @@ export default function ProfilePage() {
       setDisplayName(profileData.user.displayName);
       setAvatarUrl(profileData.user.avatarUrl);
       setStats(profileData.stats);
-      setChildProfiles(childData.profiles ?? []);
+      const premium = isPremiumStatus(profileData.subscriptionStatus);
+      setSubscriptionStatus(premium ? "premium" : "free");
+      setChildProfiles(premium ? (childData.profiles ?? []) : []);
       setLoading(false);
     });
   }, [router]);
+
+  useEffect(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((d) => setStripeEnabled(Boolean(d?.stripeEnabled)))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -200,7 +214,22 @@ export default function ProfilePage() {
           {t.linkToMyStories}
         </Link>
 
-        <ChildProfileManager lang={lang} profiles={childProfiles} onRefresh={refresh} />
+        <ChildProfileManager
+          lang={lang}
+          profiles={childProfiles}
+          onRefresh={refresh}
+          isPremium={subscriptionStatus === "premium"}
+          onUpgrade={() => setShowPaywall(true)}
+        />
+
+        {showPaywall && (
+          <PaywallModal
+            lang={lang}
+            onClose={() => setShowPaywall(false)}
+            stripeEnabled={stripeEnabled}
+            isGuest={false}
+          />
+        )}
 
         <button
           type="button"

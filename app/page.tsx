@@ -33,20 +33,8 @@ import { ChildProfilePicker, applyChildToForm } from "@/components/ChildProfileP
 import { RecentlyPlayed } from "@/components/RecentlyPlayed";
 import { libraryStoryToReader } from "@/lib/openLibraryStory";
 import type { ChildProfile, LibraryStory } from "@/types";
-
-const STORAGE_SAVED = "teret_saved";
-
-function getStoredSaved(): SavedStoryItem[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_SAVED);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
+import { getLocalSavedStories } from "@/lib/localSavedStories";
+import { isPremiumStatus } from "@/lib/premium";
 
 export default function HomePage() {
   const router = useRouter();
@@ -122,7 +110,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    setSavedStories(getStoredSaved());
+    setSavedStories(getLocalSavedStories());
     setSavedWords(getSavedWords());
   }, []);
 
@@ -134,7 +122,7 @@ export default function HomePage() {
           const status = data.subscriptionStatus === "premium" || data.subscriptionStatus === "active" ? "premium" : "free";
           setUsage({
             subscriptionStatus: status,
-            freeStoriesPerDay: data.freeStoriesPerDay ?? 3,
+            freeStoriesPerDay: data.freeStoriesPerDay ?? 1,
             storiesUsedToday: data.storiesUsedToday ?? 0,
             remainingStoriesToday: data.subscriptionStatus === "premium" || data.subscriptionStatus === "active" ? null : (data.remainingStoriesToday ?? 0),
           });
@@ -190,39 +178,28 @@ export default function HomePage() {
       ]).then(([profileData, storiesData, childData]) => {
         setUserProgress(profileData.progress ?? null);
         const status = profileData.subscriptionStatus;
-        setSubscriptionStatus(status === "premium" || status === "active" ? "premium" : "free");
-        setChildProfiles(childData.profiles ?? []);
-        const apiStories = (storiesData.stories ?? []) as LibraryStory[];
-        setLibraryStories(apiStories);
-        const dbStories = apiStories.map((s) => ({
-          id: s.id,
-          name: s.childName,
-          region: s.region,
-          date: s.createdAt ? new Date(s.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-          content: s.rawStory,
-          parsedPages: s.parsedPages,
-          illustrationPrompts: s.illustrationPrompts,
-          isFavorite: s.isFavorite ?? false,
-        }));
-        const dbContentSet = new Set(dbStories.map((s) => s.content));
-        const localStories = getStoredSaved();
-        const merged = [...dbStories];
-        for (const loc of localStories) {
-          if (!dbContentSet.has(loc.content)) {
-            dbContentSet.add(loc.content);
-            merged.push({
-              id: loc.id,
-              name: loc.name,
-              region: loc.region,
-              date: loc.date,
-              content: loc.content,
-              parsedPages: loc.parsedPages,
-              illustrationPrompts: loc.illustrationPrompts,
-              isFavorite: loc.isFavorite ?? false,
-            });
-          }
+        const premium = isPremiumStatus(status);
+        setSubscriptionStatus(premium ? "premium" : "free");
+        if (premium) {
+          setChildProfiles(childData.profiles ?? []);
+          const apiStories = (storiesData.stories ?? []) as LibraryStory[];
+          setLibraryStories(apiStories);
+          const dbStories = apiStories.map((s) => ({
+            id: s.id,
+            name: s.childName,
+            region: s.region,
+            date: s.createdAt ? new Date(s.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+            content: s.rawStory,
+            parsedPages: s.parsedPages,
+            illustrationPrompts: s.illustrationPrompts,
+            isFavorite: s.isFavorite ?? false,
+          }));
+          setSavedStories(dbStories.slice(0, 50));
+        } else {
+          setChildProfiles([]);
+          setLibraryStories([]);
+          setSavedStories(getLocalSavedStories());
         }
-        setSavedStories(merged.slice(0, 50));
         refreshUsage();
         fetch("/api/profile/words")
           .then((r) => (r.ok ? r.json() : { words: [] }))
@@ -256,6 +233,11 @@ export default function HomePage() {
   }, [screen, lang]);
 
   const saveStory = useCallback(async () => {
+    if (subscriptionStatus !== "premium") {
+      setShowPaywall(true);
+      toast.showToast(t.upgradeToSaveStories, "error");
+      return;
+    }
     const entry: SavedStoryItem = {
       id: String(Date.now()),
       name: childName,
@@ -265,63 +247,56 @@ export default function HomePage() {
       parsedPages: pages.length ? pages : undefined,
       illustrationPrompts: illustrationPrompts.length ? illustrationPrompts : undefined,
     };
-    const supabase = createClient();
-    if (supabase) {
-      const { data: { user: u } } = await supabase.auth.getUser();
-      if (u) {
-        try {
-          const res = await fetch("/api/stories", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              childName,
-              region: storyRegion || "Ethiopian highlands",
-              ageGroup: age,
-              trait: trait || undefined,
-              rawStory,
-              parsedPages: pages.length ? pages : undefined,
-              languageDefault: lang,
-              illustrationPrompts: illustrationPrompts.length ? illustrationPrompts : undefined,
-              category,
-            }),
-          });
-          const data = await res.json();
-          if (res.ok && data.id) {
-            entry.id = data.id;
-            entry.date = data.createdAt ?? entry.date;
-            const updated = [entry, ...savedStories.filter((s) => s.id !== entry.id)].slice(0, 50);
-            setSavedStories(updated);
-            const libEntry: LibraryStory = {
-              id: data.id,
-              childName,
-              region: storyRegion || "Ethiopian highlands",
-              category,
-              languageDefault: lang,
-              rawStory,
-              parsedPages: pages.length ? pages : undefined,
-              illustrationPrompts: illustrationPrompts.length ? illustrationPrompts : undefined,
-              isFavorite: false,
-              createdAt: data.createdAt ?? new Date().toISOString(),
-              ageGroup: age,
-              trait: trait || null,
-            };
-            setLibraryStories((prev) => [libEntry, ...prev.filter((s) => s.id !== data.id)].slice(0, 50));
-            toast.showToast(getT(lang).savedConfirm, "success");
-            return;
-          }
-        } catch {
-          toast.showToast(t.errorSaveFailed, "error");
-          return;
-        }
-      }
-    }
-    const updated = [entry, ...savedStories].slice(0, 10);
-    setSavedStories(updated);
     try {
-      localStorage.setItem(STORAGE_SAVED, JSON.stringify(updated));
-    } catch {}
-    toast.showToast(getT(lang).savedConfirm, "success");
-  }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, category, savedStories, toast, t]);
+      const res = await fetch("/api/stories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          childName,
+          region: storyRegion || "Ethiopian highlands",
+          ageGroup: age,
+          trait: trait || undefined,
+          rawStory,
+          parsedPages: pages.length ? pages : undefined,
+          languageDefault: lang,
+          illustrationPrompts: illustrationPrompts.length ? illustrationPrompts : undefined,
+          category,
+        }),
+      });
+      const data = await res.json();
+      if (res.status === 402) {
+        setShowPaywall(true);
+        toast.showToast(t.upgradeToSaveStories, "error");
+        return;
+      }
+      if (res.ok && data.id) {
+        entry.id = data.id;
+        entry.date = data.createdAt ?? entry.date;
+        const updated = [entry, ...savedStories.filter((s) => s.id !== entry.id)].slice(0, 50);
+        setSavedStories(updated);
+        const libEntry: LibraryStory = {
+          id: data.id,
+          childName,
+          region: storyRegion || "Ethiopian highlands",
+          category,
+          languageDefault: lang,
+          rawStory,
+          parsedPages: pages.length ? pages : undefined,
+          illustrationPrompts: illustrationPrompts.length ? illustrationPrompts : undefined,
+          isFavorite: false,
+          createdAt: data.createdAt ?? new Date().toISOString(),
+          ageGroup: age,
+          trait: trait || null,
+        };
+        setLibraryStories((prev) => [libEntry, ...prev.filter((s) => s.id !== data.id)].slice(0, 50));
+        toast.showToast(getT(lang).savedConfirm, "success");
+        return;
+      }
+      toast.showToast(t.errorSaveFailed, "error");
+    } catch {
+      toast.showToast(t.errorSaveFailed, "error");
+    }
+  }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, category, savedStories, subscriptionStatus, toast, t]);
 
   const copyStory = useCallback(() => {
     try {
@@ -745,17 +720,17 @@ export default function HomePage() {
                 </p>
               )}
 
-              {!isGuest && (
-                <ChildProfilePicker
-                  lang={lang}
-                  profiles={childProfiles}
-                  selectedId={selectedChildId}
-                  onSelect={handleChildSelect}
-                  onAddChild={() => router.push("/profile")}
-                />
-              )}
+              <ChildProfilePicker
+                lang={lang}
+                profiles={childProfiles}
+                selectedId={selectedChildId}
+                onSelect={handleChildSelect}
+                onAddChild={() => router.push("/profile")}
+                isPremium={subscriptionStatus === "premium"}
+                onUpgrade={() => setShowPaywall(true)}
+              />
 
-              {!isGuest && libraryStories.length > 0 && (
+              {subscriptionStatus === "premium" && libraryStories.length > 0 && (
                 <RecentlyPlayed
                   lang={lang}
                   stories={libraryStories}

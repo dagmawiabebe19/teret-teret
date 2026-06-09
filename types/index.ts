@@ -90,7 +90,7 @@ export interface UserProgress {
   xpToNextLevel: number;
 }
 
-export const FREE_STORY_LIMIT = 3;
+export const FREE_STORY_LIMIT = 1;
 
 export interface ChildProfile {
   id: string;

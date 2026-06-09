@@ -20,6 +20,7 @@ import {
 } from "@/lib/illustrationPrompts";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { GLOBAL_CAP_MESSAGE, reserveGlobalDailyStorySlot } from "@/lib/globalDailyCap";
+import { isPremiumStatus } from "@/lib/premium";
 import { appendGenerationDate } from "@/lib/streaks";
 import type { StoryInspiration } from "@/types";
 import type { StoryCategory } from "@/types";
@@ -60,10 +61,6 @@ const ANTHROPIC_VERSION = "2023-06-01";
 const MODEL_FREE = "claude-haiku-4-5-20251001";
 const MODEL_PREMIUM = "claude-sonnet-4-20250514";
 const ANTHROPIC_MAX_TOKENS = 2000;
-
-function isPremiumStatus(status: string | null | undefined): boolean {
-  return status === "premium" || status === "active";
-}
 
 /** Call Anthropic Messages API via fetch. Returns combined text from response content blocks. */
 async function anthropicMessages(
@@ -251,6 +248,7 @@ type ServerSupabase = NonNullable<Awaited<ReturnType<typeof import("@/lib/supaba
 async function recordSignedInGeneration(
   supabase: ServerSupabase,
   userId: string,
+  persistStory: boolean,
   story: {
     childName: string;
     ageGroup: string;
@@ -301,20 +299,22 @@ async function recordSignedInGeneration(
   const dates = appendGenerationDate((prof?.story_generation_dates as string[] | null) ?? []);
   await supabase.from("profiles").update({ story_generation_dates: dates }).eq("id", userId);
 
-  const { error: insertError } = await supabase.from("stories").insert({
-    user_id: userId,
-    child_name: story.childName,
-    age_group: story.ageGroup,
-    trait: story.trait ?? null,
-    region: story.region,
-    raw_story: story.rawStory,
-    parsed_pages: story.parsedPages.length ? story.parsedPages : null,
-    language_default: story.language,
-    illustration_prompts: story.illustrationPrompts.length ? story.illustrationPrompts : null,
-    category: story.category,
-  });
-  if (insertError) {
-    console.error("[generate-story] persist story failed", insertError);
+  if (persistStory) {
+    const { error: insertError } = await supabase.from("stories").insert({
+      user_id: userId,
+      child_name: story.childName,
+      age_group: story.ageGroup,
+      trait: story.trait ?? null,
+      region: story.region,
+      raw_story: story.rawStory,
+      parsed_pages: story.parsedPages.length ? story.parsedPages : null,
+      language_default: story.language,
+      illustration_prompts: story.illustrationPrompts.length ? story.illustrationPrompts : null,
+      category: story.category,
+    });
+    if (insertError) {
+      console.error("[generate-story] persist story failed", insertError);
+    }
   }
 }
 
@@ -497,7 +497,7 @@ export async function POST(request: Request) {
           if (user) {
             const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
             if (supabase) {
-              await recordSignedInGeneration(supabase, user.id, {
+              await recordSignedInGeneration(supabase, user.id, isPremium, {
                 childName,
                 ageGroup,
                 trait,
@@ -614,7 +614,7 @@ No other text. No markdown.`;
     if (user) {
       const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
       if (supabase) {
-        await recordSignedInGeneration(supabase, user.id, {
+        await recordSignedInGeneration(supabase, user.id, isPremium, {
           childName,
           ageGroup,
           trait,

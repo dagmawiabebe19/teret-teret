@@ -9,7 +9,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const FREE_STORIES_PER_DAY = 3;
+export const FREE_STORIES_PER_DAY = 1;
 
 /** Rolling window length in ms (24 hours). */
 export const ROLLING_WINDOW_MS = 24 * 60 * 60 * 1000;
