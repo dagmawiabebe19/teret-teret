@@ -422,9 +422,11 @@ export default function HomePage() {
       setLoadingProgress(100);
 
       if (!res.ok) {
-        setError(data.error ?? t.errorGeneric);
+        const errMsg =
+          res.status === 503 ? t.globalCapBreak : (data.error ?? t.errorGeneric);
+        setError(errMsg);
         setScreen("home");
-        toast.showToast(data.error ?? t.errorTryAgain, "error");
+        toast.showToast(errMsg, "error");
         if (res.status === 402) {
           setShowPaywall(true);
           refreshUsage();

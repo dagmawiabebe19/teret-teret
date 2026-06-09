@@ -19,6 +19,7 @@ import {
   parseIllustrationPrompts,
 } from "@/lib/illustrationPrompts";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { GLOBAL_CAP_MESSAGE, reserveGlobalDailyStorySlot } from "@/lib/globalDailyCap";
 import { appendGenerationDate } from "@/lib/streaks";
 import type { StoryInspiration } from "@/types";
 import type { StoryCategory } from "@/types";
@@ -360,6 +361,12 @@ export async function POST(request: Request) {
     } = parsed.data;
     const category: StoryCategory = bodyCategory ?? INSPIRATION_TO_CATEGORY[storyInspiration ?? "ethiopian_folklore"];
     const storyInspirationForIllustration = CATEGORY_TO_INSPIRATION[category];
+
+    const globalSlot = await reserveGlobalDailyStorySlot();
+    if (!globalSlot.allowed) {
+      console.log("[teret] global daily cap reached", { count: globalSlot.count });
+      return NextResponse.json({ error: GLOBAL_CAP_MESSAGE }, { status: 503 });
+    }
 
     const { user } = await getOptionalUser();
     let isPremium = false;

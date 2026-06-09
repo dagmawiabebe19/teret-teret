@@ -313,6 +313,7 @@ export const translations: Record<
     sampleStoryLabel: string;
     sampleReadFull: string;
     generateYourOwn: string;
+    globalCapBreak: string;
   }
 > = {
   am: {
@@ -409,7 +410,7 @@ export const translations: Record<
     paywallBenefit2: "ተወዳጅ ታሪኮች ያስቀምጡ እና እንደገና ይጎትቱ",
     paywallBenefit3: "በታሪኮች ቋንቋ እና ባህል ይማሩ",
     paywallBenefit4: "ታሪኮችን በማንኛውም መሣሪያ ይድረሱ",
-    paywallUpgradeCta: "በ$1.99/ወር ይለግሱ",
+    paywallUpgradeCta: "በ$4.99/ወር ይለግሱ",
     paywallMaybeLater: "ለቆይ",
     subscriptionSuccessMessage: "ያልተገደበ ተረት እንኳን በደህና መጡ።",
     premiumActivating: "የፕሪሚየም መዳረሻዎ እየተጫነ ነው...",
@@ -580,7 +581,7 @@ export const translations: Record<
     deleteStoryAria: "ታሪክ ሰርዝ",
     openStoryAria: (name) => `የ${name} ታሪክ ክፈት`,
     storyGoalNone: "—",
-    pricePerMonth: "$1.99/ወር",
+    pricePerMonth: "$4.99/ወር",
     prevPageAria: "ቀዳዳ ገጽ",
     nextPageAria: "ቀጣይ ገጽ",
     finishStoryAria: "ታሪኩን አጠናቅቅ",
@@ -635,6 +636,7 @@ export const translations: Record<
     sampleStoryLabel: "የምሳሌ ታሪክ",
     sampleReadFull: "ሙሉውን አንብብ",
     generateYourOwn: "የራስዎን ይፍጠሩ →",
+    globalCapBreak: "አጭር እረፍት እየወሰድን ነው — ነገ እንመለሳለን! 🌙",
   },
   en: {
     appTitle: "Teret Teret",
@@ -730,7 +732,7 @@ export const translations: Record<
     paywallBenefit2: "Save and revisit favorite stories",
     paywallBenefit3: "Learn language and culture through stories",
     paywallBenefit4: "Access stories on any device",
-    paywallUpgradeCta: "Upgrade for $1.99/month",
+    paywallUpgradeCta: "Upgrade for $4.99/month",
     paywallMaybeLater: "Maybe later",
     subscriptionSuccessMessage: "Welcome to unlimited Teret.",
     premiumActivating: "Your premium access is being activated...",
@@ -901,7 +903,7 @@ export const translations: Record<
     deleteStoryAria: "Delete story",
     openStoryAria: (name) => `Open story for ${name}`,
     storyGoalNone: "—",
-    pricePerMonth: "$1.99/month",
+    pricePerMonth: "$4.99/month",
     prevPageAria: "Previous page",
     nextPageAria: "Next page",
     finishStoryAria: "Finish story",
@@ -956,6 +958,7 @@ export const translations: Record<
     sampleStoryLabel: "Sample story",
     sampleReadFull: "Read full story",
     generateYourOwn: "Generate your own →",
+    globalCapBreak: "We're taking a short break — check back tomorrow! 🌙",
   },
   es: {
     appTitle: "Teret Teret",
@@ -1053,7 +1056,7 @@ export const translations: Record<
     paywallBenefit2: "Guarda y vuelve a tus cuentos favoritos",
     paywallBenefit3: "Aprende idiomas y cultura con los cuentos",
     paywallBenefit4: "Accede a tus cuentos en cualquier dispositivo",
-    paywallUpgradeCta: "Suscribirse por $1.99/mes",
+    paywallUpgradeCta: "Suscribirse por $4.99/mes",
     paywallMaybeLater: "Quizás luego",
     subscriptionSuccessMessage: "Bienvenido a Teret ilimitado.",
     premiumActivating: "Tu acceso premium se está activando...",
@@ -1224,7 +1227,7 @@ export const translations: Record<
     deleteStoryAria: "Eliminar cuento",
     openStoryAria: (name) => `Abrir cuento de ${name}`,
     storyGoalNone: "—",
-    pricePerMonth: "$1.99/mes",
+    pricePerMonth: "$4.99/mes",
     prevPageAria: "Página anterior",
     nextPageAria: "Página siguiente",
     finishStoryAria: "Terminar cuento",
@@ -1279,6 +1282,7 @@ export const translations: Record<
     sampleStoryLabel: "Cuento de ejemplo",
     sampleReadFull: "Leer cuento completo",
     generateYourOwn: "Crea el tuyo →",
+    globalCapBreak: "Tomamos un breve descanso — ¡vuelve mañana! 🌙",
   },
 };
 

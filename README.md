@@ -30,7 +30,7 @@ cp .env.example .env.local
 - **Supabase**: Create a project at [supabase.com](https://supabase.com). In Settings → API you’ll find `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. For server-side writes (webhooks, usage), use `SUPABASE_SERVICE_ROLE_KEY` from the same page (keep it secret).
 - **Anthropic**: Get an API key from [console.anthropic.com](https://console.anthropic.com). Set `ANTHROPIC_API_KEY` in `.env.local`. This key is **only** used in the `/api/generate-story` route (server); it is never exposed to the client.
 - **Illustration prompts** (optional): By default, illustration prompts are generated locally (no extra API calls). Set `AI_ILLUSTRATION_PROMPTS=true` to use Claude for richer, AI-generated prompts (adds one Anthropic call per story).
-- **Stripe**: In the [Stripe Dashboard](https://dashboard.stripe.com/products), create a product (e.g. “Teret Premium”) and add a **recurring monthly price of $1.99/month**. Copy the **Price ID** (starts with `price_`) into `STRIPE_PRICE_ID`. Also set `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, and `STRIPE_WEBHOOK_SECRET` (see Stripe section below).
+- **Stripe**: In the [Stripe Dashboard](https://dashboard.stripe.com/products), create a product (e.g. “Teret Premium”) and add a **recurring monthly price of $4.99/month**. Copy the **Price ID** (starts with `price_`) into `STRIPE_PRICE_ID`. Also set `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, and `STRIPE_WEBHOOK_SECRET` (see Stripe section below).
 - **App URL**: Set `NEXT_PUBLIC_APP_URL` to your production URL (e.g. `https://teret-teret.vercel.app`). For local dev, `http://localhost:3000` is fine.
 
 ### 3. Supabase database
