@@ -7,7 +7,6 @@ import {
   canShowInstallPrompt,
   detectInstallPlatform,
   dismissInstallPrompt,
-  getStoriesGenerated,
   type InstallPlatform,
 } from "@/lib/installPrompt";
 
@@ -43,10 +42,9 @@ export function InstallPrompt({ lang, storyReaderActive = false }: InstallPrompt
         setVisible(false);
         return;
       }
-      const count = getStoriesGenerated();
       const p = detectInstallPlatform();
       setPlatform(p);
-      const eligible = canShowInstallPrompt(count) && p !== "other";
+      const eligible = canShowInstallPrompt() && p !== "other";
       const androidReady = p !== "android" || prompt !== null;
       setVisible(eligible && androidReady);
     },
@@ -58,18 +56,18 @@ export function InstallPrompt({ lang, storyReaderActive = false }: InstallPrompt
   }, [evaluate]);
 
   useEffect(() => {
-    const onStory = () => evaluate();
+    const onPage2 = () => evaluate();
     const onDismiss = () => setVisible(false);
     const onReader = (e: Event) => {
       const active = (e as CustomEvent<boolean>).detail;
       if (active) setVisible(false);
       else evaluate();
     };
-    window.addEventListener("teret:story-generated", onStory);
+    window.addEventListener("teret:first-story-page2", onPage2);
     window.addEventListener("teret:install-prompt-dismissed", onDismiss);
     window.addEventListener("teret:story-reader-active", onReader);
     return () => {
-      window.removeEventListener("teret:story-generated", onStory);
+      window.removeEventListener("teret:first-story-page2", onPage2);
       window.removeEventListener("teret:install-prompt-dismissed", onDismiss);
       window.removeEventListener("teret:story-reader-active", onReader);
     };

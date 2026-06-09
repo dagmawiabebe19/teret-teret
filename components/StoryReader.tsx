@@ -13,6 +13,12 @@ import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/types";
 import type { StoryPage } from "@/types";
 import type { VocabWord } from "@/types";
+import {
+  beginStorySession,
+  endStorySession,
+  FIRST_STORY_PAGE2_INDEX,
+  recordFirstStoryPage2Reached,
+} from "@/lib/installPrompt";
 
 interface StoryReaderProps {
   pages: StoryPage[];
@@ -77,7 +83,21 @@ export function StoryReader({
   const [dailyCompleted, setDailyCompleted] = useState(false);
   const [viewMode, setViewMode] = useState<"read" | "listen" | "learn">("read");
   const touchStartX = useRef<number | null>(null);
+  const isFirstStoryRef = useRef<boolean | null>(null);
   const { speak, pause, resume, stop, isPlaying, isPaused, isSupported } = useTTS();
+
+  useEffect(() => {
+    if (isFirstStoryRef.current === null) {
+      isFirstStoryRef.current = beginStorySession();
+    }
+    return () => endStorySession();
+  }, []);
+
+  useEffect(() => {
+    if (isFirstStoryRef.current && page === FIRST_STORY_PAGE2_INDEX) {
+      recordFirstStoryPage2Reached();
+    }
+  }, [page]);
 
   const isPremium = subscriptionStatus === "premium";
   const audioAllowedThisPage = isPremium || page < 2;

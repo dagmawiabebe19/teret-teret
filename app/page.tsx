@@ -35,7 +35,6 @@ import { libraryStoryToReader } from "@/lib/openLibraryStory";
 import type { ChildProfile, LibraryStory } from "@/types";
 import { getLocalSavedStories } from "@/lib/localSavedStories";
 import { isPremiumStatus } from "@/lib/premium";
-import { recordStoryGenerated } from "@/lib/installPrompt";
 
 export default function HomePage() {
   const router = useRouter();
@@ -420,7 +419,6 @@ export default function HomePage() {
 
       setIsGenerating(false);
       refreshUsage();
-      recordStoryGenerated();
       setRawStory(data.rawStory ?? "");
       setStoryRegion(data.region ?? "Ethiopian highlands");
       const pageList = data.parsed
