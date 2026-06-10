@@ -5,10 +5,10 @@ One morning, the smell of buna drifted through her window. Her grandmother was r
 "Liyé," her grandmother called, "today we are going to the market. But first... we must find the lion who lost his roar."
 Liya's eyes grew wide. A lion? Without a roar? She grabbed her shamma, kissed her grandmother on the cheek, and ran out the door — ready for the biggest adventure of her life...`;
 
-export const LANDING_SAMPLE_AM = `ተረት ተረት! በአዲስ አበባ ላይባል ያሉት አረንጓዴ ተራሮች ላይ ልያ የተባለች ትንሽ ልጅ ነበረች። ልቷም በመላው ኢትዮጵያ ከሁሉ ደፋር ነበር።
-አንድ ጥዋት የቡና ሽታ በመስኮቷ ተንሸራተተ። አያቷ ቡና እየቀቀለች ነበር፣ አየርም እንደ ቤት የሚሰማ ሽታ ነበረው።
-«ልያዬ» አያቷ ጮኸች። «ዛሬ ወደ ገበያ እንሄዳለን። ግን መጀመሪያ… ጩኸቱን የጣች አንበሳውን ማግኘት አለብን።»
-የልያዬ አይኖች ሰፉ። አንበሳ? ጩኸት የለውም? ሻማዋን ያዘች፣ አያቷን በጉንጉንዋ ስለ ነቀሰች በርዋን ከፍተው ወጣች — በሕይወቷ ውስጥ ለታሪካዋ ትልቁን ጀብዱ ተዘጋጃች…`;
+export const LANDING_SAMPLE_AM = `ተረት ተረት! በአዲስ አበባ ላይያ ያሉ አረንጓዴ ተራሮች ላይ ልያ የሰሚ ውለውል ልጅ ነበረች። ልቧ በመላ ኢትዮጵያ ከሁሉም ደፋር ነበረች።
+አንድ ጥዋት የቡና ሽታ ባለቀ እና በመስኮቷ ወደ ውስጥ ገባ። አያቷ ቡና እያቀቀለች ነበር፣ አየሩም እንደ ቤት ሽታ ነበረው።
+«ልያዬ» አያቷ ተጮኸች። «ዛሬ ወደ ገበያ እንሄዳለን። ግን መጀመሪያ አንበሳውን እናገኛለን። ጩኸቱን ካጣ አንበሳ።»
+የልያዬ አይኖች ሰፉ። አንበሳ? ጩኸት የለውም? ሻማዋን ይዛ አያቷን በጉንጉንዋ ስላተኩሰች በሩን ከፍተው ወጣች። በሕይወቷ ውስጥ ለታሪካ ያለው ትልቅ ጀብዱ ጀመረ…`;
 
 export type LandingSampleLang = "en" | "am";
 
@@ -26,6 +26,6 @@ export const LANDING_SAMPLE_TEXT: Record<LandingSampleLang, string> = {
 export const LANDING_SAMPLE_PREVIEW: Record<LandingSampleLang, string> = {
   en: `Once upon a time, in the green hills above Addis Ababa, there lived a little girl named Liya — and she had the bravest heart in all of Ethiopia.
 One morning, the smell of buna drifted through her window.`,
-  am: `ተረት ተረት! በአዲስ አበባ ላይባል ያሉት አረንጓዴ ተራሮች ላይ ልያ የተባለች ትንሽ ልጅ ነበረች። ልቷም በመላው ኢትዮጵያ ከሁሉ ደፋር ነበር።
-አንድ ጥዋት የቡና ሽታ በመስኮቷ ተንሸራተተ።`,
+  am: `ተረት ተረት! በአዲስ አበባ ላይያ ያሉ አረንጓዴ ተራሮች ላይ ልያ የሰሚ ውለውል ልጅ ነበረች። ልቧ በመላ ኢትዮጵያ ከሁሉም ደፋር ነበረች።
+አንድ ጥዋት የቡና ሽታ ባለቀ እና በመስኮቷ ወደ ውስጥ ገባ።`,
 };

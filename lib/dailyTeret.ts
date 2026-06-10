@@ -18,21 +18,21 @@ const SETTINGS = [
   "the shores of Lake Tana",
 ];
 
-const NAMES = ["Little Star", "Little Star", "Little Star", "Friend"];
+const NAMES = ["ልያ", "ካሳ", "ታይቱ", "ደስታ"];
 
 export function getDailyStoryForDate(date: Date): string {
   const seed = dateSeed(date);
   const setting = SETTINGS[seed % SETTINGS.length];
   const name = NAMES[seed % NAMES.length];
-  return `[AM] ተረት ተረት! ${name} በውብ የኢትዮጵያ ደጋ ነበረ። ፀሐይ ብሩህ ነበረች።
+  return `[AM] ተረት ተረት! ${name} በውብ የኢትዮጵያ ደጋ ነበረች። ፀሐይ ብሩህ ነበረች።
 [EN] Teret teret! ${name} was in ${setting}. The sun was bright.
 [ES] ¡Teret teret! ${name} estaba en ${setting}. El sol brillaba.
 
-[AM] ${name} አንድ ወዳጅ እንስሳ አገኘች። ወዳጅነት እጅግ ጠቃሚ ነው።
+[AM] ${name} ወዳጅ እንስሳ አገኘች። ወዳጅነት ትልቅ ነው።
 [EN] ${name} met a friendly animal. Friendship is very important.
 [ES] ${name} conoció un animal amigable. La amistad es muy importante.
 
-[AM] ${name} በጎ ነገር አደረገች። ሁሉም ደስ አላቸው።
+[AM] ${name} በጎ ነገር አደረገች። ሁሉም ደስ ብላቸው።
 [EN] ${name} did a kind thing. Everyone was happy.
 [ES] ${name} hizo algo bueno. Todos estaban contentos.
 
