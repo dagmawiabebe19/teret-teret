@@ -32,16 +32,16 @@ function escapeSsml(text) {
     .replace(/'/g, "&apos;");
 }
 
-// Mirrors lib/azureSpeech.ts buildAmharicSsml
-function addBedtimeBreaks(escapedText) {
+// Mirrors lib/azureSpeech.ts — Ge'ez punctuation only
+function insertGeezBreaks(escapedText) {
   return escapedText
-    .replace(/([.!?።])(?!\s*<break)/g, '$1<break time="600ms"/>')
-    .replace(/([,፣፥])(?!\s*<break)/g, '$1<break time="400ms"/>');
+    .replace(/።(?!\s*<break)/g, '።<break time="600ms"/>')
+    .replace(/፣(?!\s*<break)/g, '፣<break time="400ms"/>');
 }
 
 function buildAmharicSsml(text) {
   const voice = process.env.AZURE_VOICE_AM?.trim() || AZURE_DEFAULT_VOICE;
-  const safe = addBedtimeBreaks(escapeSsml(text.trim()));
+  const safe = insertGeezBreaks(escapeSsml(text.trim()));
   return `<speak version='1.0' xml:lang='am-ET'><voice name='${voice}'><prosody rate='-25%'>${safe}</prosody></voice></speak>`;
 }
 

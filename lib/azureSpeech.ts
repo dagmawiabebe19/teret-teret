@@ -33,15 +33,16 @@ function escapeSsml(text: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function addBedtimeBreaks(escapedText: string): string {
+/** Insert SSML pauses after Ge'ez punctuation only — never English . or , */
+function insertGeezBreaks(escapedText: string): string {
   return escapedText
-    .replace(/([.!?።])(?!\s*<break)/g, '$1<break time="600ms"/>')
-    .replace(/([,፣፥])(?!\s*<break)/g, '$1<break time="400ms"/>');
+    .replace(/።(?!\s*<break)/g, '።<break time="600ms"/>')
+    .replace(/፣(?!\s*<break)/g, '፣<break time="400ms"/>');
 }
 
 export function buildAmharicSsml(text: string): string {
   const voice = voiceForAmharic();
-  const safe = addBedtimeBreaks(escapeSsml(text.trim()));
+  const safe = insertGeezBreaks(escapeSsml(text.trim()));
   return `<speak version='1.0' xml:lang='am-ET'><voice name='${voice}'><prosody rate='-25%'>${safe}</prosody></voice></speak>`;
 }
 
