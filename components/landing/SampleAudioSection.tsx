@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { LANDING_SAMPLE_AM, LANDING_SAMPLE_EN } from "@/lib/landingSample";
+import { LANDING_SAMPLE_EN } from "@/lib/landingSample";
 import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/types";
 
@@ -73,26 +73,21 @@ export function SampleAudioSection({ lang }: SampleAudioSectionProps) {
           <p className="mt-3 text-[12px] font-bold text-[rgba(200,180,255,0.7)]">
             {audioError ? t.sampleAudioFallback : t.samplePlayLabel}
           </p>
+          <p className="mt-2 text-[11px] text-center text-[rgba(200,180,255,0.55)] max-w-[320px] leading-snug">
+            {t.sampleLanguageNote}
+          </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div
-            className="rounded-xl p-4"
-            style={{ background: "rgba(13,13,43,0.5)", fontFamily: "'Noto Sans Ethiopic',sans-serif" }}
+        <div
+          className="rounded-xl p-4"
+          style={{ background: "rgba(13,13,43,0.5)" }}
+        >
+          <p
+            className="text-[14px] leading-relaxed text-[#e8e0ff]"
+            style={{ fontFamily: "'Lora',serif" }}
           >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[#FFD700] mb-2">
-              {t.sampleAmLabel}
-            </p>
-            <p className="text-[14px] leading-relaxed text-[#e8e0ff]">{LANDING_SAMPLE_AM}</p>
-          </div>
-          <div className="rounded-xl p-4" style={{ background: "rgba(13,13,43,0.5)" }}>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[#FFD700] mb-2">
-              {t.sampleEnLabel}
-            </p>
-            <p className="text-[14px] leading-relaxed text-[#e8e0ff]" style={{ fontFamily: "'Lora',serif" }}>
-              {LANDING_SAMPLE_EN}
-            </p>
-          </div>
+            {LANDING_SAMPLE_EN}
+          </p>
         </div>
       </div>
     </section>

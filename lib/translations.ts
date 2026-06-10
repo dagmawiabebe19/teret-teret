@@ -300,6 +300,7 @@ export const translations: Record<
     sampleAmLabel: string;
     sampleEnLabel: string;
     sampleAudioFallback: string;
+    sampleLanguageNote: string;
     faqHeadline: string;
     faqItems: { q: string; a: string }[];
     finalCtaHeadline: string;
@@ -659,6 +660,7 @@ export const translations: Record<
     sampleAmLabel: "አማርኛ",
     sampleEnLabel: "እንግሊዝኛ",
     sampleAudioFallback: "ናሙና በቅርቡ ይመጣል — ከላይ ጽሑፉን ያንብቡ",
+    sampleLanguageNote: "እንግሊዝኛ ናሙና ታይቷል — በመተግበሪያው ውስጥ አማርኛና ስፓኒሽም ይገኛሉ።",
     faqHeadline: "ተደጋጋሚ ጥያቄዎች",
     faqItems: [
       { q: "አማርኛው በእውነት ጥሩ ነው?", a: "አዎ — በተፈጥሮ የኢትዮጵያ አማርኛ የተጻፈ፣ ሮቦት ትርጉም አይደለም። ከላይ ያለውን ናሙና ያዳምጡ።" },
@@ -1024,6 +1026,7 @@ export const translations: Record<
     sampleAmLabel: "Amharic",
     sampleEnLabel: "English",
     sampleAudioFallback: "Sample audio loading soon — read the text above",
+    sampleLanguageNote: "English narration shown — Amharic and Spanish also available in the app.",
     faqHeadline: "Common questions",
     faqItems: [
       { q: "Is the Amharic actually good?", a: "Yes — written in natural conversational Amharic, not robotic translation. Listen to the sample above." },
@@ -1391,6 +1394,7 @@ export const translations: Record<
     sampleAmLabel: "Amárico",
     sampleEnLabel: "Inglés",
     sampleAudioFallback: "Audio de muestra pronto — lee el texto arriba",
+    sampleLanguageNote: "Narración en inglés — amárico y español también disponibles en la app.",
     faqHeadline: "Preguntas frecuentes",
     faqItems: [
       { q: "¿El amárico es de verdad bueno?", a: "Sí — escrito en amárico conversacional natural, no traducción robótica. Escucha la muestra arriba." },

@@ -1,18 +1,26 @@
-import { writeFileSync, mkdirSync } from "fs";
+import { writeFileSync, mkdirSync, readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+
 function prepareBedtimeNarrationText(text) {
   let paced = text.trim();
-  paced = paced.replace(/([.,፣፥])(?=\S)/g, "$1  ");
-  paced = paced.replace(/([.!?።])\s*/g, "$1\n\n");
+  paced = paced.replace(/([.,])(?=\S)/g, "$1  ");
+  paced = paced.replace(/([.!?])\s*/g, "$1\n\n");
   return paced.trim();
+}
+
+function loadLandingSampleEn() {
+  const landingSamplePath = join(dirname(fileURLToPath(import.meta.url)), "..", "lib", "landingSample.ts");
+  const src = readFileSync(landingSamplePath, "utf8");
+  const match = src.match(/export const LANDING_SAMPLE_EN\s*=\s*`([\s\S]*?)`;/);
+  if (!match) {
+    throw new Error("Could not parse LANDING_SAMPLE_EN from lib/landingSample.ts");
+  }
+  return match[1].trim();
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "public");
-
-const SAMPLE_AM =
-  "ተረት ተረት! ካሳ በስሜን ተራሮች ላይ ነበረች። ጸሐይ በረፍ ውስጥ ብሩህ ነበረች። ነፍሷ ስትሞቅ፣ ከሩጫው ርቀት አንድ ድምፅ ሰማች። «ካሳ!» አለች ትንሿ የጄላዳ ቤተሰብ። «እዚህ ነው!»";
 
 async function main() {
   const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
@@ -20,8 +28,8 @@ async function main() {
     console.error("Set ELEVENLABS_API_KEY to generate sample-story.mp3");
     process.exit(1);
   }
-  const voiceId = process.env.ELEVENLABS_VOICE_AM?.trim() || "EXAVITQu4vr4xnSDxMaL";
-  const text = prepareBedtimeNarrationText(SAMPLE_AM);
+  const voiceId = process.env.ELEVENLABS_VOICE_EN?.trim() || "EXAVITQu4vr4xnSDxMaL";
+  const text = prepareBedtimeNarrationText(loadLandingSampleEn());
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
     method: "POST",
     headers: {

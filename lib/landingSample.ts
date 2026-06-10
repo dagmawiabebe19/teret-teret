@@ -1,7 +1,3 @@
-/** Landing page sample story — Kasa, 6, Simien Mountains, bedtime (~30s narration) */
+/** Landing page sample story — Kasa, 6, Simien Mountains, bedtime (~30s English narration) */
 
-export const LANDING_SAMPLE_AM =
-  "ተረት ተረት! ካሳ በስሜን ተራሮች ላይ ነበረች። ጸሐይ በረፍ ውስጥ ብሩህ ነበረች። ነፍሷ ስትሞቅ፣ ከሩጫው ርቀት አንድ ድምፅ ሰማች። «ካሳ!» አለች ትንሿ የጄላዳ ቤተሰብ። «እዚህ ነው!»";
-
-export const LANDING_SAMPLE_EN =
-  "Teret teret! Kasa was in the Simien Mountains. The sun was bright over the misty cliffs. As her heart warmed, she heard a sound from far across the meadow. \"Kasa!\" called a little gelada family. \"We are here!\"";
+export const LANDING_SAMPLE_EN = `Come closer, little one. Teret teret — let me tell you about Kasa. She was six years old, standing high in the Simien Mountains, where the mist hugs the cliffs like a soft blanket. The evening sun painted everything gold. Far across the meadow, she heard something wonderful — a family of geladas calling her name. "Kasa!" they cried. "We've been waiting for you!"`;
