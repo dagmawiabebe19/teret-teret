@@ -84,7 +84,10 @@ export function StoryReader({
   const [viewMode, setViewMode] = useState<"read" | "listen" | "learn">("read");
   const touchStartX = useRef<number | null>(null);
   const isFirstStoryRef = useRef<boolean | null>(null);
-  const { speak, pause, resume, stop, isPlaying, isPaused, isSupported } = useTTS();
+  const isPremium = subscriptionStatus === "premium";
+  const { speak, pause, resume, stop, isPlaying, isPaused, isSupported } = useTTS({
+    usePremiumVoice: isPremium,
+  });
 
   useEffect(() => {
     if (isFirstStoryRef.current === null) {
@@ -99,7 +102,6 @@ export function StoryReader({
     }
   }, [page]);
 
-  const isPremium = subscriptionStatus === "premium";
   const audioAllowedThisPage = isPremium || page < 2;
 
   useEffect(() => {
@@ -418,6 +420,7 @@ export function StoryReader({
                   key={page}
                   text={text}
                   lang={lang}
+                  usePremiumVoice={isPremium}
                   onEnd={goNext}
                   renderHighlightedText={({ currentSentenceIndex, sentenceStarts }) =>
                     highlightSentenceInText(text, sentenceStarts, currentSentenceIndex)

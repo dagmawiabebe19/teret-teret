@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import type { Lang } from "@/types";
 
 /** Map app lang codes to SpeechSynthesis utterance.lang */
 function toSpeechLang(lang: string): string {
@@ -106,14 +107,6 @@ export function selectVoice(lang: string, voices: SpeechSynthesisVoice[]): Voice
   }
 
   const selected = voice ?? getDefaultVoice(voices);
-  console.log("[useTTS] voice selected:", {
-    appLang: lang,
-    reason: reason || "fallback",
-    voiceName: selected?.name ?? "(none)",
-    voiceLang: selected?.lang ?? "(none)",
-    totalVoices: voices.length,
-  });
-
   return { voice: selected, reason: reason || "fallback" };
 }
 
@@ -145,9 +138,7 @@ function waitForVoices(timeoutMs = 1500): Promise<SpeechSynthesisVoice[]> {
     };
 
     syn.addEventListener("voiceschanged", onChange);
-    // Chrome may populate voices shortly after first getVoices() call
     syn.getVoices();
-
     setTimeout(() => finish(syn.getVoices()), timeoutMs);
   });
 }
@@ -155,7 +146,7 @@ function waitForVoices(timeoutMs = 1500): Promise<SpeechSynthesisVoice[]> {
 /** Split text into sentences for boundary tracking (start char indices) */
 export function getSentenceStarts(text: string): number[] {
   const starts: number[] = [0];
-  const re = /[.!?]\s+/g;
+  const re = /[.!?።]\s+/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     starts.push(m.index + m[0].length);
@@ -166,39 +157,77 @@ export function getSentenceStarts(text: string): number[] {
 export interface UseTTSOptions {
   onEnd?: () => void;
   rate?: number;
+  /** Premium subscribers: ElevenLabs via /api/tts */
+  usePremiumVoice?: boolean;
+}
+
+function browserRateForLang(lang: Lang, baseRate: number): number {
+  if (lang === "am") return Math.min(1.1, baseRate * 0.92);
+  return baseRate;
 }
 
 export function useTTS(options: UseTTSOptions = {}) {
-  const { onEnd, rate = 1 } = options;
+  const { onEnd, rate = 1, usePremiumVoice = false } = options;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(-1);
+  const [usingPremiumVoice, setUsingPremiumVoice] = useState(false);
   const [isSupported] = useState(() =>
-    typeof window !== "undefined" && "speechSynthesis" in window
+    typeof window !== "undefined" && ("speechSynthesis" in window || typeof Audio !== "undefined")
   );
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
   const sentenceStartsRef = useRef<number[]>([]);
   const onEndRef = useRef(onEnd);
   const rateRef = useRef(rate);
+  const usePremiumVoiceRef = useRef(usePremiumVoice);
 
   onEndRef.current = onEnd;
   rateRef.current = rate;
+  usePremiumVoiceRef.current = usePremiumVoice;
+
+  const cleanupAudio = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.src = "";
+      audioRef.current = null;
+    }
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+  }, []);
+
+  const finishPlayback = useCallback(() => {
+    setIsPlaying(false);
+    setIsPaused(false);
+    setIsLoading(false);
+    setCurrentSentenceIndex(-1);
+    utteranceRef.current = null;
+    cleanupAudio();
+    onEndRef.current?.();
+  }, [cleanupAudio]);
 
   const startUtterance = useCallback(
-    (text: string, lang: string, voices: SpeechSynthesisVoice[]) => {
+    (text: string, lang: Lang, voices: SpeechSynthesisVoice[]) => {
       const syn = window.speechSynthesis;
       const trimmed = text.trim();
       if (!trimmed) return;
 
+      setUsingPremiumVoice(false);
       const utterance = new SpeechSynthesisUtterance(trimmed);
       utterance.lang = toSpeechLang(lang);
-      utterance.rate = rateRef.current;
+      utterance.rate = browserRateForLang(lang, rateRef.current);
+      if (lang === "am") {
+        utterance.pitch = 1.05;
+      }
 
       const { voice } = selectVoice(lang, voices);
-      if (voice) {
-        utterance.voice = voice;
-      }
+      if (voice) utterance.voice = voice;
 
       sentenceStartsRef.current = getSentenceStarts(text);
       setCurrentSentenceIndex(0);
@@ -215,90 +244,155 @@ export function useTTS(options: UseTTSOptions = {}) {
         }
       };
 
-      utterance.onend = () => {
-        setIsPlaying(false);
-        setIsPaused(false);
-        setCurrentSentenceIndex(-1);
-        utteranceRef.current = null;
-        onEndRef.current?.();
-      };
-
-      utterance.onerror = (event) => {
-        console.warn("[useTTS] speech error:", {
-          appLang: lang,
-          error: event.error,
-          utteranceLang: utterance.lang,
-          voiceName: utterance.voice?.name,
-        });
-        setIsPlaying(false);
-        setIsPaused(false);
-        setCurrentSentenceIndex(-1);
-        utteranceRef.current = null;
-        onEndRef.current?.();
-      };
+      utterance.onend = () => finishPlayback();
+      utterance.onerror = () => finishPlayback();
 
       utteranceRef.current = utterance;
       syn.speak(utterance);
       setIsPlaying(true);
       setIsPaused(false);
+      setIsLoading(false);
     },
-    []
+    [finishPlayback]
+  );
+
+  const startPremiumAudio = useCallback(
+    async (text: string, lang: Lang) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+
+      setIsLoading(true);
+      setUsingPremiumVoice(true);
+      setCurrentSentenceIndex(-1);
+
+      try {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: trimmed, lang }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data.useBrowserTts) {
+            setIsLoading(false);
+            setUsingPremiumVoice(false);
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+              startUtterance(text, lang, voices);
+            } else {
+              waitForVoices().then((loaded) => startUtterance(text, lang, loaded));
+            }
+            return;
+          }
+          throw new Error(data.error ?? "TTS failed");
+        }
+
+        const blob = await res.blob();
+        cleanupAudio();
+        const url = URL.createObjectURL(blob);
+        objectUrlRef.current = url;
+        const audio = new Audio(url);
+        audio.playbackRate = rateRef.current;
+        audioRef.current = audio;
+        audio.onended = () => finishPlayback();
+        audio.onerror = () => finishPlayback();
+        await audio.play();
+        setIsPlaying(true);
+        setIsPaused(false);
+        setIsLoading(false);
+      } catch (err) {
+        console.warn("[useTTS] premium audio failed, falling back to browser", err);
+        setIsLoading(false);
+        setUsingPremiumVoice(false);
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          startUtterance(text, lang, voices);
+        } else {
+          waitForVoices().then((loaded) => startUtterance(text, lang, loaded));
+        }
+      }
+    },
+    [cleanupAudio, finishPlayback, startUtterance]
   );
 
   const speak = useCallback(
-    (text: string, lang: string) => {
+    (text: string, lang: Lang) => {
       if (!isSupported || !text.trim()) return;
 
-      const syn = window.speechSynthesis;
-      syn.cancel();
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      cleanupAudio();
+      setIsPlaying(false);
+      setIsPaused(false);
 
+      if (usePremiumVoiceRef.current) {
+        void startPremiumAudio(text, lang);
+        return;
+      }
+
+      const syn = window.speechSynthesis;
       const voices = syn.getVoices();
       if (voices.length > 0) {
         startUtterance(text, lang, voices);
         return;
       }
 
-      console.log("[useTTS] voices empty on first call, waiting for voiceschanged…");
-      waitForVoices().then((loaded) => {
-        if (loaded.length === 0) {
-          console.warn("[useTTS] no voices after wait — speaking with utterance.lang only");
-        }
-        startUtterance(text, lang, loaded);
-      });
+      waitForVoices().then((loaded) => startUtterance(text, lang, loaded));
     },
-    [isSupported, startUtterance]
+    [isSupported, cleanupAudio, startUtterance, startPremiumAudio]
   );
 
   const pause = useCallback(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.pause();
-    setIsPaused(true);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPaused(true);
+      return;
+    }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.pause();
+      setIsPaused(true);
+    }
   }, []);
 
   const resume = useCallback(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.resume();
-    setIsPaused(false);
+    if (audioRef.current) {
+      void audioRef.current.play();
+      setIsPaused(false);
+      return;
+    }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.resume();
+      setIsPaused(false);
+    }
   }, []);
 
   const stop = useCallback(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    cleanupAudio();
     setIsPlaying(false);
     setIsPaused(false);
+    setIsLoading(false);
     setCurrentSentenceIndex(-1);
     utteranceRef.current = null;
-  }, []);
+  }, [cleanupAudio]);
 
   const setRate = useCallback((r: number) => {
     rateRef.current = r;
     const u = utteranceRef.current;
-    if (u) u.rate = r;
+    if (u) u.rate = browserRateForLang((u.lang || "en").startsWith("am") ? "am" : "en", r);
+    if (audioRef.current) audioRef.current.playbackRate = r;
   }, []);
 
   const [voicesReady, setVoicesReady] = useState(false);
   useEffect(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      setVoicesReady(true);
+      return;
+    }
     const check = () => {
       if (window.speechSynthesis.getVoices().length > 0) setVoicesReady(true);
     };
@@ -312,8 +406,9 @@ export function useTTS(options: UseTTSOptions = {}) {
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
+      cleanupAudio();
     };
-  }, []);
+  }, [cleanupAudio]);
 
   return {
     speak,
@@ -323,8 +418,10 @@ export function useTTS(options: UseTTSOptions = {}) {
     setRate,
     isPlaying,
     isPaused,
+    isLoading,
     isSupported,
     voicesReady,
+    usingPremiumVoice,
     currentSentenceIndex,
     sentenceStarts: sentenceStartsRef.current,
   };

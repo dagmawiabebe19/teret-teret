@@ -120,6 +120,8 @@ export const translations: Record<
     speedLabel: string;
     listeningProgress: (n: number) => string;
     audioError: string;
+    audioLoading: string;
+    premiumAudioLabel: string;
     premiumAudioNote: string;
     audioPreviewNote: string;
     // Language learning
@@ -461,6 +463,8 @@ export const translations: Record<
     speedLabel: "ፍጥነት",
     listeningProgress: (n) => `በመስማት ላይ… ${n}%`,
     audioError: "ስሙን ማምጣት አልቻልንም። እንደገና ይሞክሩ።",
+    audioLoading: "ድምፅ በመጫን ላይ…",
+    premiumAudioLabel: "ፕሪሚየም ድምፅ",
     premiumAudioNote: "በፕሪሚየም ያልተገደበ መስማት።",
     audioPreviewNote: "ቅድመ እይታ ይስሙ። ፕሪሚየም ሙሉ ስሙን ይከፍትልዎታል።",
     learnModeTitle: "በዚህ ታሪክ ይማሩ",
@@ -797,6 +801,8 @@ export const translations: Record<
     speedLabel: "Speed",
     listeningProgress: (n) => `Listening… ${n}%`,
     audioError: "We couldn't load the audio. Try again.",
+    audioLoading: "Loading narration…",
+    premiumAudioLabel: "Premium voice",
     premiumAudioNote: "Unlimited listening with Premium.",
     audioPreviewNote: "Listen to a preview. Unlock full audio with Premium.",
     learnModeTitle: "Learn with this story",
@@ -1135,6 +1141,8 @@ export const translations: Record<
     speedLabel: "Velocidad",
     listeningProgress: (n) => `Escuchando… ${n}%`,
     audioError: "No pudimos cargar el audio. Intenta de nuevo.",
+    audioLoading: "Cargando narración…",
+    premiumAudioLabel: "Voz premium",
     premiumAudioNote: "Escucha ilimitada con Premium.",
     audioPreviewNote: "Escucha una vista previa. Desbloquea el audio completo con Premium.",
     learnModeTitle: "Aprende con este cuento",

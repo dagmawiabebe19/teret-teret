@@ -16,6 +16,8 @@ interface AudioPlayerProps {
   text: string;
   lang: Lang;
   onEnd?: () => void;
+  /** Premium subscribers get ElevenLabs narration */
+  usePremiumVoice?: boolean;
   /** Optional: render text with sentence highlighting; if not provided, no paragraph shown */
   renderHighlightedText?: (props: {
     currentSentenceIndex: number;
@@ -27,6 +29,7 @@ export function AudioPlayer({
   text,
   lang,
   onEnd,
+  usePremiumVoice = false,
   renderHighlightedText,
 }: AudioPlayerProps) {
   const { t } = useTranslation(lang);
@@ -38,12 +41,15 @@ export function AudioPlayer({
     setRate,
     isPlaying,
     isPaused,
+    isLoading,
     isSupported,
     voicesReady,
+    usingPremiumVoice,
     currentSentenceIndex,
   } = useTTS({
     onEnd,
     rate: 1,
+    usePremiumVoice,
   });
 
   const sentenceStarts = getSentenceStarts(text);
@@ -99,13 +105,18 @@ export function AudioPlayer({
         <span className="text-xs font-bold uppercase tracking-wider text-[rgba(255,215,0,0.7)]">
           {lang === "am" ? t.langNameAm : lang === "es" ? t.langNameEs : t.langNameEn}
         </span>
+        {usingPremiumVoice && (
+          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-[#1a0533] bg-[#FFD700]">
+            ✨ {t.premiumAudioLabel}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-col items-center gap-4">
         <button
           type="button"
           onClick={handlePlayPause}
-          disabled={!voicesReady || !text.trim()}
+          disabled={(!voicesReady && !usePremiumVoice) || !text.trim() || isLoading}
           className="w-20 h-20 rounded-full flex items-center justify-center text-4xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#FFD700] disabled:opacity-50"
           style={{
             background: isPlaying && !isPaused
@@ -118,10 +129,16 @@ export function AudioPlayer({
           }}
           aria-label={isPlaying ? (isPaused ? t.ttsResumeAria : t.ttsPauseAria) : t.playBtn}
         >
-          {!isPlaying || isPaused ? "▶" : "⏸"}
+          {isLoading ? "…" : !isPlaying || isPaused ? "▶" : "⏸"}
         </button>
 
-        {isPlaying && (
+        {isLoading && (
+          <p className="text-sm font-semibold text-[rgba(200,180,255,0.8)]">
+            {t.audioLoading}
+          </p>
+        )}
+
+        {isPlaying && !isLoading && (
           <p className="text-sm font-semibold text-[rgba(255,215,0,0.9)]">
             {t.listeningActive}
           </p>

@@ -10,8 +10,10 @@ export async function GET() {
   if (process.env.NODE_ENV === "development") {
     console.log("[config] stripeConfigured:", stripeEnabled);
   }
+  const elevenLabsEnabled = Boolean(process.env.ELEVENLABS_API_KEY?.trim());
   return NextResponse.json({
     stripeEnabled,
     stripeConfigured: stripeEnabled,
+    elevenLabsEnabled,
   });
 }
