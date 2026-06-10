@@ -484,8 +484,8 @@ export function StoryReader({
               className="text-[#e8e0ff] font-medium"
               style={{
                 fontFamily: lang === "am" ? "var(--font-amharic)" : "'Lora',Georgia,serif",
-                fontSize: lang === "am" ? "clamp(18px,5vw,24px)" : "clamp(16px,4.5vw,21px)",
-                lineHeight: lang === "am" ? 2.1 : 1.95,
+                fontSize: lang === "am" ? "clamp(20px,5.5vw,28px)" : "clamp(18px,5vw,24px)",
+                lineHeight: lang === "am" ? 2.15 : 2,
                 letterSpacing: lang === "am" ? "0.02em" : "0.015em",
                 textShadow: "0 2px 28px rgba(160,100,255,0.12)",
               }}
@@ -501,7 +501,7 @@ export function StoryReader({
             type="button"
             onClick={goPrev}
             disabled={page === 0}
-            className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-xl border transition-all duration-200 disabled:cursor-default"
+            className="w-[56px] h-[56px] min-h-[56px] rounded-full flex items-center justify-center text-2xl border transition-all duration-200 disabled:cursor-default"
             style={{
               background: page > 0 ? "rgba(196,77,255,0.1)" : "rgba(255,255,255,0.03)",
               borderColor: page > 0 ? "rgba(196,77,255,0.28)" : "rgba(255,255,255,0.05)",
@@ -516,7 +516,7 @@ export function StoryReader({
             <button
               type="button"
               onClick={handleTTS}
-              className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-lg border transition-all duration-200 cursor-pointer"
+              className="w-[56px] h-[56px] min-h-[56px] rounded-full flex items-center justify-center text-xl border transition-all duration-200 cursor-pointer"
               style={{
                 background: isPlaying && !isPaused ? "rgba(255,215,0,0.15)" : "rgba(196,77,255,0.1)",
                 borderColor: isPlaying && !isPaused ? "rgba(255,215,0,0.35)" : "rgba(196,77,255,0.28)",
@@ -531,7 +531,7 @@ export function StoryReader({
           <button
             type="button"
             onClick={goNext}
-            className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-xl border transition-all duration-200 cursor-pointer"
+            className="w-[56px] h-[56px] min-h-[56px] rounded-full flex items-center justify-center text-2xl border transition-all duration-200 cursor-pointer"
             style={{
               background:
                 page < total - 1

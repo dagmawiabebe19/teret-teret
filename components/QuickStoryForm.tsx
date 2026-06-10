@@ -1,33 +1,25 @@
 "use client";
 
-import { useState } from "react";
 import {
   AGES,
-  REGIONS,
+  FORM_AGE_EMOJIS,
+  FORM_REGIONS,
+  FORM_TRAITS,
+  FORM_STORY_CATEGORIES,
   TRAITS_EN,
-  ALLOWED_STORY_CATEGORIES,
-  ALLOWED_STORY_GOALS,
-  CATEGORY_EMOJI,
+  type FormStoryCategory,
 } from "@/lib/constants";
+import { ScrollPillRow, PillButton } from "@/components/ScrollPillRow";
 import { useTranslation } from "@/lib/useTranslation";
 import { trackGenerateStoryCta } from "@/lib/analytics";
-import type { Lang, StoryCategory } from "@/types";
+import type { Lang } from "@/types";
 
-const btnStyle = (active: boolean, color: "gold" | "purple" = "gold"): React.CSSProperties => ({
-  background: active
-    ? color === "gold"
-      ? "linear-gradient(135deg,#FF8C00,#FFD700)"
-      : "linear-gradient(135deg,#7b2d8b,#c44dff)"
-    : "rgba(255,255,255,0.07)",
-  border: `1.5px solid ${active ? (color === "gold" ? "#FFD700" : "#c44dff") : "rgba(255,255,255,0.13)"}`,
-  borderRadius: 20,
-  padding: "7px 13px",
-  color: active ? (color === "gold" ? "#1a1a4e" : "#fff") : "#c9b8e8",
-  fontSize: 12,
-  fontWeight: 700,
-  cursor: "pointer",
-  transition: "all 0.2s",
-  fontFamily: "'Nunito',sans-serif",
+const primaryBtnStyle = (enabled: boolean): React.CSSProperties => ({
+  background: enabled
+    ? "linear-gradient(135deg,#FF8C00,#FFD700)"
+    : "rgba(255,255,255,0.09)",
+  color: enabled ? "#1a0533" : "rgba(255,255,255,0.25)",
+  boxShadow: enabled ? "0 4px 28px rgba(255,140,0,0.4)" : "none",
 });
 
 interface QuickStoryFormProps {
@@ -36,16 +28,13 @@ interface QuickStoryFormProps {
   setChildName: (v: string) => void;
   age: string;
   setAge: (v: string) => void;
-  trait: string;
   traitIdx: number | null;
-  setTrait: (v: string) => void;
   setTraitIdx: (v: number | null) => void;
+  setTrait: (v: string) => void;
   region: string;
   setRegion: (v: string) => void;
-  category: StoryCategory;
-  setCategory: (v: StoryCategory) => void;
-  storyGoal: string;
-  setStoryGoal: (v: string) => void;
+  category: FormStoryCategory;
+  setCategory: (v: FormStoryCategory) => void;
   onSubmit: () => void;
   disabled: boolean;
   error: string;
@@ -57,58 +46,50 @@ export function QuickStoryForm({
   setChildName,
   age,
   setAge,
-  trait,
   traitIdx,
-  setTrait,
   setTraitIdx,
+  setTrait,
   region,
   setRegion,
   category,
   setCategory,
-  storyGoal,
-  setStoryGoal,
   onSubmit,
   disabled,
   error,
 }: QuickStoryFormProps) {
   const { t } = useTranslation(lang);
-  const [expanded, setExpanded] = useState(false); // collapsed by default
 
   const handleTraitSelect = (idx: number) => {
-    const next = traitIdx === idx ? null : idx;
-    setTraitIdx(next);
-    setTrait(next === null ? "" : TRAITS_EN[idx] ?? "");
+    setTraitIdx(idx);
+    setTrait(TRAITS_EN[idx] ?? "");
   };
 
   return (
     <div
       id="create"
-      className="rounded-[26px] border p-6 shadow-lg backdrop-blur-xl scroll-mt-24"
+      className="rounded-[28px] border p-6 sm:p-7 scroll-mt-24 mb-12"
       style={{
-        background: "rgba(255,255,255,0.07)",
-        borderColor: "rgba(255,255,255,0.11)",
-        boxShadow: "0 18px 50px rgba(0,0,0,0.3)",
+        background: "rgba(255,255,255,0.06)",
+        borderColor: "rgba(255,255,255,0.12)",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.2)",
       }}
     >
-      <div className="mb-5">
-        <label
-          htmlFor="child-name-quick"
-          className="block text-[13px] font-extrabold text-[#FFD700] mb-2"
-        >
-          {t.nameLabel}
-        </label>
+      <h2 className="font-fredoka text-[#FFD700] text-[22px] sm:text-[26px] text-center mb-6">
+        {t.formTitle}
+      </h2>
+
+      <div className="mb-6">
         <input
           id="child-name-quick"
           type="text"
           value={childName}
           onChange={(e) => setChildName(e.target.value)}
-          placeholder={t.quickNamePlaceholder}
-          className="w-full rounded-[16px] py-4 px-4 text-[18px] font-bold outline-none border"
+          placeholder={t.formNamePlaceholder}
+          className="w-full rounded-[20px] py-4 px-5 text-[16px] font-medium outline-none border min-h-[60px]"
           style={{
             background: "rgba(255,255,255,0.09)",
             borderColor: "rgba(255,215,0,0.35)",
             color: "#fff",
-            fontFamily: "'Nunito',sans-serif",
           }}
           maxLength={80}
           aria-required
@@ -116,27 +97,80 @@ export function QuickStoryForm({
       </div>
 
       <div className="mb-6">
-        <label className="block text-[13px] font-extrabold text-[#FFD700] mb-2">
-          {t.ageLabel}
-        </label>
-        <div className="flex gap-2">
-          {AGES.map((a, i) => (
-            <button
-              key={a.value}
-              type="button"
-              className="btn-hover flex-1 text-center rounded-xl border py-3 px-2 text-sm font-black cursor-pointer transition-all"
-              style={btnStyle(age === a.value, "gold")}
-              onClick={() => setAge(a.value)}
-              aria-pressed={age === a.value}
-            >
-              {t.ageOpts[i]}
-            </button>
-          ))}
+        <div className="flex gap-3">
+          {AGES.map((a, i) => {
+            const active = age === a.value;
+            return (
+              <button
+                key={a.value}
+                type="button"
+                className="flex-1 min-h-[72px] rounded-[20px] border-2 text-center transition-all duration-200"
+                style={{
+                  background: active ? "rgba(255,215,0,0.14)" : "rgba(255,255,255,0.06)",
+                  borderColor: active ? "#FFD700" : "rgba(255,255,255,0.14)",
+                  color: active ? "#FFD700" : "#d4c4f0",
+                  boxShadow: active ? "0 0 20px rgba(255,215,0,0.15)" : "none",
+                }}
+                onClick={() => setAge(a.value)}
+                aria-pressed={active}
+              >
+                <span className="text-2xl block mb-1" aria-hidden>
+                  {FORM_AGE_EMOJIS[i]}
+                </span>
+                <span className="text-[14px] font-medium">{t.ageOpts[i]}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
+      <div className="mb-5">
+        <p className="text-[14px] font-medium text-[#e0d4ff] mb-2">{t.formSettingLabel}</p>
+        <ScrollPillRow hint={t.scrollPillHint}>
+          {FORM_REGIONS.map((r, i) => (
+            <PillButton
+              key={r.apiName}
+              active={region === r.apiName}
+              emoji={r.emoji}
+              label={t.formRegionOpts[i]}
+              onClick={() => setRegion(r.apiName)}
+            />
+          ))}
+        </ScrollPillRow>
+      </div>
+
+      <div className="mb-5">
+        <p className="text-[14px] font-medium text-[#e0d4ff] mb-2">{t.formTraitLabel}</p>
+        <ScrollPillRow hint={t.scrollPillHint}>
+          {FORM_TRAITS.map((tr, i) => (
+            <PillButton
+              key={tr.traitIndex}
+              active={traitIdx === tr.traitIndex}
+              emoji={tr.emoji}
+              label={t.formTraitOpts[i]}
+              onClick={() => handleTraitSelect(tr.traitIndex)}
+            />
+          ))}
+        </ScrollPillRow>
+      </div>
+
+      <div className="mb-6">
+        <p className="text-[14px] font-medium text-[#e0d4ff] mb-2">{t.formCategoryLabel}</p>
+        <ScrollPillRow hint={t.scrollPillHint}>
+          {FORM_STORY_CATEGORIES.map((cat, i) => (
+            <PillButton
+              key={cat.id}
+              active={category === cat.id}
+              emoji={cat.emoji}
+              label={t.formCategoryOpts[i]}
+              onClick={() => setCategory(cat.id)}
+            />
+          ))}
+        </ScrollPillRow>
+      </div>
+
       {error && (
-        <p className="text-[#ff8080] text-[13px] mb-3 font-bold" role="alert">
+        <p className="text-[#ff9a9a] text-[14px] mb-4 font-medium" role="alert">
           {error}
         </p>
       )}
@@ -148,121 +182,12 @@ export function QuickStoryForm({
           onSubmit();
         }}
         disabled={disabled}
-        className="gen-btn w-full min-h-[56px] py-4 rounded-[15px] border-none text-[18px] font-black font-fredoka tracking-wide transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80"
-        style={{
-          background:
-            childName.trim() && !disabled
-              ? "linear-gradient(135deg,#FF8C00,#FFD700)"
-              : "rgba(255,255,255,0.09)",
-          color: childName.trim() && !disabled ? "#1a0533" : "rgba(255,255,255,0.25)",
-          boxShadow:
-            childName.trim() && !disabled ? "0 4px 24px rgba(255,140,0,0.4)" : "none",
-        }}
+        className="w-full min-h-[72px] py-4 rounded-[22px] border-none text-[18px] font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80"
+        style={primaryBtnStyle(Boolean(childName.trim() && !disabled))}
         aria-busy={disabled}
       >
-        {t.landingGenerateButton}
+        {t.formSubmit}
       </button>
-
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="w-full mt-3 py-2 text-[12px] font-bold text-[rgba(200,180,255,0.55)] hover:text-[#c9b8e8] transition-colors"
-        aria-expanded={expanded}
-      >
-        {t.customizeStoryToggle} {expanded ? "▴" : "▾"}
-      </button>
-
-      <div
-        className="overflow-hidden transition-all duration-300 ease-out"
-        style={{
-          maxHeight: expanded ? 1200 : 0,
-          opacity: expanded ? 1 : 0,
-        }}
-      >
-        <div className="pt-4 border-t border-[rgba(255,255,255,0.08)] mt-2 space-y-4">
-          <div>
-            <label className="block text-[12px] font-extrabold text-[#FFD700] mb-2">
-              {t.categoryLabel}
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {ALLOWED_STORY_CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  className="rounded-xl border py-2 px-3 text-xs font-bold"
-                  style={btnStyle(category === cat, "purple")}
-                  onClick={() => setCategory(cat)}
-                >
-                  <span aria-hidden>{CATEGORY_EMOJI[cat]}</span>{" "}
-                  {t.categoryOpts[ALLOWED_STORY_CATEGORIES.indexOf(cat)]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-extrabold text-[#FFD700] mb-2">
-              {t.traitLabel}
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {t.traits.slice(0, 8).map((tr, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className="rounded-xl border py-1.5 px-2.5 text-[11px] font-bold"
-                  style={btnStyle(traitIdx === i, "gold")}
-                  onClick={() => handleTraitSelect(i)}
-                >
-                  {tr}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-extrabold text-[#FFD700] mb-2">
-              {t.regionLabel}
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {REGIONS.slice(0, 8).map((r, i) => (
-                <button
-                  key={r.name}
-                  type="button"
-                  className="rounded-xl border py-1.5 px-2.5 text-[11px] font-bold"
-                  style={btnStyle(region === r.name, "purple")}
-                  onClick={() => setRegion(region === r.name ? "" : r.name)}
-                >
-                  {t.regionNames[i]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="story-goal-quick" className="block text-[12px] font-extrabold text-[#FFD700] mb-2">
-              {t.storyGoalLabel}
-            </label>
-            <select
-              id="story-goal-quick"
-              value={storyGoal}
-              onChange={(e) => setStoryGoal(e.target.value)}
-              className="w-full rounded-xl py-2.5 px-3 text-sm font-bold border cursor-pointer"
-              style={{
-                background: "rgba(255,255,255,0.09)",
-                borderColor: "rgba(255,215,0,0.28)",
-                color: "#fff",
-              }}
-            >
-              <option value="">{t.storyGoalNone}</option>
-              {ALLOWED_STORY_GOALS.map((goal, i) => (
-                <option key={goal} value={goal}>
-                  {t.storyGoalOpts[i]}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

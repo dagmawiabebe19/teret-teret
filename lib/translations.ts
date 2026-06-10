@@ -286,8 +286,32 @@ export const translations: Record<
     // Landing page
     heroHeadline: string;
     heroSubheadline: string;
+    ctaStartStory: string;
+    heroFreeNote: string;
     ctaCreateFree: string;
     ctaListenSample: string;
+    formTitle: string;
+    formNamePlaceholder: string;
+    formSettingLabel: string;
+    formTraitLabel: string;
+    formCategoryLabel: string;
+    formSubmit: string;
+    scrollPillHint: string;
+    formTraitOpts: string[];
+    formCategoryOpts: string[];
+    formRegionOpts: string[];
+    trustNarration: string;
+    trustHeritage: string;
+    trustSafe: string;
+    testimonialFeaturedQuote: string;
+    testimonialFeaturedAuthor: string;
+    pricingFreeShort: string;
+    pricingPremiumShort: string;
+    pricingCancelNote: string;
+    finalCtaLine: string;
+    footerNoAds: string;
+    footerFaqLink: string;
+    sampleReadMore: string;
     trustStrip: string;
     problemHeadline: string;
     problemBody: string;
@@ -641,8 +665,32 @@ export const translations: Record<
     cancel: "ሰርዝ",
     selectAvatar: "አቫታር ምረጥ",
     noneYet: "ገና የለም",
-    heroHeadline: "አማርኛ የሚያስተምሩ የመጽለፊያ ታሪኮች",
-    heroSubheadline: "በአማርኛ፣ በእንግሊዝኛ እና በስፓኒሽ የተሰሩ የኢትዮጵያ ታሪኮች። ልጅዎ ጀግና ሆኖ ቋንቋውን እየተኛ ይማራል።",
+    heroHeadline: "ልጅዎ ጀግና የሆነበት የመጽለፊያ ታሪኮች",
+    heroSubheadline: "ለኢትዮጵያ ልጆች የተሰሩ የግል አማርኛ ታሪኮች",
+    ctaStartStory: "✨ ታሪክ ጀምር",
+    heroFreeNote: "ነፃ · ካርድ አያስፈልግም",
+    formTitle: "ተረቱ ለማን ነው?",
+    formNamePlaceholder: "የልጅዎን ስም ይፃፉ",
+    formSettingLabel: "ታሪኩ የት ይካሄድ?",
+    formTraitLabel: "ልጅዎ...",
+    formCategoryLabel: "የዛሬ ሌሊት ታሪኩ ስለ ምን ነው?",
+    formSubmit: "✨ ታሪክ ፍጠር",
+    scrollPillHint: "ተጨማሪ ለማየት ይጎትቱ →",
+    formTraitOpts: ["ደፋር", "ደግ", "ጉጉተኛ", "ፈጠራ ያለው", "ቀልደኛ", "ጀብዱ ወዳድ"],
+    formCategoryOpts: ["መጽለፊያ", "ታሪክ", "ሳይንስ", "እምነት", "ባህል", "አስገራሚ"],
+    formRegionOpts: ["ስሜን ተራሮች", "ላሊበላ", "አክሱም", "ጣና ሐይቅ", "አዲስ አበባ", "ዳናኪል", "ባሌ ተራሮች", "ሐረር"],
+    trustNarration: "ሞቃት የድምፅ ትረካ",
+    trustHeritage: "የኢትዮጵያ ባህል",
+    trustSafe: "ለልጆች ደህንነት",
+    testimonialFeaturedQuote: "ልጄ 'ሰላም አያቴ' ከታሪክ ተማረችና በፌስታይም ለአያቷ ተጠቀመች።",
+    testimonialFeaturedAuthor: "መቅድስ፣ የልያ (6) እናት",
+    pricingFreeShort: "በሌሊት አንድ ታሪክ",
+    pricingPremiumShort: "ያልተገደበ ታሪኮች + ቤተ-መጽሐፍት",
+    pricingCancelNote: "በማንኛውም ጊዜ መሰረዝ ይቻላል",
+    finalCtaLine: "መጽለፊያ ሌሊት እየጠበቀ ነው።",
+    footerNoAds: "ማስታወቂያ የለም፣ መከታተል የለም",
+    footerFaqLink: "ተደጋጋሚ ጥያቄዎች",
+    sampleReadMore: "ተጨማሪ ያንብቡ →",
     ctaCreateFree: "🎁 የመጀመሪያዎን ታሪክ ነፃ ይፍጠሩ",
     ctaListenSample: "ናሙና ያዳምጡ →",
     trustStrip: "🦁 የኢትዮጵያ ባህል · 🎙️ ሞቃት የድምፅ ትረካ · 🌙 4-6 ደቂቃ የመጽለፊያ ታሪኮች",
@@ -655,7 +703,7 @@ export const translations: Record<
       { title: "በአማርኛ ግል ታሪክ ይቀበሉ", sub: "በሞቃት የድምፅ ትረካ ያዳምጡ" },
     ],
     howItWorksCta: "🎁 ነፃ ታሪክዎን ይጀምሩ →",
-    sampleHeadline: "የመጽለፊያ ሌሊት እንዴት እንደሚሰማ ያዳምጡ",
+    sampleHeadline: "ታሪክ ያዳምጡ",
     samplePlayLabel: "30 ሰከንድ ናሙና ያጫውቱ",
     samplePauseLabel: "አቁም",
     sampleAmLabel: "አማርኛ",
@@ -695,7 +743,7 @@ export const translations: Record<
     pricingFreeFeatures: ["ለመሞከር በቀን 1 ታሪክ", "ሶስት ቋንቋዎች", "ታሪኮች ከ24 ሰዓት በኋላ ይጠፋሉ"],
     pricingPremiumTitle: "ፕሪሚየም",
     pricingPremiumFeatures: ["ያልተገደበ የመጽለፊያ ታሪኮች", "ተወዳጆችን ለዘላለም አስቀምጥ", "እስከ 4 የልጅ መገለጫዎች", "ፕሪሚየም የድምፅ ትረካ"],
-    pricingCta: "ነፃ ይጀምሩ፣ ካርድ አያስፈልግም →",
+    pricingCta: "ነፃ ይጀምሩ →",
     navSignIn: "ግባ",
     navStartFree: "ነፃ ጀምር",
     sampleStoryLabel: "የምሳሌ ታሪክ",
@@ -1008,8 +1056,32 @@ export const translations: Record<
     cancel: "Cancel",
     selectAvatar: "Choose avatar",
     noneYet: "None yet",
-    heroHeadline: "Bedtime stories that teach your child Amharic",
-    heroSubheadline: "Personalized Ethiopian tales narrated in Amharic, English, and Spanish. Your child becomes the hero, learning the language while they fall asleep.",
+    heroHeadline: "Bedtime stories your child becomes the hero of",
+    heroSubheadline: "Personalized Amharic stories for Ethiopian kids",
+    ctaStartStory: "✨ Start a story",
+    heroFreeNote: "Free · No card needed",
+    formTitle: "Who's the story for?",
+    formNamePlaceholder: "Type your child's name",
+    formSettingLabel: "Where should the story happen?",
+    formTraitLabel: "Your child is...",
+    formCategoryLabel: "Tonight's story is about...",
+    formSubmit: "✨ Make my story",
+    scrollPillHint: "drag to see more →",
+    formTraitOpts: ["Brave", "Kind", "Curious", "Creative", "Funny", "Adventurous"],
+    formCategoryOpts: ["Bedtime", "History", "Science", "Faith", "Culture", "Surprise me"],
+    formRegionOpts: ["Simien Mountains", "Lalibela", "Axum", "Lake Tana", "Addis Ababa", "Danakil", "Bale Mountains", "Harar"],
+    trustNarration: "Real human narration",
+    trustHeritage: "Ethiopian heritage",
+    trustSafe: "Safe for kids",
+    testimonialFeaturedQuote: "My daughter learned 'ሰላም አያቴ' from a story and used it with my mom on FaceTime.",
+    testimonialFeaturedAuthor: "Mekdes, mom of Liya (6)",
+    pricingFreeShort: "1 story a night",
+    pricingPremiumShort: "Unlimited stories + save library",
+    pricingCancelNote: "Cancel anytime — one click",
+    finalCtaLine: "Bedtime is waiting.",
+    footerNoAds: "No ads, no tracking",
+    footerFaqLink: "FAQ",
+    sampleReadMore: "Read more →",
     ctaCreateFree: "🎁 Create your first story free",
     ctaListenSample: "Listen to a sample →",
     trustStrip: "🦁 Ethiopian heritage · 🎙️ Real human narration · 🌙 4-6 minute bedtime stories",
@@ -1022,7 +1094,7 @@ export const translations: Record<
       { title: "Get a personalized story in Amharic", sub: "Read aloud with warm AI narration" },
     ],
     howItWorksCta: "🎁 Start your free story →",
-    sampleHeadline: "Hear what bedtime sounds like",
+    sampleHeadline: "Listen to a story",
     samplePlayLabel: "Play 30-second sample",
     samplePauseLabel: "Pause",
     sampleAmLabel: "Amharic",
@@ -1062,7 +1134,7 @@ export const translations: Record<
     pricingFreeFeatures: ["1 story per day to try it out", "All 3 languages", "Stories disappear after 24 hours"],
     pricingPremiumTitle: "Premium",
     pricingPremiumFeatures: ["Unlimited bedtime stories", "Save your favorites forever", "Up to 4 child profiles", "Premium AI narration"],
-    pricingCta: "Start free, no card required →",
+    pricingCta: "Start free →",
     navSignIn: "Sign in",
     navStartFree: "Start free",
     sampleStoryLabel: "Sample story",
@@ -1377,8 +1449,32 @@ export const translations: Record<
     cancel: "Cancelar",
     selectAvatar: "Elegir avatar",
     noneYet: "Ninguno aún",
-    heroHeadline: "Cuentos para dormir que enseñan amárico a tu hijo",
-    heroSubheadline: "Cuentos etíopes personalizados narrados en amárico, inglés y español. Tu hijo es el héroe y aprende el idioma mientras se duerme.",
+    heroHeadline: "Cuentos para dormir donde tu hijo es el héroe",
+    heroSubheadline: "Cuentos personalizados en amárico para niños etíopes",
+    ctaStartStory: "✨ Empezar un cuento",
+    heroFreeNote: "Gratis · Sin tarjeta",
+    formTitle: "¿Para quién es el cuento?",
+    formNamePlaceholder: "Escribe el nombre de tu hijo",
+    formSettingLabel: "¿Dónde ocurre el cuento?",
+    formTraitLabel: "Tu hijo es...",
+    formCategoryLabel: "El cuento de esta noche trata de...",
+    formSubmit: "✨ Crear mi cuento",
+    scrollPillHint: "desliza para ver más →",
+    formTraitOpts: ["Valiente", "Amable", "Curioso", "Creativo", "Divertido", "Aventurero"],
+    formCategoryOpts: ["Para dormir", "Historia", "Ciencia", "Fe", "Cultura", "Sorpresa"],
+    formRegionOpts: ["Montañas Simien", "Lalibela", "Axum", "Lago Tana", "Addis Abeba", "Danakil", "Montañas Bale", "Harar"],
+    trustNarration: "Narración humana real",
+    trustHeritage: "Herencia etíope",
+    trustSafe: "Seguro para niños",
+    testimonialFeaturedQuote: "Mi hija aprendió 'ሰላም አያቴ' de un cuento y lo usó con mi mamá en FaceTime.",
+    testimonialFeaturedAuthor: "Mekdes, mamá de Liya (6)",
+    pricingFreeShort: "1 cuento por noche",
+    pricingPremiumShort: "Cuentos ilimitados + biblioteca",
+    pricingCancelNote: "Cancela cuando quieras",
+    finalCtaLine: "La hora de dormir te espera.",
+    footerNoAds: "Sin anuncios, sin rastreo",
+    footerFaqLink: "Preguntas frecuentes",
+    sampleReadMore: "Leer más →",
     ctaCreateFree: "🎁 Crea tu primer cuento gratis",
     ctaListenSample: "Escucha una muestra →",
     trustStrip: "🦁 Herencia etíope · 🎙️ Narración humana real · 🌙 Cuentos de 4-6 minutos",
@@ -1391,7 +1487,7 @@ export const translations: Record<
       { title: "Recibe un cuento personalizado en amárico", sub: "Léelo en voz alta con narración cálida" },
     ],
     howItWorksCta: "🎁 Empieza tu cuento gratis →",
-    sampleHeadline: "Escucha cómo suena la hora de dormir",
+    sampleHeadline: "Escucha un cuento",
     samplePlayLabel: "Reproducir muestra de 30 s",
     samplePauseLabel: "Pausar",
     sampleAmLabel: "Amárico",
@@ -1431,7 +1527,7 @@ export const translations: Record<
     pricingFreeFeatures: ["1 cuento al día para probar", "Los 3 idiomas", "Los cuentos desaparecen en 24 horas"],
     pricingPremiumTitle: "Premium",
     pricingPremiumFeatures: ["Cuentos ilimitados para dormir", "Guarda favoritos para siempre", "Hasta 4 perfiles de niños", "Narración premium con IA"],
-    pricingCta: "Empieza gratis, sin tarjeta →",
+    pricingCta: "Empieza gratis →",
     navSignIn: "Iniciar sesión",
     navStartFree: "Empezar gratis",
     sampleStoryLabel: "Cuento de ejemplo",

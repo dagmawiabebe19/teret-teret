@@ -1,4 +1,4 @@
-import type { Lang } from "@/types";
+import type { Lang, StoryCategory } from "@/types";
 import { translations, getT, getTranslations, getRegionLabel, type UITranslations } from "./translations";
 
 export const FREE_STORY_LIMIT = 1;
@@ -165,3 +165,60 @@ export const CATEGORY_TO_INSPIRATION: Record<(typeof ALLOWED_STORY_CATEGORIES)[n
 };
 
 export const TRAIT_INDICES = TRAITS_EN.map((_, i) => i);
+
+/** Kid-friendly story form — visible pill options (homepage). */
+export const FORM_AGE_EMOJIS = ["🐣", "🦊", "🦁"] as const;
+
+export const FORM_REGIONS = [
+  { apiName: "Simien Mountains", emoji: "🏔️" },
+  { apiName: "Lalibela", emoji: "⛪" },
+  { apiName: "Axum", emoji: "🏛️" },
+  { apiName: "Lake Tana", emoji: "🌊" },
+  { apiName: "Addis Ababa", emoji: "🏙️" },
+  { apiName: "Afar lowlands", emoji: "🌋" },
+  { apiName: "Bale Mountains", emoji: "🦓" },
+  { apiName: "Harar", emoji: "🐪" },
+] as const;
+
+export const FORM_TRAITS = [
+  { traitIndex: 0, emoji: "⚡" },
+  { traitIndex: 3, emoji: "🤝" },
+  { traitIndex: 2, emoji: "🦋" },
+  { traitIndex: 11, emoji: "🎨" },
+  { traitIndex: 5, emoji: "😄" },
+  { traitIndex: 15, emoji: "🌟" },
+] as const;
+
+export type FormStoryCategory =
+  | (typeof ALLOWED_STORY_CATEGORIES)[number]
+  | "surprise";
+
+export const FORM_STORY_CATEGORIES: {
+  id: FormStoryCategory;
+  emoji: string;
+  apiCategory?: (typeof ALLOWED_STORY_CATEGORIES)[number];
+}[] = [
+  { id: "bedtime", emoji: "🌙", apiCategory: "bedtime" },
+  { id: "history", emoji: "📚", apiCategory: "history" },
+  { id: "science", emoji: "🔬", apiCategory: "science" },
+  { id: "faith", emoji: "🙏", apiCategory: "faith" },
+  { id: "culture_values", emoji: "🌍", apiCategory: "culture_values" },
+  { id: "surprise", emoji: "🎲" },
+];
+
+export const SURPRISE_CATEGORY_POOL = [
+  "bedtime",
+  "history",
+  "science",
+  "faith",
+  "culture_values",
+] as const satisfies readonly (typeof ALLOWED_STORY_CATEGORIES)[number][];
+
+export function resolveFormCategory(category: FormStoryCategory): StoryCategory {
+  if (category === "surprise") {
+    return SURPRISE_CATEGORY_POOL[
+      Math.floor(Math.random() * SURPRISE_CATEGORY_POOL.length)
+    ]!;
+  }
+  return category;
+}

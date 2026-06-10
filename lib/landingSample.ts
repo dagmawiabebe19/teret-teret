@@ -21,3 +21,11 @@ export const LANDING_SAMPLE_TEXT: Record<LandingSampleLang, string> = {
   en: LANDING_SAMPLE_EN,
   am: LANDING_SAMPLE_AM,
 };
+
+/** Short preview shown before "Read more" */
+export const LANDING_SAMPLE_PREVIEW: Record<LandingSampleLang, string> = {
+  en: `Once upon a time, in the green hills above Addis Ababa, there lived a little girl named Liya — and she had the bravest heart in all of Ethiopia.
+One morning, the smell of buna drifted through her window.`,
+  am: `ተረት ተረት! በአዲስ አበባ ላይባል ያሉት አረንጓዴ ተራሮች ላይ ልያ የተባለች ትንሽ ልጅ ነበረች። ልቷም በመላው ኢትዮጵያ ከሁሉ ደፋር ነበር።
+አንድ ጥዋት የቡና ሽታ በመስኮቷ ተንሸራተተ።`,
+};

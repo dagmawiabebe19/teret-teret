@@ -9,6 +9,20 @@
   --font-fredoka: 'Fredoka One', cursive;
   --font-lora: 'Lora', Georgia, serif;
   --font-amharic: 'Noto Sans Ethiopic', 'Nunito', sans-serif;
+  --color-peach: #FFB088;
+  --color-text-body: #e8e0ff;
+  --color-text-muted: #d4c4f0;
+}
+
+.scroll-pill-row {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.scroll-pill-row::-webkit-scrollbar {
+  display: none;
 }
 
 * {

@@ -12,7 +12,6 @@ interface AppNavProps {
   avatarUrl?: string | null;
   displayName?: string | null;
   email?: string | null;
-  onStartFree?: () => void;
 }
 
 function initials(name: string | null | undefined, email: string | null | undefined): string {
@@ -29,7 +28,6 @@ export function AppNav({
   avatarUrl,
   displayName,
   email,
-  onStartFree,
 }: AppNavProps) {
   const { t } = useTranslation(lang);
 
@@ -77,24 +75,12 @@ export function AppNav({
               </Link>
             </>
           ) : (
-            <>
-              <Link
-                href="/account"
-                className="text-[11px] font-bold text-[#c9b8e8] hover:text-[#FFD700] transition-colors"
-              >
-                {t.navSignIn}
-              </Link>
-              <button
-                type="button"
-                onClick={onStartFree}
-                className="py-1.5 px-3 rounded-lg text-[11px] font-black text-[#1a1a4e]"
-                style={{
-                  background: "linear-gradient(135deg,#FF8C00,#FFD700)",
-                }}
-              >
-                {t.navStartFree}
-              </button>
-            </>
+            <Link
+              href="/account"
+              className="min-h-[44px] inline-flex items-center text-[14px] font-medium text-[#c9b8e8] hover:text-[#FFD700] transition-colors"
+            >
+              {t.navSignIn}
+            </Link>
           )}
         </div>
       </div>

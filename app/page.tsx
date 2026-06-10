@@ -5,16 +5,14 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Stars } from "@/components/Stars";
 import { Fireflies } from "@/components/Fireflies";
-import { DecorativeBackground } from "@/components/DecorativeBackground";
 import { QuickStoryForm } from "@/components/QuickStoryForm";
 import { LandingHero } from "@/components/LandingHero";
-import { ProblemSection } from "@/components/landing/ProblemSection";
-import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
 import { SampleAudioSection } from "@/components/landing/SampleAudioSection";
+import { TrustSection } from "@/components/landing/TrustSection";
 import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
-import { FAQSection } from "@/components/landing/FAQSection";
 import { FinalCTASection } from "@/components/landing/FinalCTASection";
 import { PricingSection } from "@/components/PricingSection";
+import { SiteFooter } from "@/components/SiteFooter";
 import { trackFirstStoryComplete } from "@/lib/analytics";
 import { StoryReader } from "@/components/StoryReader";
 import { SavedStoriesPanel, type SavedStoryItem } from "@/components/SavedStoriesPanel";
@@ -29,10 +27,14 @@ import { getVocabForStory } from "@/lib/vocabulary";
 import { getSavedWords, saveWord } from "@/lib/savedWords";
 import { useToast } from "@/components/ToastProvider";
 import type { Lang } from "@/types";
-import type { StoryPage } from "@/types";
+import type { StoryPage, StoryCategory } from "@/types";
 import type { VocabWord } from "@/types";
-import type { StoryCategory } from "@/types";
-import { REGIONS, TRAITS_EN } from "@/lib/constants";
+import {
+  REGIONS,
+  TRAITS_EN,
+  resolveFormCategory,
+  type FormStoryCategory,
+} from "@/lib/constants";
 import { AppNav } from "@/components/AppNav";
 import { ChildProfilePicker, applyChildToForm } from "@/components/ChildProfilePicker";
 import { RecentlyPlayed } from "@/components/RecentlyPlayed";
@@ -45,10 +47,10 @@ export default function HomePage() {
   const router = useRouter();
   const [screen, setScreen] = useState<"home" | "loading" | "story">("home");
   const [childName, setChildName] = useState("");
-  const [trait, setTrait] = useState("");
-  const [traitIdx, setTraitIdx] = useState<number | null>(null);
-  const [region, setRegion] = useState("");
-  const [category, setCategory] = useState<StoryCategory>("bedtime");
+  const [trait, setTrait] = useState(TRAITS_EN[0] ?? "");
+  const [traitIdx, setTraitIdx] = useState<number | null>(0);
+  const [region, setRegion] = useState("Simien Mountains");
+  const [category, setCategory] = useState<FormStoryCategory>("bedtime");
   const [topic, setTopic] = useState("");
   const [storyGoal, setStoryGoal] = useState("");
   const [age, setAge] = useState("5-7");
@@ -98,16 +100,13 @@ export default function HomePage() {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const generatingRef = useRef(false);
+  const lastStoryCategoryRef = useRef<StoryCategory>("bedtime");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const toast = useToast();
 
   const scrollToCreate = useCallback(() => {
     document.getElementById("create")?.scrollIntoView({ behavior: "smooth" });
-  }, []);
-
-  const scrollToSample = useCallback(() => {
-    document.getElementById("sample")?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
   useEffect(() => {
@@ -285,7 +284,7 @@ export default function HomePage() {
           id: data.id,
           childName,
           region: storyRegion || "Ethiopian highlands",
-          category,
+          category: lastStoryCategoryRef.current,
           languageDefault: lang,
           rawStory,
           parsedPages: pages.length ? pages : undefined,
@@ -381,6 +380,8 @@ export default function HomePage() {
     const effectiveTrait =
       trait || TRAITS_EN[Math.floor(Math.random() * TRAITS_EN.length)];
     const effectiveGoal = storyGoal || "teach_moral";
+    const effectiveCategory = resolveFormCategory(category);
+    lastStoryCategoryRef.current = effectiveCategory;
 
     try {
       const res = await fetch("/api/generate-story", {
@@ -391,7 +392,7 @@ export default function HomePage() {
           ageGroup: age,
           trait: effectiveTrait,
           region: effectiveRegion,
-          category,
+          category: effectiveCategory,
           topic: topic.trim() || undefined,
           storyGoal: effectiveGoal,
           language: lang,
@@ -653,7 +654,6 @@ export default function HomePage() {
         }}
       >
         <Stars />
-        <DecorativeBackground />
 
         {screen !== "story" && (
           <AppNav
@@ -663,7 +663,6 @@ export default function HomePage() {
             avatarUrl={avatarUrl}
             displayName={displayName}
             email={userEmail}
-            onStartFree={scrollToCreate}
           />
         )}
 
@@ -676,16 +675,11 @@ export default function HomePage() {
               <LandingHero
                 lang={lang}
                 onCreateClick={scrollToCreate}
-                onListenSample={scrollToSample}
                 remainingStories={usage?.remainingStoriesToday ?? null}
                 storiesUsedToday={usage?.storiesUsedToday ?? 0}
                 isPremium={subscriptionStatus === "premium"}
                 onUpgrade={() => setShowPaywall(true)}
               />
-
-              <ProblemSection lang={lang} />
-
-              <HowItWorksSection lang={lang} onStartClick={scrollToCreate} />
 
               <QuickStoryForm
                 lang={lang}
@@ -693,7 +687,6 @@ export default function HomePage() {
                 setChildName={setChildName}
                 age={age}
                 setAge={setAge}
-                trait={trait}
                 traitIdx={traitIdx}
                 setTrait={setTrait}
                 setTraitIdx={setTraitIdx}
@@ -701,14 +694,14 @@ export default function HomePage() {
                 setRegion={setRegion}
                 category={category}
                 setCategory={setCategory}
-                storyGoal={storyGoal}
-                setStoryGoal={setStoryGoal}
                 onSubmit={generateStory}
                 disabled={!childName.trim() || isGenerating}
                 error={error}
               />
 
               <SampleAudioSection lang={lang} />
+
+              <TrustSection lang={lang} />
 
               <TestimonialsSection lang={lang} />
 
@@ -718,9 +711,9 @@ export default function HomePage() {
                 stripeEnabled={stripeEnabled}
               />
 
-              <FAQSection lang={lang} />
-
               <FinalCTASection lang={lang} onStartClick={scrollToCreate} />
+
+              <SiteFooter lang={lang} />
 
               {(!isGuest || savedStories.length > 0) && (
                 <>
