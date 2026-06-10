@@ -9,10 +9,22 @@ const DEFAULT_VOICES: Record<Lang, string> = {
   am: "EXAVITQu4vr4xnSDxMaL", // multilingual v2 for Amharic
 };
 
-const MODEL_ID = "eleven_multilingual_v2";
+const DEFAULT_MODEL_ID = "eleven_multilingual_v2";
+
+/** Bedtime pacing: extra pauses after punctuation + breathing room between sentences. */
+export function prepareBedtimeNarrationText(text: string): string {
+  let paced = text.trim();
+  paced = paced.replace(/([.,፣፥])(?=\S)/g, "$1  ");
+  paced = paced.replace(/([.!?።])\s*/g, "$1\n\n");
+  return paced.trim();
+}
 
 export function isElevenLabsConfigured(): boolean {
   return Boolean(process.env.ELEVENLABS_API_KEY?.trim());
+}
+
+function modelId(): string {
+  return process.env.ELEVENLABS_MODEL_ID?.trim() || DEFAULT_MODEL_ID;
 }
 
 function voiceIdForLang(lang: Lang): string {
@@ -32,6 +44,7 @@ export async function synthesizeSpeech(text: string, lang: Lang): Promise<ArrayB
   }
 
   const voiceId = voiceIdForLang(lang);
+  const narrationText = prepareBedtimeNarrationText(text);
   const res = await fetch(`${ELEVENLABS_API_URL}/${voiceId}`, {
     method: "POST",
     headers: {
@@ -40,12 +53,12 @@ export async function synthesizeSpeech(text: string, lang: Lang): Promise<ArrayB
       Accept: "audio/mpeg",
     },
     body: JSON.stringify({
-      text: text.trim(),
-      model_id: MODEL_ID,
+      text: narrationText,
+      model_id: modelId(),
       voice_settings: {
-        stability: 0.45,
+        stability: 0.7,
         similarity_boost: 0.75,
-        style: 0.35,
+        style: 0.4,
         use_speaker_boost: true,
       },
     }),
