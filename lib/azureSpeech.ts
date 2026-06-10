@@ -33,10 +33,16 @@ function escapeSsml(text: string): string {
     .replace(/'/g, "&apos;");
 }
 
+function addBedtimeBreaks(escapedText: string): string {
+  return escapedText
+    .replace(/([.!?።])(?!\s*<break)/g, '$1<break time="600ms"/>')
+    .replace(/([,፣፥])(?!\s*<break)/g, '$1<break time="400ms"/>');
+}
+
 export function buildAmharicSsml(text: string): string {
   const voice = voiceForAmharic();
-  const safe = escapeSsml(text.trim());
-  return `<speak version='1.0' xml:lang='am-ET'><voice name='${voice}'><prosody rate='-15%'>${safe}</prosody></voice></speak>`;
+  const safe = addBedtimeBreaks(escapeSsml(text.trim()));
+  return `<speak version='1.0' xml:lang='am-ET'><voice name='${voice}'><prosody rate='-25%'>${safe}</prosody></voice></speak>`;
 }
 
 export async function synthesizeAmharicSpeech(text: string): Promise<ArrayBuffer> {

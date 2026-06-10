@@ -5,10 +5,11 @@ import { fileURLToPath } from "url";
 // Mirrors lib/azureSpeech.ts for standalone script use
 const AZURE_DEFAULT_VOICE = "am-ET-MekdesNeural";
 
+// Mirrors lib/elevenlabs.ts prepareBedtimeNarrationText
 function prepareBedtimeNarrationText(text) {
   let paced = text.trim();
-  paced = paced.replace(/([.,])(?=\S)/g, "$1  ");
-  paced = paced.replace(/([.!?])\s*/g, "$1\n\n");
+  paced = paced.replace(/([,፣፥])(\s*)/g, "$1  ");
+  paced = paced.replace(/([.!?።])(\s*)/g, "$1  \n\n");
   return paced.trim();
 }
 
@@ -31,10 +32,17 @@ function escapeSsml(text) {
     .replace(/'/g, "&apos;");
 }
 
+// Mirrors lib/azureSpeech.ts buildAmharicSsml
+function addBedtimeBreaks(escapedText) {
+  return escapedText
+    .replace(/([.!?።])(?!\s*<break)/g, '$1<break time="600ms"/>')
+    .replace(/([,፣፥])(?!\s*<break)/g, '$1<break time="400ms"/>');
+}
+
 function buildAmharicSsml(text) {
   const voice = process.env.AZURE_VOICE_AM?.trim() || AZURE_DEFAULT_VOICE;
-  const safe = escapeSsml(text.trim());
-  return `<speak version='1.0' xml:lang='am-ET'><voice name='${voice}'><prosody rate='-15%'>${safe}</prosody></voice></speak>`;
+  const safe = addBedtimeBreaks(escapeSsml(text.trim()));
+  return `<speak version='1.0' xml:lang='am-ET'><voice name='${voice}'><prosody rate='-25%'>${safe}</prosody></voice></speak>`;
 }
 
 function azureTtsUrl() {
@@ -67,9 +75,9 @@ async function synthesizeElevenLabs(text) {
       text: prepareBedtimeNarrationText(text),
       model_id: process.env.ELEVENLABS_MODEL_ID?.trim() || "eleven_multilingual_v2",
       voice_settings: {
-        stability: 0.7,
+        stability: 0.75,
         similarity_boost: 0.75,
-        style: 0.4,
+        style: 0.3,
         use_speaker_boost: true,
       },
     }),

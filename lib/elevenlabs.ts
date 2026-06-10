@@ -11,11 +11,11 @@ const DEFAULT_VOICES: Record<Lang, string> = {
 
 const DEFAULT_MODEL_ID = "eleven_multilingual_v2";
 
-/** Bedtime pacing: extra pauses after punctuation + breathing room between sentences. */
+/** Bedtime pacing: deliberate pauses after punctuation + breathing room between sentences. */
 export function prepareBedtimeNarrationText(text: string): string {
   let paced = text.trim();
-  paced = paced.replace(/([.,፣፥])(?=\S)/g, "$1  ");
-  paced = paced.replace(/([.!?።])\s*/g, "$1\n\n");
+  paced = paced.replace(/([,፣፥])(\s*)/g, "$1  ");
+  paced = paced.replace(/([.!?።])(\s*)/g, "$1  \n\n");
   return paced.trim();
 }
 
@@ -56,9 +56,9 @@ export async function synthesizeSpeech(text: string, lang: Lang): Promise<ArrayB
       text: narrationText,
       model_id: modelId(),
       voice_settings: {
-        stability: 0.7,
+        stability: 0.75,
         similarity_boost: 0.75,
-        style: 0.4,
+        style: 0.3,
         use_speaker_boost: true,
       },
     }),
