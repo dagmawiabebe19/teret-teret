@@ -1,7 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { LANDING_SAMPLE_EN } from "@/lib/landingSample";
+import { useRef, useState, useEffect } from "react";
+import {
+  LANDING_SAMPLE_AUDIO,
+  LANDING_SAMPLE_TEXT,
+  type LandingSampleLang,
+} from "@/lib/landingSample";
 import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/types";
 
@@ -9,11 +13,28 @@ interface SampleAudioSectionProps {
   lang: Lang;
 }
 
+const SAMPLE_TOGGLE: { id: LandingSampleLang; label: string }[] = [
+  { id: "en", label: "🇺🇸 English" },
+  { id: "am", label: "🇪🇹 አማርኛ" },
+];
+
 export function SampleAudioSection({ lang }: SampleAudioSectionProps) {
   const { t } = useTranslation(lang);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [sampleLang, setSampleLang] = useState<LandingSampleLang>("en");
   const [playing, setPlaying] = useState(false);
   const [audioError, setAudioError] = useState(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = LANDING_SAMPLE_AUDIO[sampleLang];
+    audio.load();
+    setPlaying(false);
+    setAudioError(false);
+  }, [sampleLang]);
 
   const togglePlay = async () => {
     const audio = audioRef.current;
@@ -26,6 +47,7 @@ export function SampleAudioSection({ lang }: SampleAudioSectionProps) {
     try {
       await audio.play();
       setPlaying(true);
+      setAudioError(false);
     } catch {
       setAudioError(true);
       setPlaying(false);
@@ -45,9 +67,37 @@ export function SampleAudioSection({ lang }: SampleAudioSectionProps) {
           borderColor: "rgba(255,215,0,0.25)",
         }}
       >
+        <div
+          className="flex justify-center gap-2 mb-5"
+          role="group"
+          aria-label={t.sampleToggleLabel}
+        >
+          {SAMPLE_TOGGLE.map(({ id, label }) => {
+            const active = sampleLang === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setSampleLang(id)}
+                className="min-h-[40px] px-4 py-2 rounded-full text-[13px] font-bold transition-all"
+                style={{
+                  background: active
+                    ? "linear-gradient(135deg,#FF8C00,#FFD700)"
+                    : "rgba(255,255,255,0.07)",
+                  border: `1.5px solid ${active ? "#FFD700" : "rgba(255,255,255,0.15)"}`,
+                  color: active ? "#1a0533" : "#c9b8e8",
+                }}
+                aria-pressed={active}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
         <audio
           ref={audioRef}
-          src="/sample-story.mp3"
+          src={LANDING_SAMPLE_AUDIO.en}
           preload="metadata"
           onEnded={() => setPlaying(false)}
           onError={() => setAudioError(true)}
@@ -84,9 +134,12 @@ export function SampleAudioSection({ lang }: SampleAudioSectionProps) {
         >
           <p
             className="text-[14px] leading-relaxed text-[#e8e0ff]"
-            style={{ fontFamily: "'Lora',serif" }}
+            style={{
+              fontFamily:
+                sampleLang === "am" ? "'Noto Sans Ethiopic',sans-serif" : "'Lora',serif",
+            }}
           >
-            {LANDING_SAMPLE_EN}
+            {LANDING_SAMPLE_TEXT[sampleLang]}
           </p>
         </div>
       </div>
