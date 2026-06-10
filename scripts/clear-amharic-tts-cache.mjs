@@ -17,23 +17,46 @@ if (!url || !key) {
 
 const supabase = createClient(url, key);
 
+async function listAllAmFiles() {
+  const all = [];
+  let offset = 0;
+  const limit = 1000;
+  for (;;) {
+    const { data: files, error } = await supabase.storage.from("tts-cache").list("am", {
+      limit,
+      offset,
+    });
+    if (error) throw error;
+    if (!files?.length) break;
+    for (const f of files) {
+      if (f.name) all.push(`am/${f.name}`);
+    }
+    if (files.length < limit) break;
+    offset += limit;
+  }
+  return all;
+}
+
 async function main() {
-  const { data: files, error: listError } = await supabase.storage.from("tts-cache").list("am", {
-    limit: 1000,
-  });
-  if (listError) {
-    console.error("List failed:", listError.message);
+  let paths;
+  try {
+    paths = await listAllAmFiles();
+  } catch (err) {
+    console.error("List failed:", err.message || err);
     process.exit(1);
   }
-  if (!files?.length) {
+  if (!paths.length) {
     console.log("No files under tts-cache/am/");
     return;
   }
-  const paths = files.map((f) => `am/${f.name}`);
-  const { error: removeError } = await supabase.storage.from("tts-cache").remove(paths);
-  if (removeError) {
-    console.error("Remove failed:", removeError.message);
-    process.exit(1);
+  const batchSize = 100;
+  for (let i = 0; i < paths.length; i += batchSize) {
+    const batch = paths.slice(i, i + batchSize);
+    const { error: removeError } = await supabase.storage.from("tts-cache").remove(batch);
+    if (removeError) {
+      console.error("Remove failed:", removeError.message);
+      process.exit(1);
+    }
   }
   console.log(`Deleted ${paths.length} file(s) from tts-cache/am/`);
 }
