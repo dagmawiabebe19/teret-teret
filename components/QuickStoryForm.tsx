@@ -10,6 +10,7 @@ import {
   CATEGORY_EMOJI,
 } from "@/lib/constants";
 import { useTranslation } from "@/lib/useTranslation";
+import { trackGenerateStoryCta } from "@/lib/analytics";
 import type { Lang, StoryCategory } from "@/types";
 
 const btnStyle = (active: boolean, color: "gold" | "purple" = "gold"): React.CSSProperties => ({
@@ -71,7 +72,7 @@ export function QuickStoryForm({
   error,
 }: QuickStoryFormProps) {
   const { t } = useTranslation(lang);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false); // collapsed by default
 
   const handleTraitSelect = (idx: number) => {
     const next = traitIdx === idx ? null : idx;
@@ -142,21 +143,24 @@ export function QuickStoryForm({
 
       <button
         type="button"
-        onClick={onSubmit}
+        onClick={() => {
+          trackGenerateStoryCta("form");
+          onSubmit();
+        }}
         disabled={disabled}
-        className="gen-btn w-full py-4 rounded-[15px] border-none text-[18px] font-black font-fredoka tracking-wide transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80"
+        className="gen-btn w-full min-h-[56px] py-4 rounded-[15px] border-none text-[18px] font-black font-fredoka tracking-wide transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80"
         style={{
           background:
             childName.trim() && !disabled
               ? "linear-gradient(135deg,#FF8C00,#FFD700)"
               : "rgba(255,255,255,0.09)",
-          color: childName.trim() && !disabled ? "#1a1a4e" : "rgba(255,255,255,0.25)",
+          color: childName.trim() && !disabled ? "#1a0533" : "rgba(255,255,255,0.25)",
           boxShadow:
             childName.trim() && !disabled ? "0 4px 24px rgba(255,140,0,0.4)" : "none",
         }}
         aria-busy={disabled}
       >
-        {t.tellMeStoryTonight}
+        {t.landingGenerateButton}
       </button>
 
       <button

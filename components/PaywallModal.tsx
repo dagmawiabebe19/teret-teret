@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "@/lib/useTranslation";
 import { startStripeCheckout } from "@/lib/stripeCheckout";
+import { trackPremiumUpgradeClick } from "@/lib/analytics";
 import type { Lang } from "@/types";
 
 interface PaywallModalProps {
@@ -19,6 +20,7 @@ export function PaywallModal({ onClose, lang, stripeEnabled = false, isGuest = f
   const [error, setError] = useState("");
 
   const handleUpgrade = async () => {
+    trackPremiumUpgradeClick("paywall");
     if (isGuest) {
       const returnTo = typeof window !== "undefined" ? encodeURIComponent(window.location.pathname || "/") : "";
       window.location.href = returnTo ? `/account?signin=1&returnTo=${returnTo}` : "/account?signin=1";

@@ -8,9 +8,14 @@ import { Fireflies } from "@/components/Fireflies";
 import { DecorativeBackground } from "@/components/DecorativeBackground";
 import { QuickStoryForm } from "@/components/QuickStoryForm";
 import { LandingHero } from "@/components/LandingHero";
-import { SampleStoryPreview } from "@/components/SampleStoryPreview";
-import { SocialProof } from "@/components/SocialProof";
+import { ProblemSection } from "@/components/landing/ProblemSection";
+import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
+import { SampleAudioSection } from "@/components/landing/SampleAudioSection";
+import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
+import { FAQSection } from "@/components/landing/FAQSection";
+import { FinalCTASection } from "@/components/landing/FinalCTASection";
 import { PricingSection } from "@/components/PricingSection";
+import { trackFirstStoryComplete } from "@/lib/analytics";
 import { StoryReader } from "@/components/StoryReader";
 import { SavedStoriesPanel, type SavedStoryItem } from "@/components/SavedStoriesPanel";
 import { DailyTeretCard } from "@/components/DailyTeretCard";
@@ -92,7 +97,6 @@ export default function HomePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [showSample, setShowSample] = useState(false);
   const generatingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -103,10 +107,7 @@ export default function HomePage() {
   }, []);
 
   const scrollToSample = useCallback(() => {
-    setShowSample(true);
-    setTimeout(() => {
-      document.getElementById("sample")?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
+    document.getElementById("sample")?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
   useEffect(() => {
@@ -427,6 +428,7 @@ export default function HomePage() {
       setPages(pageList);
       setIllustrationPrompts(Array.isArray(data.parsed?.illustrationPrompts) ? data.parsed.illustrationPrompts : []);
       setStoryVocabulary(Array.isArray(data.parsed?.vocabulary) ? data.parsed.vocabulary : []);
+      trackFirstStoryComplete();
       setTimeout(() => setScreen("story"), 500);
     } catch (e) {
       setError(t.errorGeneric);
@@ -674,75 +676,16 @@ export default function HomePage() {
               <LandingHero
                 lang={lang}
                 onCreateClick={scrollToCreate}
-                onSeeExample={scrollToSample}
+                onListenSample={scrollToSample}
                 remainingStories={usage?.remainingStoriesToday ?? null}
+                storiesUsedToday={usage?.storiesUsedToday ?? 0}
                 isPremium={subscriptionStatus === "premium"}
                 onUpgrade={() => setShowPaywall(true)}
               />
 
-              <SocialProof lang={lang} />
+              <ProblemSection lang={lang} />
 
-              <SampleStoryPreview
-                lang={lang}
-                setLang={setLang}
-                visible={showSample}
-                onGenerateOwn={scrollToCreate}
-              />
-
-              {userProgress != null && (
-                <div
-                  className="flex justify-center gap-2 mb-3 text-[11px] font-bold"
-                  style={{ color: "rgba(255,215,0,0.85)" }}
-                >
-                  <span>{userProgress.levelName}</span>
-                  {userProgress.streakCount > 0 && (
-                    <span>· 🔥 {t.streakDays(userProgress.streakCount)}</span>
-                  )}
-                </div>
-              )}
-
-              <DailyTeretCard
-                lang={lang}
-                progress={userProgress}
-                onOpenDailyStory={openDailyStory}
-              />
-
-              <SavedStoriesPanel
-                lang={lang}
-                stories={savedStories}
-                open={showSaved}
-                onToggle={() => setShowSaved(!showSaved)}
-                onOpenStory={openSavedStory}
-                onDelete={isGuest ? undefined : deleteStory}
-                onToggleFavorite={isGuest ? undefined : toggleFavorite}
-                isGuest={isGuest}
-              />
-              {isGuest && (
-                <p
-                  className="mt-2 mb-2 text-[11px] text-[rgba(200,180,255,0.65)] leading-snug px-1"
-                  role="status"
-                >
-                  {savedStories.length > 0 ? t.guestNotice : t.signInToSync}
-                </p>
-              )}
-
-              <ChildProfilePicker
-                lang={lang}
-                profiles={childProfiles}
-                selectedId={selectedChildId}
-                onSelect={handleChildSelect}
-                onAddChild={() => router.push("/profile")}
-                isPremium={subscriptionStatus === "premium"}
-                onUpgrade={() => setShowPaywall(true)}
-              />
-
-              {subscriptionStatus === "premium" && libraryStories.length > 0 && (
-                <RecentlyPlayed
-                  lang={lang}
-                  stories={libraryStories}
-                  onOpen={openLibraryStory}
-                />
-              )}
+              <HowItWorksSection lang={lang} onStartClick={scrollToCreate} />
 
               <QuickStoryForm
                 lang={lang}
@@ -765,11 +708,78 @@ export default function HomePage() {
                 error={error}
               />
 
+              <SampleAudioSection lang={lang} />
+
+              <TestimonialsSection lang={lang} />
+
               <PricingSection
                 lang={lang}
                 isSignedIn={!isGuest}
                 stripeEnabled={stripeEnabled}
               />
+
+              <FAQSection lang={lang} />
+
+              <FinalCTASection lang={lang} onStartClick={scrollToCreate} />
+
+              {(!isGuest || savedStories.length > 0) && (
+                <>
+                  {userProgress != null && (
+                    <div
+                      className="flex justify-center gap-2 mt-10 mb-3 text-[11px] font-bold"
+                      style={{ color: "rgba(255,215,0,0.85)" }}
+                    >
+                      <span>{userProgress.levelName}</span>
+                      {userProgress.streakCount > 0 && (
+                        <span>· 🔥 {t.streakDays(userProgress.streakCount)}</span>
+                      )}
+                    </div>
+                  )}
+
+                  <DailyTeretCard
+                    lang={lang}
+                    progress={userProgress}
+                    onOpenDailyStory={openDailyStory}
+                  />
+
+                  <SavedStoriesPanel
+                    lang={lang}
+                    stories={savedStories}
+                    open={showSaved}
+                    onToggle={() => setShowSaved(!showSaved)}
+                    onOpenStory={openSavedStory}
+                    onDelete={isGuest ? undefined : deleteStory}
+                    onToggleFavorite={isGuest ? undefined : toggleFavorite}
+                    isGuest={isGuest}
+                  />
+                  {isGuest && savedStories.length > 0 && (
+                    <p
+                      className="mt-2 mb-2 text-[11px] text-[rgba(200,180,255,0.65)] leading-snug px-1"
+                      role="status"
+                    >
+                      {t.guestNotice}
+                    </p>
+                  )}
+
+                  <ChildProfilePicker
+                    lang={lang}
+                    profiles={childProfiles}
+                    selectedId={selectedChildId}
+                    onSelect={handleChildSelect}
+                    onAddChild={() => router.push("/profile")}
+                    isPremium={subscriptionStatus === "premium"}
+                    onUpgrade={() => setShowPaywall(true)}
+                  />
+
+                  {subscriptionStatus === "premium" && libraryStories.length > 0 && (
+                    <RecentlyPlayed
+                      lang={lang}
+                      stories={libraryStories}
+                      onOpen={openLibraryStory}
+                    />
+                  )}
+                </>
+              )}
             </div>
           )}
 

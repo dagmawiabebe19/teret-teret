@@ -8,6 +8,7 @@ import type { UserProgress } from "@/types";
 import type { UITranslations } from "@/lib/translations";
 import { useTranslation } from "@/lib/useTranslation";
 import { startStripeCheckout } from "@/lib/stripeCheckout";
+import { trackPremiumConversion, trackSignupComplete } from "@/lib/analytics";
 
 function formatBillingDate(iso: string, lang: "am" | "en" | "es"): string {
   try {
@@ -158,7 +159,10 @@ export default function AccountPage() {
     setMessageType("success");
     let intervalId: ReturnType<typeof setInterval> | null = null;
     refreshProfile().then((isPremium) => {
-      if (isPremium) return;
+      if (isPremium) {
+        trackPremiumConversion();
+        return;
+      }
       setMessage(t.premiumActivating);
       let attempts = 0;
       const maxAttempts = 5;
@@ -168,6 +172,7 @@ export default function AccountPage() {
           if (premium) {
             if (intervalId) clearInterval(intervalId);
             intervalId = null;
+            trackPremiumConversion();
             setMessage(t.subscriptionSuccessMessage);
             setMessageType("success");
           } else if (attempts >= maxAttempts && intervalId) {
@@ -200,6 +205,7 @@ export default function AccountPage() {
         setMessage(getFriendlyAuthError(error, t));
         setMessageType("error");
       } else {
+        trackSignupComplete();
         setMessage(t.signUpSuccess);
         setMessageType("success");
       }

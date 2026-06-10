@@ -1,18 +1,27 @@
-export type AnalyticsEvent =
-  | "story_generated"
-  | "story_saved"
-  | "paywall_shown"
-  | "subscription_started"
-  | "story_opened"
-  | "story_copied";
+import { track } from "@vercel/analytics";
 
-export function track(event: AnalyticsEvent, props?: Record<string, string | number>) {
-  if (typeof window === "undefined") return;
-  try {
-    if (typeof (window as unknown as { gtag?: (a: string, b: string, c: Record<string, unknown>) => void }).gtag === "function") {
-      (window as unknown as { gtag: (a: string, b: string, c: Record<string, unknown>) => void }).gtag("event", event, props ?? {});
-    }
-  } catch {
-    // no-op
-  }
+type AnalyticsProps = Record<string, string | number | boolean | null>;
+
+export function trackGenerateStoryCta(source: string) {
+  track("generate_story_cta_click", { source });
+}
+
+export function trackFirstStoryComplete() {
+  track("first_story_complete");
+}
+
+export function trackSignupComplete() {
+  track("signup_complete");
+}
+
+export function trackPremiumUpgradeClick(source: string) {
+  track("premium_upgrade_click", { source });
+}
+
+export function trackPremiumConversion() {
+  track("premium_conversion");
+}
+
+export function trackPageView(name: string, props?: AnalyticsProps) {
+  track(name, props);
 }

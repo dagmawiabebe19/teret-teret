@@ -51,11 +51,8 @@ export function AppNav({
           {t.appTitle}
         </Link>
 
-        <div className="flex-1 flex justify-center">
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
           <LangToggle lang={lang} setLang={setLang} />
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
           {isSignedIn ? (
             <>
               <Link
