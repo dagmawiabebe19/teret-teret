@@ -3,6 +3,16 @@ const DEFAULT_VOICE = "am-ET-MekdesNeural";
 const FULLSTOP_PLACEHOLDER = "\uE000FS\uE001";
 const GEEZ_COMMA_PLACEHOLDER = "\uE000GC\uE001";
 
+/**
+ * Expected clean SSML shape (Vercel log `[azureSpeech] FULL SSML:`):
+ *
+ * <speak version='1.0' xml:lang='am-ET'><voice name='am-ET-MekdesNeural'><prosody rate='-25%'>
+ * ተረት ተረት<break time="600ms"/> በአዲስ አበባ ላይባል ያሉት አረንጓዴ ተራሮች ላይ ልያ የተባለች ትንሽ ልጅ ነበረች<break time="600ms"/>
+ * </prosody></voice></speak>
+ *
+ * Must NOT contain: &#63;, &quest;, ፣, ።, literal "comma", or "question mark" artifacts.
+ */
+
 export function isAzureSpeechConfigured(): boolean {
   const key = process.env.AZURE_SPEECH_KEY?.trim();
   const region = process.env.AZURE_SPEECH_REGION?.trim();
@@ -27,7 +37,8 @@ function voiceForAmharic(): string {
   return process.env.AZURE_VOICE_AM?.trim() || DEFAULT_VOICE;
 }
 
-function escapeSsmlText(text: string): string {
+/** Only escape XML structural characters — never ? ! . or other punctuation. */
+function escapeXML(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -36,36 +47,27 @@ function escapeSsmlText(text: string): string {
     .replace(/'/g, "&apos;");
 }
 
-const BREAK_TAG_RE = /<break time="\d+ms"\/>/g;
-
-/** Escape story text while leaving our break tags intact. */
-function escapePreservingBreakTags(processed: string): string {
-  const tags = processed.match(BREAK_TAG_RE) ?? [];
-  const parts = processed.split(BREAK_TAG_RE);
-  let out = escapeSsmlText(parts[0] ?? "");
-  for (let i = 0; i < tags.length; i++) {
-    out += tags[i] + escapeSsmlText(parts[i + 1] ?? "");
-  }
-  return out;
+function stripInvisibleChars(text: string): string {
+  return text.replace(/[\u200B-\u200D\uFEFF]/g, "");
 }
 
 /**
  * Build Amharic SSML with bedtime pacing.
- * Ge'ez ።/፣ are replaced by <break> tags only — not kept in spoken text,
- * because Azure voices may otherwise say "comma" / "period" for those characters.
+ * 1. Strip zero-width / BOM
+ * 2. Escape XML special chars in story text
+ * 3. Replace Ge'ez ።/፣ with <break> tags (not spoken — avoids "comma"/"period")
  */
 export function buildAmharicSSML(
   text: string,
   voice: string = DEFAULT_VOICE
 ): string {
-  let processed = text
-    .trim()
+  let processed = stripInvisibleChars(text.trim());
+  processed = escapeXML(processed);
+  processed = processed
     .replace(/።/g, FULLSTOP_PLACEHOLDER)
     .replace(/፣/g, GEEZ_COMMA_PLACEHOLDER)
     .replace(new RegExp(FULLSTOP_PLACEHOLDER, "g"), '<break time="600ms"/>')
     .replace(new RegExp(GEEZ_COMMA_PLACEHOLDER, "g"), '<break time="400ms"/>');
-
-  processed = escapePreservingBreakTags(processed);
 
   const ssml = `<speak version='1.0' xml:lang='am-ET'><voice name='${voice}'><prosody rate='-25%'>${processed}</prosody></voice></speak>`;
   return ssml;

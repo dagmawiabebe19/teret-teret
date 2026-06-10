@@ -23,7 +23,11 @@ function loadLandingSample(constName) {
   return match[1].trim();
 }
 
-function escapeSsml(text) {
+// Mirrors lib/azureSpeech.ts buildAmharicSSML
+const FULLSTOP_PLACEHOLDER = "\uE000FS\uE001";
+const GEEZ_COMMA_PLACEHOLDER = "\uE000GC\uE001";
+
+function escapeXML(text) {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -32,30 +36,19 @@ function escapeSsml(text) {
     .replace(/'/g, "&apos;");
 }
 
-// Mirrors lib/azureSpeech.ts buildAmharicSSML
-const FULLSTOP_PLACEHOLDER = "\uE000FS\uE001";
-const GEEZ_COMMA_PLACEHOLDER = "\uE000GC\uE001";
-const BREAK_TAG_RE = /<break time="\d+ms"\/>/g;
-
-function escapePreservingBreakTags(processed) {
-  const tags = processed.match(BREAK_TAG_RE) ?? [];
-  const parts = processed.split(BREAK_TAG_RE);
-  let out = escapeSsml(parts[0] ?? "");
-  for (let i = 0; i < tags.length; i++) {
-    out += tags[i] + escapeSsml(parts[i + 1] ?? "");
-  }
-  return out;
+function stripInvisibleChars(text) {
+  return text.replace(/[\u200B-\u200D\uFEFF]/g, "");
 }
 
 function buildAmharicSsml(text) {
   const voice = process.env.AZURE_VOICE_AM?.trim() || AZURE_DEFAULT_VOICE;
-  let processed = text
-    .trim()
+  let processed = stripInvisibleChars(text.trim());
+  processed = escapeXML(processed);
+  processed = processed
     .replace(/።/g, FULLSTOP_PLACEHOLDER)
     .replace(/፣/g, GEEZ_COMMA_PLACEHOLDER)
     .replace(new RegExp(FULLSTOP_PLACEHOLDER, "g"), '<break time="600ms"/>')
     .replace(new RegExp(GEEZ_COMMA_PLACEHOLDER, "g"), '<break time="400ms"/>');
-  processed = escapePreservingBreakTags(processed);
   const ssml = `<speak version='1.0' xml:lang='am-ET'><voice name='${voice}'><prosody rate='-25%'>${processed}</prosody></voice></speak>`;
   console.log("[azureSpeech] FULL SSML:", ssml);
   return ssml;
