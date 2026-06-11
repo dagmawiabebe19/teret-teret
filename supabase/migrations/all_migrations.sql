@@ -359,3 +359,7 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.reserve_global_daily_sms_slot(integer) TO service_role;
+
+-- =============================================================================
+-- 018_phone_auth_profiles.sql + 019_otp_rate_limits.sql — see individual files
+-- =============================================================================

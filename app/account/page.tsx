@@ -512,6 +512,13 @@ export default function AccountPage() {
           </div>
         ) : (
           <div className="space-y-4">
+            <Link
+              href="/auth/sign-in"
+              className="block w-full py-3 rounded-xl font-bold text-center text-[#1a0a12]"
+              style={{ background: "linear-gradient(135deg, #E8C547, #D4AF37)" }}
+            >
+              Sign in with phone
+            </Link>
             <button
               type="button"
               onClick={handleGoogleSignIn}

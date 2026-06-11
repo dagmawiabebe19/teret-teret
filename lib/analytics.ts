@@ -27,3 +27,27 @@ export function trackPremiumConversion() {
 export function trackPageView(name: string, props?: AnalyticsProps) {
   track(name, props);
 }
+
+export function trackPhoneSignupStarted() {
+  track("phone_signup_started");
+}
+
+export function trackPhoneOtpSent() {
+  track("phone_otp_sent");
+}
+
+export function trackPhoneOtpVerified() {
+  track("phone_otp_verified");
+}
+
+export function trackPhoneSignupComplete() {
+  track("phone_signup_complete");
+}
+
+export function trackPhoneSignupFailed(reason: string) {
+  track("phone_signup_failed", { reason });
+}
+
+export function trackPhoneRateLimited(code: string) {
+  track("phone_rate_limited", { code });
+}
