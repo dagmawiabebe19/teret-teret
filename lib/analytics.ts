@@ -1,3 +1,5 @@
+"use client";
+
 import { track } from "@vercel/analytics";
 
 type AnalyticsProps = Record<string, string | number | boolean | null>;

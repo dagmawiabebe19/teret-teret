@@ -3,7 +3,7 @@ import "./globals.css";
 import { ToastProvider } from "@/components/ToastProvider";
 import { DebugPanel } from "@/components/DebugPanel";
 import { InstallPromptShell } from "@/components/InstallPromptShell";
-import { Analytics } from "@vercel/analytics/react";
+import { VercelAnalytics } from "@/components/VercelAnalytics";
 
 export const viewport: Viewport = {
   themeColor: "#1a0533",
@@ -45,7 +45,7 @@ export default function RootLayout({
         <ToastProvider>{children}</ToastProvider>
         <InstallPromptShell />
         <DebugPanel />
-        <Analytics />
+        <VercelAnalytics />
       </body>
     </html>
   );
