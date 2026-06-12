@@ -51,6 +51,30 @@ function stripInvisibleChars(text: string): string {
   return text.replace(/[\u200B-\u200D\uFEFF]/g, "");
 }
 
+type AmharicSSMLPipeline = {
+  strippedText: string;
+  escapedText: string;
+  textWithBreaks: string;
+  ssml: string;
+};
+
+/** Same pipeline as buildAmharicSSML — exposes intermediates for debug logging only. */
+function buildAmharicSSMLPipeline(
+  text: string,
+  voice: string = DEFAULT_VOICE
+): AmharicSSMLPipeline {
+  const strippedText = stripInvisibleChars(text.trim());
+  const escapedText = escapeXML(strippedText);
+  const textWithBreaks = escapedText
+    .replace(/።/g, FULLSTOP_PLACEHOLDER)
+    .replace(/፣/g, GEEZ_COMMA_PLACEHOLDER)
+    .replace(new RegExp(FULLSTOP_PLACEHOLDER, "g"), '<break time="600ms"/>')
+    .replace(new RegExp(GEEZ_COMMA_PLACEHOLDER, "g"), '<break time="400ms"/>');
+
+  const ssml = `<speak version='1.0' xml:lang='am-ET'><voice name='${voice}'><prosody rate='-25%'>${textWithBreaks}</prosody></voice></speak>`;
+  return { strippedText, escapedText, textWithBreaks, ssml };
+}
+
 /**
  * Build Amharic SSML with bedtime pacing.
  * 1. Strip zero-width / BOM
@@ -61,16 +85,7 @@ export function buildAmharicSSML(
   text: string,
   voice: string = DEFAULT_VOICE
 ): string {
-  let processed = stripInvisibleChars(text.trim());
-  processed = escapeXML(processed);
-  processed = processed
-    .replace(/።/g, FULLSTOP_PLACEHOLDER)
-    .replace(/፣/g, GEEZ_COMMA_PLACEHOLDER)
-    .replace(new RegExp(FULLSTOP_PLACEHOLDER, "g"), '<break time="600ms"/>')
-    .replace(new RegExp(GEEZ_COMMA_PLACEHOLDER, "g"), '<break time="400ms"/>');
-
-  const ssml = `<speak version='1.0' xml:lang='am-ET'><voice name='${voice}'><prosody rate='-25%'>${processed}</prosody></voice></speak>`;
-  return ssml;
+  return buildAmharicSSMLPipeline(text, voice).ssml;
 }
 
 /** @deprecated Use buildAmharicSSML — kept for existing imports */
@@ -84,10 +99,29 @@ export async function synthesizeAmharicSpeech(text: string): Promise<ArrayBuffer
     throw new Error("AZURE_SPEECH_KEY is not set");
   }
 
-  const ssml = buildAmharicSSML(text, voiceForAmharic());
-  console.log("[azureSpeech] FULL SSML:", ssml);
+  const voice = voiceForAmharic();
+  const endpoint = azureTtsUrl();
+  const { strippedText, escapedText, textWithBreaks, ssml } = buildAmharicSSMLPipeline(
+    text,
+    voice
+  );
 
-  const res = await fetch(azureTtsUrl(), {
+  console.log("[AzureTTS] ===== START =====");
+  console.log("[AzureTTS] Raw input text length:", text.length);
+  console.log("[AzureTTS] Raw input text (first 200 chars):", text.slice(0, 200));
+  console.log(
+    "[AzureTTS] Raw input text (hex of first 50 bytes):",
+    Buffer.from(text.slice(0, 50)).toString("hex")
+  );
+  console.log("[AzureTTS] After zero-width strip:", strippedText.slice(0, 200));
+  console.log("[AzureTTS] After XML escape:", escapedText.slice(0, 200));
+  console.log("[AzureTTS] After break tag insertion:", textWithBreaks.slice(0, 300));
+  console.log("[AzureTTS] FINAL SSML being sent to Azure:");
+  console.log(ssml);
+  console.log("[AzureTTS] Voice:", voice);
+  console.log("[AzureTTS] Endpoint:", endpoint);
+
+  const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Ocp-Apim-Subscription-Key": apiKey,
@@ -97,10 +131,22 @@ export async function synthesizeAmharicSpeech(text: string): Promise<ArrayBuffer
     body: ssml,
   });
 
-  if (!res.ok) {
-    const errBody = await res.text().catch(() => "");
-    throw new Error(`Azure TTS failed (${res.status}): ${errBody.slice(0, 200)}`);
+  console.log("[AzureTTS] Azure response status:", response.status);
+  console.log(
+    "[AzureTTS] Azure response headers:",
+    JSON.stringify(Object.fromEntries(response.headers.entries()))
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error("[AzureTTS] Azure error body:", errorBody);
+    console.log("[AzureTTS] ===== END =====");
+    throw new Error(`Azure TTS failed (${response.status}): ${errorBody.slice(0, 200)}`);
   }
 
-  return res.arrayBuffer();
+  const audioBuffer = await response.arrayBuffer();
+  console.log("[AzureTTS] Audio bytes received:", audioBuffer.byteLength);
+  console.log("[AzureTTS] ===== END =====");
+
+  return audioBuffer;
 }
