@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getOptionalUser } from "@/lib/supabase/server";
 import { z } from "zod";
 import { ALLOWED_STORY_CATEGORIES } from "@/lib/constants";
-import { resolveProfileAccess } from "@/lib/profileAccess";
+import { canSaveStories } from "@/lib/access";
 
 const SaveStorySchema = z.object({
   childName: z.string().min(1).max(80),
@@ -82,12 +82,8 @@ export async function POST(request: Request) {
   const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
   if (!supabase) return NextResponse.json({ error: "Database not configured" }, { status: 503 });
 
-  const access = await resolveProfileAccess(user.id, request);
-  if (!access.hasFullAccess) {
-    return NextResponse.json(
-      { error: "Upgrade to Premium to save your stories" },
-      { status: 402 }
-    );
+  if (!canSaveStories(user.id)) {
+    return NextResponse.json({ error: "Sign in to save stories" }, { status: 401 });
   }
 
   const { data, error } = await supabase

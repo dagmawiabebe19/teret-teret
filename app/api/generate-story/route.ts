@@ -508,7 +508,7 @@ export async function POST(request: Request) {
           if (user) {
             const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
             if (supabase) {
-              await recordSignedInGeneration(supabase, user.id, hasFullAccessFlag, {
+              await recordSignedInGeneration(supabase, user.id, true, {
                 childName,
                 ageGroup,
                 trait,
@@ -625,7 +625,7 @@ No other text. No markdown.`;
     if (user) {
       const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
       if (supabase) {
-        await recordSignedInGeneration(supabase, user.id, hasFullAccessFlag, {
+        await recordSignedInGeneration(supabase, user.id, true, {
           childName,
           ageGroup,
           trait,

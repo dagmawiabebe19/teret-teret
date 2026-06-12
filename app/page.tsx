@@ -45,7 +45,7 @@ import { ChildProfilePicker, applyChildToForm } from "@/components/ChildProfileP
 import { RecentlyPlayed } from "@/components/RecentlyPlayed";
 import { libraryStoryToReader } from "@/lib/openLibraryStory";
 import type { ChildProfile, LibraryStory } from "@/types";
-import { getLocalSavedStories } from "@/lib/localSavedStories";
+import { getLocalSavedStories, setLocalSavedStories } from "@/lib/localSavedStories";
 import { hasFullAccess as checkFullAccess } from "@/lib/access";
 import { isPremiumStatus } from "@/lib/premium";
 
@@ -224,26 +224,20 @@ export default function HomePage() {
         setSubscriptionStatus(premium ? "premium" : "free");
         setHasFullAccess(fullAccess);
         setIsEthiopiaFree(profileData.isEthiopiaFree === true);
-        if (fullAccess) {
-          setChildProfiles(childData.profiles ?? []);
-          const apiStories = (storiesData.stories ?? []) as LibraryStory[];
-          setLibraryStories(apiStories);
-          const dbStories = apiStories.map((s) => ({
-            id: s.id,
-            name: s.childName,
-            region: s.region,
-            date: s.createdAt ? new Date(s.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-            content: s.rawStory,
-            parsedPages: s.parsedPages,
-            illustrationPrompts: s.illustrationPrompts,
-            isFavorite: s.isFavorite ?? false,
-          }));
-          setSavedStories(dbStories.slice(0, 50));
-        } else {
-          setChildProfiles([]);
-          setLibraryStories([]);
-          setSavedStories(getLocalSavedStories());
-        }
+        const apiStories = (storiesData.stories ?? []) as LibraryStory[];
+        setLibraryStories(apiStories);
+        const dbStories = apiStories.map((s) => ({
+          id: s.id,
+          name: s.childName,
+          region: s.region,
+          date: s.createdAt ? new Date(s.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+          content: s.rawStory,
+          parsedPages: s.parsedPages,
+          illustrationPrompts: s.illustrationPrompts,
+          isFavorite: s.isFavorite ?? false,
+        }));
+        setSavedStories(dbStories.slice(0, 50));
+        setChildProfiles(fullAccess ? (childData.profiles ?? []) : []);
         refreshUsage();
         fetch("/api/profile/words")
           .then((r) => (r.ok ? r.json() : { words: [] }))
@@ -287,11 +281,6 @@ export default function HomePage() {
   }, [screen, lang]);
 
   const saveStory = useCallback(async () => {
-    if (!hasFullAccess) {
-      setShowPaywall(true);
-      toast.showToast(t.upgradeToSaveStories, "error");
-      return;
-    }
     const entry: SavedStoryItem = {
       id: String(Date.now()),
       name: childName,
@@ -301,6 +290,20 @@ export default function HomePage() {
       parsedPages: pages.length ? pages : undefined,
       illustrationPrompts: illustrationPrompts.length ? illustrationPrompts : undefined,
     };
+    if (isGuest) {
+      const updated = [entry, ...savedStories.filter((s) => s.content !== rawStory || s.name !== childName)].slice(0, 10);
+      setSavedStories(updated);
+      setLocalSavedStories(updated);
+      toast.showToast(getT(lang).savedConfirm, "success");
+      return;
+    }
+    const alreadySaved = libraryStories.some(
+      (s) => s.rawStory === rawStory && s.childName === childName
+    );
+    if (alreadySaved) {
+      toast.showToast(getT(lang).savedConfirm, "success");
+      return;
+    }
     try {
       const res = await fetch("/api/stories", {
         method: "POST",
@@ -318,9 +321,8 @@ export default function HomePage() {
         }),
       });
       const data = await res.json();
-      if (res.status === 402) {
-        setShowPaywall(true);
-        toast.showToast(t.upgradeToSaveStories, "error");
+      if (res.status === 401) {
+        router.push("/account?signin=1");
         return;
       }
       if (res.ok && data.id) {
@@ -350,7 +352,7 @@ export default function HomePage() {
     } catch {
       toast.showToast(t.errorSaveFailed, "error");
     }
-  }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, category, savedStories, hasFullAccess, toast, t]);
+  }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, category, savedStories, libraryStories, isGuest, toast, t, router]);
 
   const copyStory = useCallback(() => {
     try {
@@ -479,6 +481,29 @@ export default function HomePage() {
       setStoryVocabulary(Array.isArray(data.parsed?.vocabulary) ? data.parsed.vocabulary : []);
       trackFirstStoryComplete();
       setEligibleForSignupPrompt(true);
+      if (!isGuest) {
+        fetch("/api/stories")
+          .then((r) => r.json())
+          .then((storiesData) => {
+            const apiStories = (storiesData.stories ?? []) as LibraryStory[];
+            setLibraryStories(apiStories);
+            setSavedStories(
+              apiStories.map((s) => ({
+                id: s.id,
+                name: s.childName,
+                region: s.region,
+                date: s.createdAt
+                  ? new Date(s.createdAt).toLocaleDateString()
+                  : new Date().toLocaleDateString(),
+                content: s.rawStory,
+                parsedPages: s.parsedPages,
+                illustrationPrompts: s.illustrationPrompts,
+                isFavorite: s.isFavorite ?? false,
+              })).slice(0, 50)
+            );
+          })
+          .catch(() => {});
+      }
       setTimeout(() => setScreen("story"), 500);
     } catch (e) {
       setError(t.errorGeneric);
@@ -490,7 +515,7 @@ export default function HomePage() {
       generatingRef.current = false;
       setIsGenerating(false);
     }
-  }, [childName, age, trait, region, category, topic, storyGoal, lang, usage, hasFullAccess, refreshUsage, toast, t]);
+  }, [childName, age, trait, region, category, topic, storyGoal, lang, usage, hasFullAccess, isGuest, refreshUsage, toast, t]);
 
   const openLibraryStory = useCallback((story: LibraryStory) => {
     const payload = libraryStoryToReader(story, lang);
@@ -828,7 +853,7 @@ export default function HomePage() {
                     }}
                   />
 
-                  {hasFullAccess && libraryStories.length > 0 && (
+                  {!isGuest && libraryStories.length > 0 && (
                     <RecentlyPlayed
                       lang={lang}
                       stories={libraryStories}
