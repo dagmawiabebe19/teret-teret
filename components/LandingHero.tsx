@@ -32,7 +32,7 @@ export function LandingHero({
       style={{ minHeight: "calc(100dvh - 56px)" }}
     >
       <div
-        className="mx-auto mb-6 w-[140px] h-[140px] rounded-[36px] flex items-center justify-center text-[72px]"
+        className="mx-auto mb-3 md:mb-6 w-[84px] h-[84px] md:w-[140px] md:h-[140px] rounded-[22px] md:rounded-[36px] flex items-center justify-center text-[43px] md:text-[72px]"
         style={{
           background: "linear-gradient(145deg, rgba(255,176,136,0.2), rgba(255,215,0,0.12))",
           border: "2px solid rgba(255,215,0,0.25)",
@@ -44,15 +44,19 @@ export function LandingHero({
       </div>
 
       <h1
-        className="font-fredoka text-[#FFD700] leading-[1.15] mb-3 mx-auto max-w-[520px]"
+        className="text-[#FFD700] font-bold leading-[1.2] mb-2 mx-auto max-w-[520px]"
         style={{
-          fontSize: "clamp(28px,7vw,44px)",
+          fontFamily: "'Nunito', system-ui, sans-serif",
+          fontSize: "clamp(26px,6.5vw,42px)",
           textShadow: "0 2px 0 rgba(0,0,0,0.25), 0 0 24px rgba(255,215,0,0.2)",
         }}
       >
         {t.heroHeadline}
       </h1>
-      <p className="text-[16px] text-[#e0d4ff] font-medium leading-relaxed mb-8 max-w-[400px] mx-auto">
+      <p
+        className="text-[15px] sm:text-[16px] text-[rgba(200,180,230,0.85)] font-medium leading-relaxed mb-5 max-w-[400px] mx-auto"
+        style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
+      >
         {t.heroSubheadline}
       </p>
 
@@ -73,6 +77,12 @@ export function LandingHero({
 
       <p className="mt-3 text-[14px] font-medium text-[var(--color-peach)]">
         {t.heroFreeNote}
+      </p>
+      <p
+        className="mt-2 text-[12px] sm:text-[13px] font-medium text-[var(--color-peach)] leading-snug max-w-[320px] mx-auto"
+        style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
+      >
+        {t.heroSocialProof}
       </p>
 
       {showExhaustedBanner && (

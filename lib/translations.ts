@@ -289,6 +289,7 @@ export const translations: Record<
     heroSubheadline: string;
     ctaStartStory: string;
     heroFreeNote: string;
+    heroSocialProof: string;
     ctaCreateFree: string;
     ctaListenSample: string;
     formTitle: string;
@@ -667,10 +668,12 @@ export const translations: Record<
     cancel: "Cancel",
     selectAvatar: "Choose avatar",
     noneYet: "None yet",
-    heroHeadline: "Bedtime stories your child becomes the hero of",
-    heroSubheadline: "Personalized Amharic stories for Ethiopian kids",
+    heroHeadline: "Amharic bedtime stories where your child is the hero",
+    heroSubheadline:
+      "Help your child learn Amharic, fall in love with Ethiopian culture, and look forward to bedtime.",
     ctaStartStory: "✨ Start a story",
     heroFreeNote: "Free · No card needed",
+    heroSocialProof: "⭐⭐⭐⭐⭐ Loved by Ethiopian families in LA, DC, London",
     formTitle: "Who's the story for?",
     formNamePlaceholder: "Type your child's name",
     formSettingLabel: "Where should the story happen?",
@@ -1060,10 +1063,12 @@ export const translations: Record<
     cancel: "Cancelar",
     selectAvatar: "Elegir avatar",
     noneYet: "Ninguno aún",
-    heroHeadline: "Cuentos para dormir donde tu hijo es el héroe",
-    heroSubheadline: "Cuentos personalizados en amárico para niños etíopes",
+    heroHeadline: "Cuentos de dormir en amárico donde tu hijo es el héroe",
+    heroSubheadline:
+      "Ayuda a tu hijo a aprender amárico, enamorarse de la cultura etíope y esperar con ilusión la hora de dormir.",
     ctaStartStory: "✨ Empezar un cuento",
     heroFreeNote: "Gratis · Sin tarjeta",
+    heroSocialProof: "⭐⭐⭐⭐⭐ Querido por familias etíopes en LA, DC y Londres",
     formTitle: "¿Para quién es el cuento?",
     formNamePlaceholder: "Escribe el nombre de tu hijo",
     formSettingLabel: "¿Dónde ocurre el cuento?",
