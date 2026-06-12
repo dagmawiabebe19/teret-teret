@@ -298,6 +298,13 @@ export const amTranslations = {
   ctaStartStory: "✨ ታሪክ ጀምሪ",
   heroFreeNote: "ነፃ · ካርድ አያስፈልግም",
   heroSocialProof: "⭐⭐⭐⭐⭐ በሎስ አንጀለስ፣ ዲሲ እና ለንደን የኢትዮጵያ ቤተሰቦች ይወዳሉ",
+  heroSocialProofEthiopia: "⭐⭐⭐⭐⭐ በአዲስ አበባ፣ ባሕር ዳር እና ሐዋሳ ቤተሰቦች ይወዳሉ",
+  testimonialFeaturedQuoteEthiopia:
+    "ልጄ በየሌሊት አዲስ ታሪክ ትጠይቃለች። ስሟ በአማርኛ ሲጠራ በጣም ትኮርካለች።",
+  testimonialFeaturedAuthorEthiopia: "ሐና፣ የሳራ (5) እናት — አዲስ አበባ",
+  footerEthiopiaFree: "ለኢትዮጵያ ቤተሰቦች ነፃ · ማስታወቂያ የለም፣ መከታተል የለም",
+  ethiopiaFreeBadge: "🇪🇹 በኢትዮጵያ ነፃ",
+  ethiopiaFreePlanLabel: "ሙሉ መዳረሻ — ለኢትዮጵያ ቤተሰቦች ነፃ",
   ctaCreateFree: "🎁 ታሪክ ፍጠሪ",
   ctaListenSample: "ናሙና ስሚ →",
   formTitle: "ተረቱ ለማን ነው?",

@@ -9,7 +9,8 @@ interface LandingHeroProps {
   onCreateClick: () => void;
   remainingStories: number | null;
   storiesUsedToday: number;
-  isPremium: boolean;
+  hasFullAccess: boolean;
+  isEthiopiaUi?: boolean;
   onUpgrade: () => void;
 }
 
@@ -18,13 +19,14 @@ export function LandingHero({
   onCreateClick,
   remainingStories,
   storiesUsedToday,
-  isPremium,
+  hasFullAccess,
+  isEthiopiaUi = false,
   onUpgrade,
 }: LandingHeroProps) {
   const { t } = useTranslation(lang);
 
   const showExhaustedBanner =
-    !isPremium && remainingStories !== null && remainingStories <= 0 && storiesUsedToday > 0;
+    !hasFullAccess && remainingStories !== null && remainingStories <= 0 && storiesUsedToday > 0;
 
   return (
     <section
@@ -82,7 +84,7 @@ export function LandingHero({
         className="mt-2 text-[12px] sm:text-[13px] font-medium text-[var(--color-peach)] leading-snug max-w-[320px] mx-auto"
         style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
       >
-        {t.heroSocialProof}
+        {isEthiopiaUi ? t.heroSocialProofEthiopia : t.heroSocialProof}
       </p>
 
       {showExhaustedBanner && (

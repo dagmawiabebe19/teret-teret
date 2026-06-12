@@ -42,6 +42,8 @@ interface StoryReaderProps {
   onCompleteDailyTeret?: () => void;
   /** "free" | "premium" | null — used to gate audio beyond first 2 pages */
   subscriptionStatus?: "free" | "premium" | null;
+  /** Premium or Ethiopia free tier — unlocks full narration */
+  hasFullAccess?: boolean;
   /** Optional: when free user tries to listen past page 2 */
   onShowPaywall?: () => void;
   /** Vocabulary for language learning (from API or getVocabForStory) */
@@ -70,6 +72,7 @@ export function StoryReader({
   isDailyTeret = false,
   onCompleteDailyTeret,
   subscriptionStatus = null,
+  hasFullAccess = false,
   onShowPaywall,
   vocabulary = [],
   savedWordKeys = new Set(),
@@ -84,9 +87,9 @@ export function StoryReader({
   const [viewMode, setViewMode] = useState<"read" | "listen" | "learn">("read");
   const touchStartX = useRef<number | null>(null);
   const isFirstStoryRef = useRef<boolean | null>(null);
-  const isPremium = subscriptionStatus === "premium";
+  const fullAccess = hasFullAccess || subscriptionStatus === "premium";
   const { speak, pause, resume, stop, isPlaying, isPaused, isSupported } = useTTS({
-    usePremiumVoice: isPremium,
+    usePremiumVoice: fullAccess,
   });
 
   useEffect(() => {
@@ -102,7 +105,7 @@ export function StoryReader({
     }
   }, [page]);
 
-  const audioAllowedThisPage = isPremium || page < 2;
+  const audioAllowedThisPage = fullAccess || page < 2;
 
   useEffect(() => {
     if (showEnd && isDailyTeret && onCompleteDailyTeret && !dailyCompleted) {
@@ -420,7 +423,7 @@ export function StoryReader({
                   key={page}
                   text={text}
                   lang={lang}
-                  usePremiumVoice={isPremium}
+                  usePremiumVoice={fullAccess}
                   onEnd={goNext}
                   renderHighlightedText={({ currentSentenceIndex, sentenceStarts }) =>
                     highlightSentenceInText(text, sentenceStarts, currentSentenceIndex)

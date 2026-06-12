@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOptionalUser } from "@/lib/supabase/server";
 import { ALLOWED_AGES } from "@/lib/constants";
-import { isPremiumStatus } from "@/lib/premium";
+import { resolveProfileAccess } from "@/lib/profileAccess";
 
 const ChildProfileSchema = z.object({
   name: z.string().min(1).max(80).transform((s) => s.trim()),
@@ -63,12 +63,8 @@ export async function POST(request: Request) {
   const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
   if (!supabase) return NextResponse.json({ error: "Database not configured" }, { status: 503 });
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("subscription_status")
-    .eq("id", user.id)
-    .single();
-  if (!isPremiumStatus(profile?.subscription_status)) {
+  const access = await resolveProfileAccess(user.id, request);
+  if (!access.hasFullAccess) {
     return NextResponse.json(
       { error: "Upgrade to Premium to create child profiles" },
       { status: 402 }

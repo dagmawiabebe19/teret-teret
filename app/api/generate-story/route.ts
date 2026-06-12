@@ -20,7 +20,7 @@ import {
 } from "@/lib/illustrationPrompts";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { GLOBAL_CAP_MESSAGE, reserveGlobalDailyStorySlot } from "@/lib/globalDailyCap";
-import { isPremiumStatus } from "@/lib/premium";
+import { resolveProfileAccess } from "@/lib/profileAccess";
 import { appendGenerationDate } from "@/lib/streaks";
 import type { StoryInspiration } from "@/types";
 import type { StoryCategory } from "@/types";
@@ -380,9 +380,9 @@ export async function POST(request: Request) {
     }
 
     const { user } = await getOptionalUser();
-    let isPremium = false;
+    let hasFullAccessFlag = false;
 
-    // Signed-in: rolling 24h free limit (usage_tracking); premium = unlimited
+    // Signed-in: rolling 24h free limit (usage_tracking); premium / Ethiopia free = unlimited
     if (user) {
       const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
       if (supabase) {
@@ -390,9 +390,9 @@ export async function POST(request: Request) {
           { user_id: user.id, generation_count: 0 },
           { onConflict: "user_id", ignoreDuplicates: true }
         );
-        const { data: profile } = await supabase.from("profiles").select("subscription_status").eq("id", user.id).single();
-        isPremium = isPremiumStatus(profile?.subscription_status);
-        if (!isPremium) {
+        const access = await resolveProfileAccess(user.id, request);
+        hasFullAccessFlag = access.hasFullAccess;
+        if (!hasFullAccessFlag) {
           const { data: usage } = await supabase.from("usage_tracking").select("generation_count, first_story_at").eq("user_id", user.id).single();
           const { storiesUsed, remaining } = getSignedInUsageFromRow(usage ?? null);
           if (remaining <= 0) {
@@ -434,7 +434,7 @@ export async function POST(request: Request) {
     const keyExists = Boolean(apiKey);
     console.log("[generate-story] Anthropic config:", {
       model: STORY_MODEL,
-      isPremium,
+      hasFullAccess: hasFullAccessFlag,
       apiKeyExists: keyExists,
       apiKeyLength: keyExists ? apiKey!.length : 0,
     });
@@ -506,7 +506,7 @@ export async function POST(request: Request) {
           if (user) {
             const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
             if (supabase) {
-              await recordSignedInGeneration(supabase, user.id, isPremium, {
+              await recordSignedInGeneration(supabase, user.id, hasFullAccessFlag, {
                 childName,
                 ageGroup,
                 trait,
@@ -623,7 +623,7 @@ No other text. No markdown.`;
     if (user) {
       const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
       if (supabase) {
-        await recordSignedInGeneration(supabase, user.id, isPremium, {
+        await recordSignedInGeneration(supabase, user.id, hasFullAccessFlag, {
           childName,
           ageGroup,
           trait,

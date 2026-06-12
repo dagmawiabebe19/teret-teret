@@ -9,6 +9,7 @@ import { DecorativeBackground } from "@/components/DecorativeBackground";
 import { AppNav } from "@/components/AppNav";
 import { ChildProfileManager } from "@/components/ChildProfileManager";
 import { PaywallModal } from "@/components/PaywallModal";
+import { hasFullAccess as checkFullAccess } from "@/lib/access";
 import { isPremiumStatus } from "@/lib/premium";
 import { startStripeCheckout } from "@/lib/stripeCheckout";
 import {
@@ -63,6 +64,8 @@ export default function ProfilePage() {
   const [childProfiles, setChildProfiles] = useState<ChildProfile[]>([]);
   const [subscriptionStatus, setSubscriptionStatus] = useState<"free" | "premium">("free");
   const [rawSubscriptionStatus, setRawSubscriptionStatus] = useState<string | null>(null);
+  const [isEthiopiaFree, setIsEthiopiaFree] = useState(false);
+  const [hasFullAccessFlag, setHasFullAccessFlag] = useState(false);
   const [nextBillingDate, setNextBillingDate] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [stripeEnabled, setStripeEnabled] = useState(false);
@@ -86,19 +89,31 @@ export default function ProfilePage() {
       const rawStatus = profileData.subscriptionStatus ?? null;
       setRawSubscriptionStatus(rawStatus);
       const premium = isPremiumStatus(rawStatus);
+      const ethiopiaFree = profileData.isEthiopiaFree === true;
+      const fullAccess =
+        profileData.hasFullAccess === true ||
+        checkFullAccess({
+          subscription_status: rawStatus,
+          is_ethiopia_free: ethiopiaFree,
+        });
       console.log("[profile] subscription:", {
         raw: rawStatus,
         isPremium: premium,
+        hasFullAccess: fullAccess,
+        isEthiopiaFree: ethiopiaFree,
         nextBillingDate: profileData.nextBillingDate ?? null,
       });
       setSubscriptionStatus(premium ? "premium" : "free");
+      setIsEthiopiaFree(ethiopiaFree);
+      setHasFullAccessFlag(fullAccess);
       setNextBillingDate(profileData.nextBillingDate ?? null);
-      setChildProfiles(premium ? (childData.profiles ?? []) : []);
+      setChildProfiles(fullAccess ? (childData.profiles ?? []) : []);
       setLoading(false);
     });
   }, [router]);
 
   const isPremium = isPremiumStatus(rawSubscriptionStatus) || subscriptionStatus === "premium";
+  const hasFullAccess = hasFullAccessFlag || isEthiopiaFree;
 
   useEffect(() => {
     fetch("/api/config")
@@ -204,7 +219,18 @@ export default function ProfilePage() {
           {email && (
             <p className="text-[13px] text-[rgba(200,180,255,0.65)] mt-1">{email}</p>
           )}
-          {isPremium ? (
+          {isEthiopiaFree ? (
+            <span
+              className="inline-block mt-3 px-3.5 py-1 rounded-full text-[11px] font-black tracking-wide"
+              style={{
+                background: "linear-gradient(135deg,#FF8C00,#FFD700)",
+                color: "#1a1a4e",
+                boxShadow: "0 2px 12px rgba(255,215,0,0.35)",
+              }}
+            >
+              {t.ethiopiaFreeBadge}
+            </span>
+          ) : isPremium ? (
             <span
               className="inline-block mt-3 px-3.5 py-1 rounded-full text-[11px] font-black tracking-wide"
               style={{
@@ -246,7 +272,7 @@ export default function ProfilePage() {
           </p>
           <p className="text-[13px] text-[rgba(200,180,255,0.65)] mb-0.5">{t.currentPlan}</p>
           <p className="text-[18px] font-fredoka text-[#FFD700] mb-2">
-            {isPremium ? t.planPremium : t.planFree}
+            {isEthiopiaFree ? t.ethiopiaFreePlanLabel : isPremium ? t.planPremium : t.planFree}
           </p>
           {isPremium && nextBillingDate && (
             <p className="text-[12px] text-[#c9b8e8] mb-3">
@@ -262,7 +288,7 @@ export default function ProfilePage() {
               {t.manageSubscription}
             </a>
           )}
-          {!isPremium && stripeEnabled && (
+          {!hasFullAccess && stripeEnabled && (
             <button
               type="button"
               disabled={checkoutLoading}
@@ -276,7 +302,7 @@ export default function ProfilePage() {
               {checkoutLoading ? "…" : `${t.upgradeToPremium} — ${t.pricePerMonth}`}
             </button>
           )}
-          {!isPremium && !stripeEnabled && (
+          {!hasFullAccess && !stripeEnabled && (
             <button
               type="button"
               onClick={() => setShowPaywall(true)}
@@ -341,11 +367,13 @@ export default function ProfilePage() {
           lang={lang}
           profiles={childProfiles}
           onRefresh={refresh}
-          isPremium={isPremium}
-          onUpgrade={() => setShowPaywall(true)}
+          isPremium={hasFullAccess}
+          onUpgrade={() => {
+            if (!hasFullAccess) setShowPaywall(true);
+          }}
         />
 
-        {showPaywall && (
+        {showPaywall && !hasFullAccess && (
           <PaywallModal
             lang={lang}
             onClose={() => setShowPaywall(false)}

@@ -5,7 +5,7 @@ import { synthesizeSpeech, isElevenLabsConfigured } from "@/lib/elevenlabs";
 import { ttsCacheKey, ttsStoragePath } from "@/lib/ttsCache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOptionalUser } from "@/lib/supabase/server";
-import { isPremiumStatus } from "@/lib/premium";
+import { resolveProfileAccess } from "@/lib/profileAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -56,13 +56,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Auth unavailable", useBrowserTts: true }, { status: 503 });
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("subscription_status")
-    .eq("id", user.id)
-    .single();
-
-  if (!isPremiumStatus(profile?.subscription_status)) {
+  const access = await resolveProfileAccess(user.id, request);
+  if (!access.hasFullAccess) {
     return NextResponse.json(
       { error: "Premium narration is for subscribers", useBrowserTts: true },
       { status: 403 }

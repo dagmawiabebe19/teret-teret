@@ -41,6 +41,7 @@ import { RecentlyPlayed } from "@/components/RecentlyPlayed";
 import { libraryStoryToReader } from "@/lib/openLibraryStory";
 import type { ChildProfile, LibraryStory } from "@/types";
 import { getLocalSavedStories } from "@/lib/localSavedStories";
+import { hasFullAccess as checkFullAccess } from "@/lib/access";
 import { isPremiumStatus } from "@/lib/premium";
 
 export default function HomePage() {
@@ -90,6 +91,9 @@ export default function HomePage() {
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<"free" | "premium" | null>(null);
+  const [hasFullAccess, setHasFullAccess] = useState(false);
+  const [isEthiopiaFree, setIsEthiopiaFree] = useState(false);
+  const [isEthiopiaGeo, setIsEthiopiaGeo] = useState(false);
   const [isDailyTeretView, setIsDailyTeretView] = useState(false);
   const [storyVocabulary, setStoryVocabulary] = useState<VocabWord[]>([]);
   const [savedWords, setSavedWords] = useState<VocabWord[]>([]);
@@ -125,14 +129,19 @@ export default function HomePage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data) {
-          const status = data.subscriptionStatus === "premium" || data.subscriptionStatus === "active" ? "premium" : "free";
+          const fullAccess = data.hasFullAccess === true;
+          const ethiopiaFree = data.isEthiopiaFree === true;
+          const status =
+            fullAccess && !ethiopiaFree ? "premium" : "free";
           setUsage({
             subscriptionStatus: status,
             freeStoriesPerDay: data.freeStoriesPerDay ?? 1,
             storiesUsedToday: data.storiesUsedToday ?? 0,
-            remainingStoriesToday: data.subscriptionStatus === "premium" || data.subscriptionStatus === "active" ? null : (data.remainingStoriesToday ?? 0),
+            remainingStoriesToday: fullAccess ? null : (data.remainingStoriesToday ?? 0),
           });
           setSubscriptionStatus(status);
+          setHasFullAccess(fullAccess);
+          setIsEthiopiaFree(ethiopiaFree);
         }
       })
       .catch(() => {});
@@ -141,6 +150,17 @@ export default function HomePage() {
   useEffect(() => {
     refreshUsage();
   }, [refreshUsage]);
+
+  useEffect(() => {
+    fetch("/api/geo")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.isEthiopia) setIsEthiopiaGeo(true);
+      })
+      .catch(() => {});
+  }, []);
+
+  const showEthiopiaUi = isEthiopiaGeo || isEthiopiaFree;
 
   useEffect(() => {
     fetch("/api/config")
@@ -184,9 +204,17 @@ export default function HomePage() {
       ]).then(([profileData, storiesData, childData]) => {
         setUserProgress(profileData.progress ?? null);
         const status = profileData.subscriptionStatus;
+        const fullAccess =
+          profileData.hasFullAccess === true ||
+          checkFullAccess({
+            subscription_status: status,
+            is_ethiopia_free: profileData.isEthiopiaFree,
+          });
         const premium = isPremiumStatus(status);
         setSubscriptionStatus(premium ? "premium" : "free");
-        if (premium) {
+        setHasFullAccess(fullAccess);
+        setIsEthiopiaFree(profileData.isEthiopiaFree === true);
+        if (fullAccess) {
           setChildProfiles(childData.profiles ?? []);
           const apiStories = (storiesData.stories ?? []) as LibraryStory[];
           setLibraryStories(apiStories);
@@ -239,7 +267,7 @@ export default function HomePage() {
   }, [screen, lang]);
 
   const saveStory = useCallback(async () => {
-    if (subscriptionStatus !== "premium") {
+    if (!hasFullAccess) {
       setShowPaywall(true);
       toast.showToast(t.upgradeToSaveStories, "error");
       return;
@@ -302,7 +330,7 @@ export default function HomePage() {
     } catch {
       toast.showToast(t.errorSaveFailed, "error");
     }
-  }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, category, savedStories, subscriptionStatus, toast, t]);
+  }, [childName, storyRegion, rawStory, pages, illustrationPrompts, age, trait, lang, category, savedStories, hasFullAccess, toast, t]);
 
   const copyStory = useCallback(() => {
     try {
@@ -361,9 +389,8 @@ export default function HomePage() {
       generatingRef.current = false;
       return;
     }
-    const isPremium = subscriptionStatus === "premium";
     const remaining = usage?.remainingStoriesToday ?? 0;
-    if (!isPremium && remaining <= 0 && usage !== null) {
+    if (!hasFullAccess && remaining <= 0 && usage !== null) {
       setShowPaywall(true);
       generatingRef.current = false;
       return;
@@ -441,7 +468,7 @@ export default function HomePage() {
       generatingRef.current = false;
       setIsGenerating(false);
     }
-  }, [childName, age, trait, region, category, topic, storyGoal, lang, usage, subscriptionStatus, refreshUsage, toast, t]);
+  }, [childName, age, trait, region, category, topic, storyGoal, lang, usage, hasFullAccess, refreshUsage, toast, t]);
 
   const openLibraryStory = useCallback((story: LibraryStory) => {
     const payload = libraryStoryToReader(story, lang);
@@ -593,7 +620,7 @@ export default function HomePage() {
 
   return (
     <>
-      {showPaywall && (
+      {showPaywall && !hasFullAccess && (
         <PaywallModal
           onClose={() => setShowPaywall(false)}
           lang={lang}
@@ -638,7 +665,10 @@ export default function HomePage() {
           isDailyTeret={isDailyTeretView}
           onCompleteDailyTeret={completeDailyTeret}
           subscriptionStatus={subscriptionStatus}
-          onShowPaywall={() => setShowPaywall(true)}
+          hasFullAccess={hasFullAccess}
+          onShowPaywall={() => {
+            if (!hasFullAccess) setShowPaywall(true);
+          }}
           vocabulary={storyVocabulary}
           savedWordKeys={new Set(savedWords.map((w) => w.word))}
           onSaveWord={handleSaveWord}
@@ -677,8 +707,11 @@ export default function HomePage() {
                 onCreateClick={scrollToCreate}
                 remainingStories={usage?.remainingStoriesToday ?? null}
                 storiesUsedToday={usage?.storiesUsedToday ?? 0}
-                isPremium={subscriptionStatus === "premium"}
-                onUpgrade={() => setShowPaywall(true)}
+                hasFullAccess={hasFullAccess}
+                isEthiopiaUi={showEthiopiaUi}
+                onUpgrade={() => {
+                  if (!hasFullAccess) setShowPaywall(true);
+                }}
               />
 
               <QuickStoryForm
@@ -703,17 +736,19 @@ export default function HomePage() {
 
               <TrustSection lang={lang} />
 
-              <TestimonialsSection lang={lang} />
+              <TestimonialsSection lang={lang} isEthiopiaUi={showEthiopiaUi} />
 
-              <PricingSection
-                lang={lang}
-                isSignedIn={!isGuest}
-                stripeEnabled={stripeEnabled}
-              />
+              {!showEthiopiaUi && (
+                <PricingSection
+                  lang={lang}
+                  isSignedIn={!isGuest}
+                  stripeEnabled={stripeEnabled}
+                />
+              )}
 
               <FinalCTASection lang={lang} onStartClick={scrollToCreate} />
 
-              <SiteFooter lang={lang} />
+              <SiteFooter lang={lang} isEthiopiaUi={showEthiopiaUi} />
 
               {(!isGuest || savedStories.length > 0) && (
                 <>
@@ -760,11 +795,13 @@ export default function HomePage() {
                     selectedId={selectedChildId}
                     onSelect={handleChildSelect}
                     onAddChild={() => router.push("/profile")}
-                    isPremium={subscriptionStatus === "premium"}
-                    onUpgrade={() => setShowPaywall(true)}
+                    isPremium={hasFullAccess}
+                    onUpgrade={() => {
+                      if (!hasFullAccess) setShowPaywall(true);
+                    }}
                   />
 
-                  {subscriptionStatus === "premium" && libraryStories.length > 0 && (
+                  {hasFullAccess && libraryStories.length > 0 && (
                     <RecentlyPlayed
                       lang={lang}
                       stories={libraryStories}

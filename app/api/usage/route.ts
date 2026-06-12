@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveProfileAccess } from "@/lib/profileAccess";
 import { getOptionalUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FREE_STORIES_PER_DAY, getSignedInUsageFromRow, getGuestDailyUsage, getClientIp } from "@/lib/usageDaily";
@@ -15,13 +16,14 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
 
   if (user && supabase) {
-    const { data: profile } = await supabase.from("profiles").select("subscription_status").eq("id", user.id).single();
-    const subscriptionStatus = profile?.subscription_status ?? "free";
-    const isPremium = subscriptionStatus === "premium" || subscriptionStatus === "active";
+    const access = await resolveProfileAccess(user.id, request);
+    const subscriptionStatus = access.subscription_status ?? "free";
 
-    if (isPremium) {
+    if (access.hasFullAccess) {
       return NextResponse.json({
-        subscriptionStatus: "premium",
+        subscriptionStatus: access.is_ethiopia_free ? "free" : "premium",
+        isEthiopiaFree: access.is_ethiopia_free,
+        hasFullAccess: true,
         freeStoriesPerDay: FREE_STORIES_PER_DAY,
         storiesUsedToday: 0,
         remainingStoriesToday: null,
@@ -37,6 +39,8 @@ export async function GET(request: Request) {
     const { storiesUsed, remaining } = getSignedInUsageFromRow(usage ?? null);
     return NextResponse.json({
       subscriptionStatus: "free",
+      isEthiopiaFree: false,
+      hasFullAccess: false,
       freeStoriesPerDay: FREE_STORIES_PER_DAY,
       storiesUsedToday: storiesUsed,
       remainingStoriesToday: remaining,
@@ -48,6 +52,8 @@ export async function GET(request: Request) {
   const remaining = Math.max(0, FREE_STORIES_PER_DAY - count);
   return NextResponse.json({
     subscriptionStatus: null,
+    isEthiopiaFree: false,
+    hasFullAccess: false,
     freeStoriesPerDay: FREE_STORIES_PER_DAY,
     storiesUsedToday: count,
     remainingStoriesToday: remaining,

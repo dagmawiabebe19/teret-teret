@@ -290,6 +290,12 @@ export const translations: Record<
     ctaStartStory: string;
     heroFreeNote: string;
     heroSocialProof: string;
+    heroSocialProofEthiopia: string;
+    testimonialFeaturedQuoteEthiopia: string;
+    testimonialFeaturedAuthorEthiopia: string;
+    footerEthiopiaFree: string;
+    ethiopiaFreeBadge: string;
+    ethiopiaFreePlanLabel: string;
     ctaCreateFree: string;
     ctaListenSample: string;
     formTitle: string;
@@ -674,6 +680,13 @@ export const translations: Record<
     ctaStartStory: "✨ Start a story",
     heroFreeNote: "Free · No card needed",
     heroSocialProof: "⭐⭐⭐⭐⭐ Loved by Ethiopian families in LA, DC, London",
+    heroSocialProofEthiopia: "⭐⭐⭐⭐⭐ Loved by families in Addis Ababa, Bahir Dar, Hawassa",
+    testimonialFeaturedQuoteEthiopia:
+      "My daughter asks for a new story every night. She is proud to hear her name in Amharic.",
+    testimonialFeaturedAuthorEthiopia: "Hanna, mom of Sara (5) — Addis Ababa",
+    footerEthiopiaFree: "Free for families in Ethiopia · No ads, no tracking",
+    ethiopiaFreeBadge: "🇪🇹 Free in Ethiopia",
+    ethiopiaFreePlanLabel: "Full access — free for families in Ethiopia",
     formTitle: "Who's the story for?",
     formNamePlaceholder: "Type your child's name",
     formSettingLabel: "Where should the story happen?",
@@ -1069,6 +1082,13 @@ export const translations: Record<
     ctaStartStory: "✨ Empezar un cuento",
     heroFreeNote: "Gratis · Sin tarjeta",
     heroSocialProof: "⭐⭐⭐⭐⭐ Querido por familias etíopes en LA, DC y Londres",
+    heroSocialProofEthiopia: "⭐⭐⭐⭐⭐ Querido por familias en Addis Abeba, Bahir Dar y Hawassa",
+    testimonialFeaturedQuoteEthiopia:
+      "Mi hija pide un cuento nuevo cada noche. Le encanta escuchar su nombre en amárico.",
+    testimonialFeaturedAuthorEthiopia: "Hanna, mamá de Sara (5) — Addis Abeba",
+    footerEthiopiaFree: "Gratis para familias en Etiopía · Sin anuncios, sin rastreo",
+    ethiopiaFreeBadge: "🇪🇹 Gratis en Etiopía",
+    ethiopiaFreePlanLabel: "Acceso completo — gratis para familias en Etiopía",
     formTitle: "¿Para quién es el cuento?",
     formNamePlaceholder: "Escribe el nombre de tu hijo",
     formSettingLabel: "¿Dónde ocurre el cuento?",

@@ -5,10 +5,13 @@ import type { Lang } from "@/types";
 
 interface TestimonialsSectionProps {
   lang: Lang;
+  isEthiopiaUi?: boolean;
 }
 
-export function TestimonialsSection({ lang }: TestimonialsSectionProps) {
+export function TestimonialsSection({ lang, isEthiopiaUi = false }: TestimonialsSectionProps) {
   const { t } = useTranslation(lang);
+  const quote = isEthiopiaUi ? t.testimonialFeaturedQuoteEthiopia : t.testimonialFeaturedQuote;
+  const author = isEthiopiaUi ? t.testimonialFeaturedAuthorEthiopia : t.testimonialFeaturedAuthor;
 
   return (
     <section className="mb-12">
@@ -26,10 +29,10 @@ export function TestimonialsSection({ lang }: TestimonialsSectionProps) {
           className="text-[16px] leading-relaxed text-[#e8e0ff] font-medium mb-4"
           style={{ fontFamily: lang === "am" ? "var(--font-amharic)" : "inherit" }}
         >
-          &ldquo;{t.testimonialFeaturedQuote}&rdquo;
+          &ldquo;{quote}&rdquo;
         </blockquote>
         <p className="text-[14px] text-[var(--color-peach)] font-medium">
-          — {t.testimonialFeaturedAuthor}
+          — {author}
         </p>
       </div>
     </section>

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { buildUserProgress } from "@/lib/progress";
+import { resolveProfileAccess } from "@/lib/profileAccess";
 import { createClient } from "@/lib/supabase/server";
-import { isPremiumStatus } from "@/lib/premium";
 import { computeGenerationStreak } from "@/lib/streaks";
 import { computeStoryStats } from "@/lib/storyStats";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ user: null, progress: null, stats: null }, { status: 200 });
@@ -20,8 +20,9 @@ export async function GET() {
     return NextResponse.json({ user: null, progress: null, stats: null }, { status: 200 });
   }
 
+  const access = await resolveProfileAccess(user.id, request);
+
   const [
-    { data: subscriptionProfile, error: subscriptionError },
     { data: profile, error: profileError },
     { data: stories, error: storiesError },
     { data: usage },
@@ -29,13 +30,8 @@ export async function GET() {
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("subscription_status")
-      .eq("id", user.id)
-      .single(),
-    supabase
-      .from("profiles")
       .select(
-        "subscription_status, streak_count, last_daily_teret_viewed_at, completed_daily_teret_dates, xp, story_generation_dates"
+        "subscription_status, is_ethiopia_free, signup_country, streak_count, last_daily_teret_viewed_at, completed_daily_teret_dates, xp, story_generation_dates"
       )
       .eq("id", user.id)
       .single(),
@@ -57,18 +53,8 @@ export async function GET() {
   ]);
 
   const rawSubscriptionStatus =
-    subscriptionProfile?.subscription_status ??
-    profile?.subscription_status ??
-    "free";
+    profile?.subscription_status ?? access.subscription_status ?? "free";
 
-  if (subscriptionError) {
-    console.error("[profile] subscription_status query failed", {
-      userId: user.id,
-      code: subscriptionError.code,
-      message: subscriptionError.message,
-      details: subscriptionError.details,
-    });
-  }
   if (profileError) {
     console.error("[profile] full profile query failed", {
       userId: user.id,
@@ -84,8 +70,9 @@ export async function GET() {
   console.log("[profile] subscription status", {
     userId: user.id,
     rawSubscriptionStatus,
-    isPremium: isPremiumStatus(rawSubscriptionStatus),
-    subscriptionQueryOk: !subscriptionError,
+    hasFullAccess: access.hasFullAccess,
+    isEthiopiaFree: access.is_ethiopia_free,
+    signupCountry: access.signup_country,
     profileQueryOk: !profileError,
   });
 
@@ -114,6 +101,9 @@ export async function GET() {
       avatarUrl: user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null,
     },
     subscriptionStatus: rawSubscriptionStatus,
+    isEthiopiaFree: access.is_ethiopia_free,
+    signupCountry: access.signup_country,
+    hasFullAccess: access.hasFullAccess,
     nextBillingDate: subscription?.current_period_end ?? null,
     progress,
     stats: {

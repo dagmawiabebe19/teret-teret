@@ -47,6 +47,7 @@ function getFriendlyAuthError(
 export default function AccountPage() {
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<"free" | "premium" | null>(null);
+  const [isEthiopiaFree, setIsEthiopiaFree] = useState(false);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
@@ -112,7 +113,9 @@ export default function AccountPage() {
         setProgress(d.progress ?? null);
         const sub = d.subscriptionStatus ?? null;
         const isPremium = sub === "premium" || sub === "active";
+        const ethiopiaFree = d.isEthiopiaFree === true;
         setStatus(isPremium ? "premium" : "free");
+        setIsEthiopiaFree(ethiopiaFree);
         setNextBillingDate(d.nextBillingDate ?? null);
         return isPremium;
       })
@@ -442,7 +445,24 @@ export default function AccountPage() {
               <p className="text-[11px] font-bold text-[rgba(200,180,255,0.5)] uppercase tracking-wide mb-2">
                 {t.subscriptionLabel}
               </p>
-              {status === "premium" ? (
+              {isEthiopiaFree ? (
+                <>
+                  <span
+                    className="inline-block px-3.5 py-1 rounded-full text-[12px] font-black tracking-wide"
+                    style={{
+                      background: "linear-gradient(135deg,#FF8C00,#FFD700)",
+                      color: "#1a1a4e",
+                      boxShadow: "0 2px 12px rgba(255,215,0,0.35)",
+                    }}
+                  >
+                    {t.ethiopiaFreeBadge}
+                  </span>
+                  <p className="text-sm text-[#c9b8e8] mt-3">{t.ethiopiaFreePlanLabel}</p>
+                  <p className="text-[12px] text-[rgba(200,180,255,0.65)] mt-2">
+                    {t.unlimitedStories} {t.unlimitedStoriesLabel}
+                  </p>
+                </>
+              ) : status === "premium" ? (
                 <>
                   <span
                     className="inline-block px-3.5 py-1 rounded-full text-[12px] font-black tracking-wide"
