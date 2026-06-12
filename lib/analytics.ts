@@ -16,6 +16,22 @@ export function trackSignupComplete() {
   track("signup_complete");
 }
 
+export function trackSignupPromptShown() {
+  track("signup_prompt_shown");
+}
+
+export function trackSignupPromptClickedGoogle() {
+  track("signup_prompt_clicked_google");
+}
+
+export function trackSignupPromptDismissed() {
+  track("signup_prompt_dismissed");
+}
+
+export function trackSignupCompletedFromPrompt() {
+  track("signup_completed_from_prompt");
+}
+
 export function trackPremiumUpgradeClick(source: string) {
   track("premium_upgrade_click", { source });
 }

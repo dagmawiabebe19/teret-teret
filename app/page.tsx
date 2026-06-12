@@ -13,7 +13,7 @@ import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { FinalCTASection } from "@/components/landing/FinalCTASection";
 import { PricingSection } from "@/components/PricingSection";
 import { SiteFooter } from "@/components/SiteFooter";
-import { trackFirstStoryComplete } from "@/lib/analytics";
+import { trackFirstStoryComplete, trackSignupCompletedFromPrompt } from "@/lib/analytics";
 import { StoryReader } from "@/components/StoryReader";
 import { SavedStoriesPanel, type SavedStoryItem } from "@/components/SavedStoriesPanel";
 import { DailyTeretCard } from "@/components/DailyTeretCard";
@@ -94,6 +94,7 @@ export default function HomePage() {
   const [hasFullAccess, setHasFullAccess] = useState(false);
   const [isEthiopiaFree, setIsEthiopiaFree] = useState(false);
   const [isEthiopiaGeo, setIsEthiopiaGeo] = useState(false);
+  const [eligibleForSignupPrompt, setEligibleForSignupPrompt] = useState(false);
   const [isDailyTeretView, setIsDailyTeretView] = useState(false);
   const [storyVocabulary, setStoryVocabulary] = useState<VocabWord[]>([]);
   const [savedWords, setSavedWords] = useState<VocabWord[]>([]);
@@ -243,6 +244,16 @@ export default function HomePage() {
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsGuest(!session?.user);
+      if (session?.user) {
+        try {
+          if (sessionStorage.getItem("signup_from_prompt") === "1") {
+            trackSignupCompletedFromPrompt();
+            sessionStorage.removeItem("signup_from_prompt");
+          }
+        } catch {
+          // ignore
+        }
+      }
     });
     return () => subscription.unsubscribe();
   }, [refreshUsage]);
@@ -457,6 +468,7 @@ export default function HomePage() {
       setIllustrationPrompts(Array.isArray(data.parsed?.illustrationPrompts) ? data.parsed.illustrationPrompts : []);
       setStoryVocabulary(Array.isArray(data.parsed?.vocabulary) ? data.parsed.vocabulary : []);
       trackFirstStoryComplete();
+      setEligibleForSignupPrompt(true);
       setTimeout(() => setScreen("story"), 500);
     } catch (e) {
       setError(t.errorGeneric);
@@ -478,6 +490,7 @@ export default function HomePage() {
       return;
     }
     setIsDailyTeretView(false);
+    setEligibleForSignupPrompt(false);
     setRawStory(payload.rawStory);
     setChildName(payload.childName);
     setStoryRegion(payload.region);
@@ -506,6 +519,7 @@ export default function HomePage() {
 
   const openSavedStory = useCallback((story: SavedStoryItem) => {
     setIsDailyTeretView(false);
+    setEligibleForSignupPrompt(false);
     setRawStory(story.content);
     setChildName(story.name);
     setStoryRegion(story.region);
@@ -537,6 +551,7 @@ export default function HomePage() {
     isDailyTeret: true;
   }) => {
     setIsDailyTeretView(true);
+    setEligibleForSignupPrompt(false);
     setPages(payload.pages);
     setIllustrationPrompts(payload.illustrationPrompts);
     setChildName(payload.childName);
@@ -672,6 +687,8 @@ export default function HomePage() {
           vocabulary={storyVocabulary}
           savedWordKeys={new Set(savedWords.map((w) => w.word))}
           onSaveWord={handleSaveWord}
+          isGuest={isGuest}
+          enableSignupPrompt={eligibleForSignupPrompt}
         />
       )}
 

@@ -362,6 +362,14 @@ export const translations: Record<
     pricingPremiumFeatures: string[];
     pricingCta: string;
     navSignIn: string;
+    navSignUp: string;
+    signupPromptHeadline: (name: string) => string;
+    signupPromptSubheadline: string;
+    signupPromptBenefit1: string;
+    signupPromptBenefit2: string;
+    signupPromptBenefit3: string;
+    signupPromptEmailLink: string;
+    signupPromptDismiss: string;
     navStartFree: string;
     sampleStoryLabel: string;
     sampleReadFull: string;
@@ -763,6 +771,15 @@ export const translations: Record<
     pricingPremiumFeatures: ["Unlimited bedtime stories", "Save your favorites forever", "Up to 4 child profiles", "Premium AI narration"],
     pricingCta: "Start free →",
     navSignIn: "Sign in",
+    navSignUp: "Sign up",
+    signupPromptHeadline: (name) => `Save ${name}'s story forever`,
+    signupPromptSubheadline:
+      "Sign up free to keep this story, create more, and unlock your child's library.",
+    signupPromptBenefit1: "Save unlimited stories",
+    signupPromptBenefit2: "Pick up where you left off on any device",
+    signupPromptBenefit3: "Create profiles for each child",
+    signupPromptEmailLink: "Or sign up with email",
+    signupPromptDismiss: "Maybe later",
     navStartFree: "Start free",
     sampleStoryLabel: "Sample story",
     sampleReadFull: "Read full story",
@@ -1165,6 +1182,15 @@ export const translations: Record<
     pricingPremiumFeatures: ["Cuentos ilimitados para dormir", "Guarda favoritos para siempre", "Hasta 4 perfiles de niños", "Narración premium con IA"],
     pricingCta: "Empieza gratis →",
     navSignIn: "Iniciar sesión",
+    navSignUp: "Regístrate",
+    signupPromptHeadline: (name) => `Guarda el cuento de ${name} para siempre`,
+    signupPromptSubheadline:
+      "Regístrate gratis para guardar este cuento, crear más y abrir la biblioteca de tu hijo.",
+    signupPromptBenefit1: "Guarda cuentos sin límite",
+    signupPromptBenefit2: "Sigue donde lo dejaste en cualquier dispositivo",
+    signupPromptBenefit3: "Crea un perfil para cada hijo",
+    signupPromptEmailLink: "O regístrate con correo",
+    signupPromptDismiss: "Quizá después",
     navStartFree: "Empezar gratis",
     sampleStoryLabel: "Cuento de ejemplo",
     sampleReadFull: "Leer cuento completo",

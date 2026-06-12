@@ -19,6 +19,16 @@ import {
   FIRST_STORY_PAGE2_INDEX,
   recordFirstStoryPage2Reached,
 } from "@/lib/installPrompt";
+import { PostStorySignupPrompt } from "@/components/PostStorySignupPrompt";
+import { createClient } from "@/lib/supabase/client";
+import {
+  trackSignupPromptShown,
+  trackSignupPromptClickedGoogle,
+  trackSignupPromptDismissed,
+} from "@/lib/analytics";
+
+const SIGNUP_PROMPTED_KEY = "signup_prompted";
+const SIGNUP_PROMPT_DISMISSED_KEY = "signup_prompt_dismissed";
 
 interface StoryReaderProps {
   pages: StoryPage[];
@@ -52,6 +62,9 @@ interface StoryReaderProps {
   savedWordKeys?: Set<string>;
   /** Callback when user saves a word */
   onSaveWord?: (word: VocabWord) => void;
+  /** Guest who just finished a user-generated story */
+  isGuest?: boolean;
+  enableSignupPrompt?: boolean;
 }
 
 export function StoryReader({
@@ -77,6 +90,8 @@ export function StoryReader({
   vocabulary = [],
   savedWordKeys = new Set(),
   onSaveWord,
+  isGuest = false,
+  enableSignupPrompt = false,
 }: StoryReaderProps) {
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState<"fwd" | "bck">("fwd");
@@ -85,6 +100,8 @@ export function StoryReader({
   const [localSaved, setLocalSaved] = useState(saved);
   const [dailyCompleted, setDailyCompleted] = useState(false);
   const [viewMode, setViewMode] = useState<"read" | "listen" | "learn">("read");
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const [googleSignupLoading, setGoogleSignupLoading] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const isFirstStoryRef = useRef<boolean | null>(null);
   const fullAccess = hasFullAccess || subscriptionStatus === "premium";
@@ -113,6 +130,50 @@ export function StoryReader({
       onCompleteDailyTeret();
     }
   }, [showEnd, isDailyTeret, onCompleteDailyTeret, dailyCompleted]);
+
+  useEffect(() => {
+    if (!showEnd || !isGuest || !enableSignupPrompt || isDailyTeret) return;
+    try {
+      if (localStorage.getItem(SIGNUP_PROMPTED_KEY) === "true") return;
+      if (localStorage.getItem(SIGNUP_PROMPT_DISMISSED_KEY) === "true") return;
+      localStorage.setItem(SIGNUP_PROMPTED_KEY, "true");
+      setShowSignupPrompt(true);
+      trackSignupPromptShown();
+    } catch {
+      // ignore storage errors
+    }
+  }, [showEnd, isGuest, enableSignupPrompt, isDailyTeret]);
+
+  const handleSignupPromptDismiss = useCallback(() => {
+    try {
+      localStorage.setItem(SIGNUP_PROMPT_DISMISSED_KEY, "true");
+    } catch {
+      // ignore
+    }
+    trackSignupPromptDismissed();
+    setShowSignupPrompt(false);
+  }, []);
+
+  const handleSignupPromptGoogle = useCallback(async () => {
+    const supabase = createClient();
+    if (!supabase) return;
+    trackSignupPromptClickedGoogle();
+    try {
+      sessionStorage.setItem("signup_from_prompt", "1");
+    } catch {
+      // ignore
+    }
+    setGoogleSignupLoading(true);
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent("/")}`;
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      });
+    } catch {
+      setGoogleSignupLoading(false);
+    }
+  }, []);
 
   const { t } = useTranslation(lang);
   const total = pages.length;
@@ -222,6 +283,15 @@ export function StoryReader({
         className="fixed inset-0 z-[50] flex flex-col overflow-hidden"
         style={{ background: readerBg }}
       >
+        {showSignupPrompt && (
+          <PostStorySignupPrompt
+            lang={lang}
+            childName={childName}
+            googleLoading={googleSignupLoading}
+            onGoogleClick={handleSignupPromptGoogle}
+            onDismiss={handleSignupPromptDismiss}
+          />
+        )}
         <Stars />
         <Fireflies />
         {topBar}

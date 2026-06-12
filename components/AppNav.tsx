@@ -75,12 +75,24 @@ export function AppNav({
               </Link>
             </>
           ) : (
-            <Link
-              href="/account"
-              className="min-h-[44px] inline-flex items-center text-[14px] font-medium text-[#c9b8e8] hover:text-[#FFD700] transition-colors"
-            >
-              {t.navSignIn}
-            </Link>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Link
+                href="/account?mode=signin"
+                className="hidden sm:inline-flex min-h-[44px] items-center text-[13px] sm:text-[14px] font-medium text-[#c9b8e8] hover:text-[#FFD700] transition-colors no-underline"
+              >
+                {t.navSignIn}
+              </Link>
+              <Link
+                href="/account?mode=signup"
+                className="min-h-[36px] sm:min-h-[38px] inline-flex items-center px-3.5 sm:px-4 rounded-full text-[12px] sm:text-[13px] font-bold text-[#1a0533] no-underline transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  background: "linear-gradient(135deg, #FFB088, #FFD700)",
+                  boxShadow: "0 2px 12px rgba(255,140,0,0.25)",
+                }}
+              >
+                {t.navSignUp}
+              </Link>
+            </div>
           )}
         </div>
       </div>

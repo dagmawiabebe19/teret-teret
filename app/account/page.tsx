@@ -8,7 +8,22 @@ import type { UserProgress } from "@/types";
 import type { UITranslations } from "@/lib/translations";
 import { useTranslation } from "@/lib/useTranslation";
 import { startStripeCheckout } from "@/lib/stripeCheckout";
-import { trackPremiumConversion, trackSignupComplete } from "@/lib/analytics";
+import {
+  trackPremiumConversion,
+  trackSignupComplete,
+  trackSignupCompletedFromPrompt,
+} from "@/lib/analytics";
+
+function markSignupFromPromptIfNeeded() {
+  try {
+    if (sessionStorage.getItem("signup_from_prompt") === "1") {
+      trackSignupCompletedFromPrompt();
+      sessionStorage.removeItem("signup_from_prompt");
+    }
+  } catch {
+    // ignore
+  }
+}
 
 function formatBillingDate(iso: string, lang: "am" | "en" | "es"): string {
   try {
@@ -82,6 +97,20 @@ export default function AccountPage() {
   useEffect(() => {
     const params = typeof window !== "undefined" ? Object.fromEntries(new URLSearchParams(window.location.search)) : {};
     setSearchParams(params);
+    if (params.mode === "signup" || params.signup === "1") {
+      setIsSignUp(true);
+    } else if (params.mode === "signin" || params.signin === "1") {
+      setIsSignUp(false);
+    } else if (!params.mode && !params.signin && !params.signup) {
+      setIsSignUp(true);
+    }
+    if (params.from === "prompt") {
+      try {
+        sessionStorage.setItem("signup_from_prompt", "1");
+      } catch {
+        // ignore
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -96,10 +125,12 @@ export default function AccountPage() {
     }
     supabase.auth.getUser().then(({ data: { user: u } }) => {
       setUser(u ?? null);
+      if (u) markSignupFromPromptIfNeeded();
       setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) markSignupFromPromptIfNeeded();
     });
     return () => subscription.unsubscribe();
   }, [authConfigured]);
@@ -209,6 +240,7 @@ export default function AccountPage() {
         setMessageType("error");
       } else {
         trackSignupComplete();
+        markSignupFromPromptIfNeeded();
         setMessage(t.signUpSuccess);
         setMessageType("success");
       }
@@ -273,6 +305,13 @@ export default function AccountPage() {
     }
     setMessage("");
     setGoogleLoading(true);
+    if (isSignUp || searchParams.from === "prompt") {
+      try {
+        sessionStorage.setItem("signup_from_prompt", "1");
+      } catch {
+        // ignore
+      }
+    }
     try {
       let next = "/account";
       if (typeof window !== "undefined" && searchParams.returnTo) {
