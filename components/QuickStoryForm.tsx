@@ -85,6 +85,9 @@ export function QuickStoryForm({
           value={childName}
           onChange={(e) => setChildName(e.target.value)}
           placeholder={t.formNamePlaceholder}
+          autoFocus
+          enterKeyHint="go"
+          autoComplete="given-name"
           className="w-full rounded-[20px] py-4 px-5 text-[16px] font-medium outline-none border min-h-[60px]"
           style={{
             background: "rgba(255,255,255,0.09)",

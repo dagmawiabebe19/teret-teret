@@ -20,7 +20,9 @@ import {
 } from "@/lib/illustrationPrompts";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { GLOBAL_CAP_MESSAGE, reserveGlobalDailyStorySlot } from "@/lib/globalDailyCap";
+import { ANALYTICS_EVENTS } from "@/lib/analyticsEvents";
 import { resolveProfileAccess } from "@/lib/profileAccess";
+import { insertAnalyticsEvent } from "@/lib/serverAnalytics";
 import { appendGenerationDate } from "@/lib/streaks";
 import type { StoryInspiration } from "@/types";
 import type { StoryCategory } from "@/types";
@@ -639,6 +641,16 @@ No other text. No markdown.`;
       const admin = createAdminClient();
       const ip = getClientIp(request);
       await incrementGuestDaily(admin, ip);
+    }
+
+    const analyticsAdmin = createAdminClient();
+    if (analyticsAdmin) {
+      await insertAnalyticsEvent(analyticsAdmin, {
+        eventName: ANALYTICS_EVENTS.STORY_GENERATED,
+        request,
+        userId: user?.id ?? null,
+        properties: { guest: !user, category },
+      });
     }
 
     console.log("[teret] story generated", { userId: user?.id ?? "guest", pageCount: result.am.length, hasIllustrationPrompts: illustrationPrompts.length > 0 });

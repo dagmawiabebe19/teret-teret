@@ -12,6 +12,7 @@ import {
   trackPremiumConversion,
   trackSignupComplete,
   trackSignupCompletedFromPrompt,
+  trackSignupStarted,
 } from "@/lib/analytics";
 
 function markSignupFromPromptIfNeeded() {
@@ -110,6 +111,9 @@ export default function AccountPage() {
       } catch {
         // ignore
       }
+    }
+    if (params.mode === "signup" || params.signup === "1" || params.from === "prompt") {
+      trackSignupStarted(params.from === "prompt" ? "post_story_prompt" : "account_page");
     }
   }, []);
 
@@ -306,6 +310,7 @@ export default function AccountPage() {
     setMessage("");
     setGoogleLoading(true);
     if (isSignUp || searchParams.from === "prompt") {
+      trackSignupStarted(searchParams.from === "prompt" ? "post_story_prompt" : "google_oauth");
       try {
         sessionStorage.setItem("signup_from_prompt", "1");
       } catch {

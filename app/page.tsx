@@ -13,7 +13,12 @@ import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { FinalCTASection } from "@/components/landing/FinalCTASection";
 import { PricingSection } from "@/components/PricingSection";
 import { SiteFooter } from "@/components/SiteFooter";
-import { trackFirstStoryComplete, trackSignupCompletedFromPrompt } from "@/lib/analytics";
+import {
+  trackFirstStoryComplete,
+  trackHomepageView,
+  trackSignupCompletedFromPrompt,
+  trackStoryStarted,
+} from "@/lib/analytics";
 import { StoryReader } from "@/components/StoryReader";
 import { SavedStoriesPanel, type SavedStoryItem } from "@/components/SavedStoriesPanel";
 import { DailyTeretCard } from "@/components/DailyTeretCard";
@@ -151,6 +156,10 @@ export default function HomePage() {
   useEffect(() => {
     refreshUsage();
   }, [refreshUsage]);
+
+  useEffect(() => {
+    if (screen === "home") trackHomepageView();
+  }, [screen]);
 
   useEffect(() => {
     fetch("/api/geo")
@@ -406,6 +415,7 @@ export default function HomePage() {
       generatingRef.current = false;
       return;
     }
+    trackStoryStarted();
     setIsGenerating(true);
     setScreen("loading");
     setLoadingMsg(0);

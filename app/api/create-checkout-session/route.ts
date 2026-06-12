@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getOptionalUser } from "@/lib/supabase/server";
+import { ANALYTICS_EVENTS } from "@/lib/analyticsEvents";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { insertAnalyticsEvent } from "@/lib/serverAnalytics";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -29,6 +31,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let returnPath = "/account";
+  try {
+    const body = await request.json().catch(() => ({}));
+    const rt = typeof body?.returnTo === "string" ? body.returnTo.trim() : "";
+    if (rt.startsWith("/") && !rt.startsWith("//")) returnPath = rt;
+  } catch {
+    // use default
+  }
+
   const stripe = new Stripe(secret);
   const admin = createAdminClient();
   let customerId: string | null = null;
@@ -46,8 +57,8 @@ export async function POST(request: NextRequest) {
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: PRICE_ID, quantity: 1 }],
-      success_url: `${APP_URL}/account?upgraded=true`,
-      cancel_url: `${APP_URL}/`,
+      success_url: `${APP_URL}/account?upgraded=true&returnTo=${encodeURIComponent(returnPath)}`,
+      cancel_url: `${APP_URL}${returnPath}?cancel=1`,
       customer_email: customerId ? undefined : (user.email ?? undefined),
       customer: customerId ?? undefined,
       metadata: { user_id: user.id },
@@ -60,6 +71,16 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    if (admin) {
+      await insertAnalyticsEvent(admin, {
+        eventName: ANALYTICS_EVENTS.CHECKOUT_STARTED,
+        request,
+        userId: user.id,
+        properties: { return_to: returnPath },
+      });
+    }
+
     return NextResponse.json({ url: session.url });
   } catch (e) {
     console.error("[create-checkout-session]", e);

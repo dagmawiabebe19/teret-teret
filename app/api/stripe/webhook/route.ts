@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { ANALYTICS_EVENTS } from "@/lib/analyticsEvents";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { insertAnalyticsEvent } from "@/lib/serverAnalytics";
 
 function stripeId(value: string | Stripe.Customer | Stripe.DeletedCustomer | Stripe.Subscription | null | undefined): string | null {
   if (!value) return null;
@@ -132,6 +134,12 @@ export async function POST(request: NextRequest) {
           userId,
           rows: profileUpdate.data,
         });
+        await insertAnalyticsEvent(admin, {
+          eventName: ANALYTICS_EVENTS.SUBSCRIPTION_STARTED,
+          request,
+          userId,
+          properties: { stripe_subscription_id: subId },
+        });
       }
       break;
     }
@@ -191,6 +199,21 @@ export async function POST(request: NextRequest) {
         log("Supabase profiles update failed", { message: profileUpdate.error.message });
       } else {
         log("Supabase profiles update ok", { userId, rows: profileUpdate.data });
+        if (event.type === "customer.subscription.deleted" || status === "free") {
+          await insertAnalyticsEvent(admin, {
+            eventName: ANALYTICS_EVENTS.SUBSCRIPTION_CANCELLED,
+            request,
+            userId,
+            properties: { stripe_status: sub.status },
+          });
+        } else if (status === "premium") {
+          await insertAnalyticsEvent(admin, {
+            eventName: ANALYTICS_EVENTS.SUBSCRIPTION_STARTED,
+            request,
+            userId,
+            properties: { stripe_status: sub.status },
+          });
+        }
       }
       break;
     }
