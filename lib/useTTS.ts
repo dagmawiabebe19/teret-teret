@@ -143,6 +143,13 @@ function waitForVoices(timeoutMs = 1500): Promise<SpeechSynthesisVoice[]> {
   });
 }
 
+/** Strip ASCII punctuation from Amharic before browser TTS (avoids "comma" artifacts). */
+export function prepareBrowserTtsText(text: string, lang: Lang): string {
+  const trimmed = text.trim();
+  if (lang !== "am") return trimmed;
+  return trimmed.replace(/[,.\?!;:]/g, "");
+}
+
 /** Split text into sentences for boundary tracking (start char indices) */
 export function getSentenceStarts(text: string): number[] {
   const starts: number[] = [0];
@@ -157,8 +164,9 @@ export function getSentenceStarts(text: string): number[] {
 export interface UseTTSOptions {
   onEnd?: () => void;
   rate?: number;
-  /** Premium subscribers: ElevenLabs via /api/tts */
+  /** Signed-in users: Azure/ElevenLabs via /api/tts; guests use browser TTS */
   usePremiumVoice?: boolean;
+  onNarrationError?: (message: string) => void;
 }
 
 function browserRateForLang(lang: Lang, baseRate: number): number {
@@ -167,7 +175,7 @@ function browserRateForLang(lang: Lang, baseRate: number): number {
 }
 
 export function useTTS(options: UseTTSOptions = {}) {
-  const { onEnd, rate = 1, usePremiumVoice = false } = options;
+  const { onEnd, rate = 1, usePremiumVoice = false, onNarrationError } = options;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -184,10 +192,12 @@ export function useTTS(options: UseTTSOptions = {}) {
   const onEndRef = useRef(onEnd);
   const rateRef = useRef(rate);
   const usePremiumVoiceRef = useRef(usePremiumVoice);
+  const onNarrationErrorRef = useRef(onNarrationError);
 
   onEndRef.current = onEnd;
   rateRef.current = rate;
   usePremiumVoiceRef.current = usePremiumVoice;
+  onNarrationErrorRef.current = onNarrationError;
 
   const cleanupAudio = useCallback(() => {
     const audio = audioRef.current;
@@ -215,7 +225,7 @@ export function useTTS(options: UseTTSOptions = {}) {
   const startUtterance = useCallback(
     (text: string, lang: Lang, voices: SpeechSynthesisVoice[]) => {
       const syn = window.speechSynthesis;
-      const trimmed = text.trim();
+      const trimmed = prepareBrowserTtsText(text, lang);
       if (!trimmed) return;
 
       setUsingPremiumVoice(false);
@@ -229,7 +239,7 @@ export function useTTS(options: UseTTSOptions = {}) {
       const { voice } = selectVoice(lang, voices);
       if (voice) utterance.voice = voice;
 
-      sentenceStartsRef.current = getSentenceStarts(text);
+      sentenceStartsRef.current = getSentenceStarts(trimmed);
       setCurrentSentenceIndex(0);
 
       utterance.onboundary = (event: SpeechSynthesisEvent) => {
@@ -274,6 +284,14 @@ export function useTTS(options: UseTTSOptions = {}) {
 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
+          if (res.status === 429 || data.ttsDailyLimit) {
+            setIsLoading(false);
+            setUsingPremiumVoice(false);
+            onNarrationErrorRef.current?.(
+              data.error ?? "Daily audio limit reached. Upgrade to Premium for unlimited."
+            );
+            return;
+          }
           if (data.useBrowserTts) {
             setIsLoading(false);
             setUsingPremiumVoice(false);

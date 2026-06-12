@@ -724,6 +724,14 @@ export default function HomePage() {
           onSaveWord={handleSaveWord}
           isGuest={isGuest}
           enableSignupPrompt={eligibleForSignupPrompt}
+          onNarrationError={(msg) =>
+            toast.showToast(
+              msg.includes("Daily audio") || msg.includes("የዛሬ የድምፅ")
+                ? t.ttsDailyLimitReached
+                : msg,
+              "error"
+            )
+          }
         />
       )}
 

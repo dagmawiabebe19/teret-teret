@@ -65,6 +65,7 @@ interface StoryReaderProps {
   /** Guest who just finished a user-generated story */
   isGuest?: boolean;
   enableSignupPrompt?: boolean;
+  onNarrationError?: (message: string) => void;
 }
 
 export function StoryReader({
@@ -92,6 +93,7 @@ export function StoryReader({
   onSaveWord,
   isGuest = false,
   enableSignupPrompt = false,
+  onNarrationError,
 }: StoryReaderProps) {
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState<"fwd" | "bck">("fwd");
@@ -104,9 +106,10 @@ export function StoryReader({
   const [googleSignupLoading, setGoogleSignupLoading] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const isFirstStoryRef = useRef<boolean | null>(null);
-  const fullAccess = hasFullAccess || subscriptionStatus === "premium";
+  const useApiNarration = !isGuest;
   const { speak, pause, resume, stop, isPlaying, isPaused, isSupported } = useTTS({
-    usePremiumVoice: fullAccess,
+    usePremiumVoice: useApiNarration,
+    onNarrationError,
   });
 
   useEffect(() => {
@@ -122,7 +125,7 @@ export function StoryReader({
     }
   }, [page]);
 
-  const audioAllowedThisPage = fullAccess || page < 2;
+  const audioAllowedThisPage = !isGuest || page < 2;
 
   useEffect(() => {
     if (showEnd && isDailyTeret && onCompleteDailyTeret && !dailyCompleted) {
@@ -493,7 +496,8 @@ export function StoryReader({
                   key={page}
                   text={text}
                   lang={lang}
-                  usePremiumVoice={fullAccess}
+                  usePremiumVoice={useApiNarration}
+                  onNarrationError={onNarrationError}
                   onEnd={goNext}
                   renderHighlightedText={({ currentSentenceIndex, sentenceStarts }) =>
                     highlightSentenceInText(text, sentenceStarts, currentSentenceIndex)
@@ -508,7 +512,7 @@ export function StoryReader({
                   }}
                 >
                   <p className="text-sm text-[rgba(200,180,255,0.8)] mb-3">
-                    {t.premiumAudioGate}
+                    {t.guestAudioGate}
                   </p>
                   <div className="flex gap-2 justify-center flex-wrap">
                     <button
@@ -523,19 +527,18 @@ export function StoryReader({
                     >
                       {t.readInsteadBtn}
                     </button>
-                    {onShowPaywall && (
-                      <button
-                        type="button"
-                        onClick={onShowPaywall}
-                        className="py-2 px-3 rounded-xl text-xs font-bold"
+                    {isGuest && (
+                      <a
+                        href="/account?signin=1"
+                        className="py-2 px-3 rounded-xl text-xs font-bold inline-block"
                         style={{
                           background: "linear-gradient(135deg,rgba(255,140,0,0.3),rgba(255,215,0,0.2))",
                           border: "1px solid rgba(255,215,0,0.4)",
                           color: "#FFD700",
                         }}
                       >
-                        {t.upgradeBtn}
-                      </button>
+                        {t.signInForNarrationBtn}
+                      </a>
                     )}
                   </div>
                 </div>

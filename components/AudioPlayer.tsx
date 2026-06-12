@@ -16,8 +16,9 @@ interface AudioPlayerProps {
   text: string;
   lang: Lang;
   onEnd?: () => void;
-  /** Premium subscribers get ElevenLabs narration */
+  /** Signed-in users get Azure/ElevenLabs via /api/tts */
   usePremiumVoice?: boolean;
+  onNarrationError?: (message: string) => void;
   /** Optional: render text with sentence highlighting; if not provided, no paragraph shown */
   renderHighlightedText?: (props: {
     currentSentenceIndex: number;
@@ -30,6 +31,7 @@ export function AudioPlayer({
   lang,
   onEnd,
   usePremiumVoice = false,
+  onNarrationError,
   renderHighlightedText,
 }: AudioPlayerProps) {
   const { t } = useTranslation(lang);
@@ -50,6 +52,7 @@ export function AudioPlayer({
     onEnd,
     rate: 1,
     usePremiumVoice,
+    onNarrationError,
   });
 
   const sentenceStarts = getSentenceStarts(text);
