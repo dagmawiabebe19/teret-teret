@@ -51,6 +51,16 @@ function stripInvisibleChars(text: string): string {
   return text.replace(/[\u200B-\u200D\uFEFF]/g, "");
 }
 
+/** Prepare story text for Azure SSML — newlines and some punctuation break synthesis. */
+function sanitizeForAmharicSsml(text: string): string {
+  let s = stripInvisibleChars(text.trim());
+  s = s.replace(/\r\n/g, "\n").replace(/\s+/g, " ");
+  s = s.replace(/[,.\?!;:]/g, "");
+  s = s.replace(/[«»""]/g, "");
+  s = s.replace(/^[a-z]{1,2}\s+(?=[\u1200-\u137F])/i, "");
+  return s.trim();
+}
+
 type AmharicSSMLPipeline = {
   strippedText: string;
   escapedText: string;
@@ -63,7 +73,7 @@ function buildAmharicSSMLPipeline(
   text: string,
   voice: string = DEFAULT_VOICE
 ): AmharicSSMLPipeline {
-  const strippedText = stripInvisibleChars(text.trim());
+  const strippedText = sanitizeForAmharicSsml(text);
   const escapedText = escapeXML(strippedText);
   const textWithBreaks = escapedText
     .replace(/።/g, FULLSTOP_PLACEHOLDER)
@@ -101,8 +111,12 @@ export async function synthesizeAmharicSpeech(text: string): Promise<ArrayBuffer
 
   const voice = voiceForAmharic();
   const endpoint = azureTtsUrl();
+  const prepared = sanitizeForAmharicSsml(text);
+  if (!prepared) {
+    throw new Error("Azure TTS: empty text after sanitization");
+  }
   const { strippedText, escapedText, textWithBreaks, ssml } = buildAmharicSSMLPipeline(
-    text,
+    prepared,
     voice
   );
 

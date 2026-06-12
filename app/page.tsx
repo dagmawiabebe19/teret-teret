@@ -724,14 +724,18 @@ export default function HomePage() {
           onSaveWord={handleSaveWord}
           isGuest={isGuest}
           enableSignupPrompt={eligibleForSignupPrompt}
-          onNarrationError={(msg) =>
-            toast.showToast(
-              msg.includes("Daily audio") || msg.includes("የዛሬ የድምፅ")
-                ? t.ttsDailyLimitReached
-                : msg,
-              "error"
-            )
-          }
+          onNarrationError={(msg) => {
+            let text = msg;
+            if (msg.includes("Daily audio") || msg.includes("የዛሬ የድምፅ")) {
+              text = t.ttsDailyLimitReached;
+            } else if (
+              msg.includes("temporarily unavailable") ||
+              msg.includes("ጊዜያዊ አይገኝም")
+            ) {
+              text = t.audioUnavailable;
+            }
+            toast.showToast(text, "error");
+          }}
         />
       )}
 

@@ -233,6 +233,7 @@ export const translations: Record<
     guestAudioGate: string;
     signInForNarrationBtn: string;
     ttsDailyLimitReached: string;
+    audioUnavailable: string;
     readInsteadBtn: string;
     upgradeBtn: string;
     ttsPauseAria: string;
@@ -634,6 +635,7 @@ export const translations: Record<
     guestAudioGate: "Sign in to hear the full story with AI narration.",
     signInForNarrationBtn: "Sign in free",
     ttsDailyLimitReached: "Daily audio limit reached. Upgrade to Premium for unlimited.",
+    audioUnavailable: "Audio temporarily unavailable. Please try again in a moment.",
     readInsteadBtn: "📖 Read instead",
     upgradeBtn: "Upgrade",
     ttsPauseAria: "Pause",
@@ -1057,6 +1059,7 @@ export const translations: Record<
     guestAudioGate: "Inicia sesión para escuchar el cuento completo con narración IA.",
     signInForNarrationBtn: "Iniciar sesión gratis",
     ttsDailyLimitReached: "Límite diario de audio alcanzado. Mejora a Premium para ilimitado.",
+    audioUnavailable: "Audio no disponible por el momento. Inténtalo de nuevo.",
     readInsteadBtn: "📖 Leer en su lugar",
     upgradeBtn: "Mejorar plan",
     ttsPauseAria: "Pausar",

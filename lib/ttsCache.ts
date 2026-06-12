@@ -4,7 +4,7 @@ import type { Lang } from "@/types";
 export function ttsCacheKey(text: string, lang: Lang): string {
   const hash = createHash("sha256").update(`${lang}:${text.trim()}`).digest("hex");
   if (lang === "am") {
-    return `azure-am-v4-${hash}`;
+    return `azure-am-v5-${hash}`;
   }
   return hash;
 }

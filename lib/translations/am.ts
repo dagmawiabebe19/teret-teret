@@ -241,6 +241,7 @@ export const amTranslations = {
   guestAudioGate: "ሙሉውን ታሪክ በAI ድምፅ ለመስማት መለያ ፍጠሪ።",
   signInForNarrationBtn: "ነፃ መለያ ፍጠሪ",
   ttsDailyLimitReached: "የዛሬ የድምፅ ገደብ ተሞልቷል። ያልተገደበ ለመስማት ፕሪሚየም ተመዝገቢ።",
+  audioUnavailable: "ድምፁ ጊዜያዊ አይገኝም። እንደገና ሞክሪ።",
   readInsteadBtn: "📖 አንብቢ",
   upgradeBtn: "ፕሪሚየም ተመዝገቢ",
   ttsPauseAria: "አቁሚ",

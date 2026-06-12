@@ -1,4 +1,5 @@
 import type { ParsedStory, StoryPage } from "@/types";
+import { sanitizeAmharicStoryText, lineLooksLikeAmharic } from "@/lib/storyTextSanitize";
 
 const MIN_PAGES = 2;
 const MIN_TOTAL_CHARS = 100;
@@ -7,6 +8,7 @@ function extractBlocks(raw: string): { am: string; en: string; es: string }[] {
   const lines = raw.split("\n");
   const pages: { am: string; en: string; es: string }[] = [];
   let cur: { am: string; en: string; es: string } = { am: "", en: "", es: "" };
+  let activeField: "am" | "en" | "es" | null = null;
 
   for (const line of lines) {
     const t = line.trim();
@@ -15,14 +17,23 @@ function extractBlocks(raw: string): { am: string; en: string; es: string }[] {
     if (tag.startsWith("[AM]")) {
       if (cur.am) pages.push({ ...cur });
       cur = {
-        am: t.replace(/^\[AM\]\s*/i, "").trim(),
+        am: sanitizeAmharicStoryText(t.replace(/^\[AM\]\s*/i, "").trim()),
         en: "",
         es: "",
       };
+      activeField = "am";
     } else if (tag.startsWith("[EN]")) {
       cur.en = t.replace(/^\[EN\]\s*/i, "").trim();
+      activeField = "en";
     } else if (tag.startsWith("[ES]")) {
       cur.es = t.replace(/^\[ES\]\s*/i, "").trim();
+      activeField = "es";
+    } else if (activeField === "am" && lineLooksLikeAmharic(t)) {
+      cur.am = sanitizeAmharicStoryText(`${cur.am} ${t}`.trim());
+    } else if (activeField === "en" && !lineLooksLikeAmharic(t)) {
+      cur.en = `${cur.en} ${t}`.trim();
+    } else if (activeField === "es" && !lineLooksLikeAmharic(t)) {
+      cur.es = `${cur.es} ${t}`.trim();
     }
   }
   if (cur.am) pages.push({ ...cur });
@@ -64,7 +75,7 @@ export function parseStory(rawText: string): ParsedStory | null {
   const es: string[] = [];
 
   for (const p of pages) {
-    am.push(p.am || "");
+    am.push(sanitizeAmharicStoryText(p.am || ""));
     en.push(p.en || p.am || "");
     es.push(p.es || p.am || "");
   }

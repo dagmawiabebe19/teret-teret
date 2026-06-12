@@ -10,11 +10,15 @@ import { canUsePremiumNarration } from "@/lib/access";
 import { checkTtsBudget, recordTtsUsage } from "@/lib/ttsUsageDaily";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const TtsSchema = z.object({
   text: z.string().min(1).max(5000),
   lang: z.enum(["am", "en", "es"]),
 });
+
+const AUDIO_UNAVAILABLE =
+  "Audio temporarily unavailable. Please try again in a moment.";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -61,20 +65,29 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   if (!admin) {
-    return NextResponse.json({ error: "Storage unavailable", useBrowserTts: true }, { status: 503 });
+    return NextResponse.json(
+      { error: AUDIO_UNAVAILABLE, audioUnavailable: true },
+      { status: 503 }
+    );
   }
 
-  const { data: cached, error: downloadError } = await admin.storage.from("tts-cache").download(path);
-  if (cached && !downloadError) {
-    const buffer = await cached.arrayBuffer();
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "X-TTS-Cache": "hit",
-        "X-TTS-Provider": lang === "am" ? "azure" : "elevenlabs",
-      },
-    });
+  try {
+    const { data: cached, error: downloadError } = await admin.storage
+      .from("tts-cache")
+      .download(path);
+    if (cached && !downloadError) {
+      const buffer = await cached.arrayBuffer();
+      return new NextResponse(buffer, {
+        headers: {
+          "Content-Type": "audio/mpeg",
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "X-TTS-Cache": "hit",
+          "X-TTS-Provider": lang === "am" ? "azure" : "elevenlabs",
+        },
+      });
+    }
+  } catch (cacheErr) {
+    console.warn("[tts] cache download error", cacheErr);
   }
 
   const budget = await checkTtsBudget(admin, user.id, trimmed.length, access.hasFullAccess);
@@ -91,12 +104,17 @@ export async function POST(request: Request) {
   try {
     const audio =
       lang === "am" ? await synthesizeAmharicSpeech(trimmed) : await synthesizeSpeech(trimmed, lang);
-    const upload = await admin.storage.from("tts-cache").upload(path, audio, {
-      contentType: "audio/mpeg",
-      upsert: true,
-    });
-    if (upload.error) {
-      console.error("[tts] cache upload failed", upload.error);
+
+    try {
+      const upload = await admin.storage.from("tts-cache").upload(path, audio, {
+        contentType: "audio/mpeg",
+        upsert: true,
+      });
+      if (upload.error) {
+        console.error("[tts] cache upload failed", upload.error);
+      }
+    } catch (uploadErr) {
+      console.error("[tts] cache upload threw", uploadErr);
     }
 
     if (!access.hasFullAccess) {
@@ -113,10 +131,11 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const provider = lang === "am" ? "Azure" : "ElevenLabs";
-    console.error(`[tts] ${provider} synthesis failed`, err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[tts] ${provider} synthesis failed`, message);
     return NextResponse.json(
-      { error: "Could not generate narration", useBrowserTts: true },
-      { status: 502 }
+      { error: AUDIO_UNAVAILABLE, audioUnavailable: true },
+      { status: 503 }
     );
   }
 }

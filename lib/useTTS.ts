@@ -292,6 +292,14 @@ export function useTTS(options: UseTTSOptions = {}) {
             );
             return;
           }
+          if (data.audioUnavailable) {
+            setIsLoading(false);
+            setUsingPremiumVoice(false);
+            onNarrationErrorRef.current?.(
+              data.error ?? "Audio temporarily unavailable. Please try again in a moment."
+            );
+            return;
+          }
           if (data.useBrowserTts) {
             setIsLoading(false);
             setUsingPremiumVoice(false);
@@ -320,9 +328,15 @@ export function useTTS(options: UseTTSOptions = {}) {
         setIsPaused(false);
         setIsLoading(false);
       } catch (err) {
-        console.warn("[useTTS] premium audio failed, falling back to browser", err);
+        console.warn("[useTTS] API narration failed", err);
         setIsLoading(false);
         setUsingPremiumVoice(false);
+        if (usePremiumVoiceRef.current) {
+          onNarrationErrorRef.current?.(
+            "Audio temporarily unavailable. Please try again in a moment."
+          );
+          return;
+        }
         const voices = window.speechSynthesis.getVoices();
         if (voices.length > 0) {
           startUtterance(text, lang, voices);
