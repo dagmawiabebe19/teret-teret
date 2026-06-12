@@ -67,6 +67,7 @@ export default function HomePage() {
   const [loadingMsg, setLoadingMsg] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [error, setError] = useState("");
+  const [storyErrorRetryable, setStoryErrorRetryable] = useState(false);
   const [lang, setLangState] = useState<Lang>(() => {
     if (typeof window === "undefined") return "en";
     const s = localStorage.getItem("teret_lang");
@@ -423,6 +424,7 @@ export default function HomePage() {
     setLoadingMsg(0);
     setLoadingProgress(0);
     setError("");
+    setStoryErrorRetryable(false);
     setPages([]);
 
     const effectiveRegion =
@@ -455,8 +457,13 @@ export default function HomePage() {
       setLoadingProgress(100);
 
       if (!res.ok) {
-        const errMsg =
-          res.status === 503 ? t.globalCapBreak : (data.error ?? t.errorGeneric);
+        const isStoryBusy = data.error === "story_generation_unavailable";
+        const errMsg = isStoryBusy
+          ? t.storyGenerationUnavailable
+          : res.status === 503
+            ? t.globalCapBreak
+            : (data.error ?? t.errorGeneric);
+        setStoryErrorRetryable(isStoryBusy);
         setError(errMsg);
         setScreen("home");
         toast.showToast(errMsg, "error");
@@ -700,6 +707,7 @@ export default function HomePage() {
             setTopic("");
             setStoryGoal("");
             setError("");
+            setStoryErrorRetryable(false);
           }}
           onAnother={generateStory}
           onSave={saveStory}
@@ -794,6 +802,8 @@ export default function HomePage() {
                 onSubmit={generateStory}
                 disabled={!childName.trim() || isGenerating}
                 error={error}
+                errorRetryable={storyErrorRetryable}
+                onRetry={generateStory}
               />
 
               <SampleAudioSection lang={lang} />

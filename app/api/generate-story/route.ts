@@ -278,32 +278,7 @@ async function recordSignedInGeneration(
 ) {
   const { error: rpcError } = await supabase.rpc("increment_usage", { p_user_id: userId });
   if (rpcError) {
-    const now = new Date();
-    const { data: usage } = await supabase
-      .from("usage_tracking")
-      .select("generation_count, first_story_at")
-      .eq("user_id", userId)
-      .single();
-    const { windowExpired } = getSignedInUsageFromRow(usage ?? null, now);
-    if (windowExpired) {
-      await supabase
-        .from("usage_tracking")
-        .update({
-          first_story_at: now.toISOString(),
-          generation_count: 1,
-          last_generated_at: now.toISOString(),
-        })
-        .eq("user_id", userId);
-    } else {
-      const next = (usage?.generation_count ?? 0) + 1;
-      await supabase
-        .from("usage_tracking")
-        .update({
-          generation_count: next,
-          last_generated_at: now.toISOString(),
-        })
-        .eq("user_id", userId);
-    }
+    console.error("[generate-story] increment_usage failed", rpcError);
   }
 
   const { data: prof } = await supabase
@@ -331,25 +306,6 @@ async function recordSignedInGeneration(
       console.error("[generate-story] persist story failed", insertError);
     }
   }
-}
-
-function generateFallbackStory(childName: string, setting: string): string {
-  const safeName = childName.slice(0, 40).trim() || "little one";
-  return `[AM] ተረት ተረት! ${safeName} በውብ የኢትዮጵያ ደጋ ነበረ። ፀሐይ ብሩህ ነበረች።
-[EN] Teret teret! ${safeName} was in ${setting}. The sun was bright.
-[ES] ¡Teret teret! ${safeName} estaba en ${setting}. El sol brillaba.
-
-[AM] ${safeName} አንድ ወዳጅ እንስሳ አገኘች። ወዳጅነት እጅግ ጠቃሚ ነው።
-[EN] ${safeName} met a friendly animal. Friendship is very important.
-[ES] ${safeName} conoció un animal amigable. La amistad es muy importante.
-
-[AM] ${safeName} በጎ ነገር አደረገች። ሁሉም ደስ አላቸው።
-[EN] ${safeName} did a kind thing. Everyone was happy.
-[ES] ${safeName} hizo algo bueno. Todos estaban contentos.
-
-[AM] ተረቱ ሄደ ዘንቢሉ መጣ። ${safeName} ጣፋጭ ህልም ይስማት።
-[EN] The story went, the basket came. May ${safeName} have sweet dreams.
-[ES] El cuento se fue, la cesta llegó. Que ${safeName} tenga dulces sueños.`;
 }
 
 export async function POST(request: Request) {
@@ -390,10 +346,13 @@ export async function POST(request: Request) {
     if (user) {
       const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
       if (supabase) {
-        await supabase.from("usage_tracking").upsert(
-          { user_id: user.id, generation_count: 0 },
-          { onConflict: "user_id", ignoreDuplicates: true }
-        );
+        const admin = createAdminClient();
+        if (admin) {
+          await admin.from("usage_tracking").upsert(
+            { user_id: user.id, generation_count: 0 },
+            { onConflict: "user_id", ignoreDuplicates: true }
+          );
+        }
         const access = await resolveProfileAccess(user.id, request);
         hasFullAccessFlag = access.hasFullAccess;
         if (!hasFullAccessFlag) {
@@ -473,11 +432,6 @@ export async function POST(request: Request) {
       const err = anthropicErr as { name?: string; status?: number; message?: string; error?: { type?: string; message?: string }; body?: unknown };
       const status = err?.status ?? (err?.error as { status?: number } | undefined)?.status;
       const message = err?.message ?? (err?.error as { message?: string } | undefined)?.message ?? String(anthropicErr);
-      const useFallback =
-        (status == null ||
-          [402, 404, 429, 502, 503, 504].includes(status as number)) &&
-        ![400, 401, 403].includes(status as number);
-      let fallbackTriggered = false;
       console.error("[generate-story] Anthropic request failed:", {
         name: err?.name ?? "Error",
         status: status ?? "unknown",
@@ -489,63 +443,10 @@ export async function POST(request: Request) {
         const bodyErr = (err.body as { error?: { type?: string; message?: string } }).error;
         if (bodyErr) console.error("[generate-story] API error body:", { type: bodyErr.type, message: bodyErr.message });
       }
-      if (useFallback && !fallbackTriggered) {
-        fallbackTriggered = true;
-        const regionObj = region ? REGIONS.find((r) => r.name === region) : null;
-        const setting = regionObj ? regionObj.detail : "the beautiful Ethiopian highlands";
-        const rawText = generateFallbackStory(childName, setting);
-        const result = parseStory(rawText);
-        if (result && result.am.length >= MIN_PAGES) {
-          console.log("[teret] fallback story used", { reason: status ?? "network" });
-          const pageContents = result.en.length ? result.en : result.am;
-          const illustrationPrompts = buildLocalIllustrationPrompts(
-            pageContents,
-            storyInspirationForIllustration as StoryInspiration,
-            regionObj?.name ?? undefined
-          );
-          result.illustrationPrompts = illustrationPrompts;
-          const fallbackPages = parsedToPages(result);
-          result.vocabulary = getVocabForStory(fallbackPages, "en").slice(0, 8);
-          const storyRegion = region ?? "Ethiopian highlands";
-          if (user) {
-            const supabase = await import("@/lib/supabase/server").then((m) => m.createClient());
-            if (supabase) {
-              await recordSignedInGeneration(supabase, user.id, true, {
-                childName,
-                ageGroup,
-                trait,
-                region: storyRegion,
-                category,
-                rawStory: rawText,
-                parsedPages: fallbackPages,
-                language,
-                illustrationPrompts,
-              });
-            }
-          } else {
-            const admin = createAdminClient();
-            await incrementGuestDaily(admin, getClientIp(request));
-          }
-          return NextResponse.json({
-            rawStory: rawText,
-            parsed: result,
-            region: storyRegion,
-          });
-        }
-      }
-      const clientMessage =
-        status === 400
-          ? "Story request was invalid. Please try again."
-          : status === 401 || status === 403
-            ? "Story service authentication failed."
-            : status === 404
-              ? "Story service model unavailable. Please try again later."
-            : status === 429
-              ? "Too many requests. Please try again in a moment."
-              : "Story service is temporarily unavailable. Please try again.";
-      const clientStatus =
-        status === 429 ? 429 : status === 401 || status === 403 ? 503 : 502;
-      return NextResponse.json({ error: clientMessage }, { status: clientStatus });
+      return NextResponse.json(
+        { error: "story_generation_unavailable" },
+        { status: 503 }
+      );
     }
     clearTimeout(timeout);
 

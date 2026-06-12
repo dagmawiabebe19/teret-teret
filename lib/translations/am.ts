@@ -252,6 +252,7 @@ export const amTranslations = {
   errorExported: "ወርዷል!",
   errorNetwork: "ኢንተርኔት ችግር። እንደገና ሞክሪ።",
   errorGeneric: "ችግር ተፈጥሯል። እንደገና ሞክሪ።",
+  storyGenerationUnavailable: "ታሪክ ፍጠራው ተጠምዷል — ትንሽ በኋላ እንደገና ሞክሪ",
   errorTryAgain: "እንደገና ሞክሪ",
   errorCouldNotSaveWord: "ቃሉን ማስቀመጥ አልተሳካም",
   errorStoryDisplayFailed: "ታሪኩን ማሳየት አልተሳካም።",
@@ -321,7 +322,7 @@ export const amTranslations = {
   formTraitOpts: ["ደፋር", "ደግ", "ጉጉ", "ፈጠራ", "አስቂ", "ጀብዳ"],
   formCategoryOpts: ["መጽለፊያ", "ታሪክ", "ሳይንስ", "እምነት", "ባህል", "አስገራሚ"],
   formRegionOpts: ["ስሜን", "ላሊበላ", "አክሱም", "ታና", "አዲስ አበባ", "ዳናኪል", "ባሌ", "ሐረር"],
-  trustNarration: "ሞቃት ድምፅ",
+  trustNarration: "ሞቃት AI ድምጽ",
   trustHeritage: "የኢትዮጵያ ባህል",
   trustSafe: "ለልጆች ደህንነት",
   testimonialFeaturedQuote:
@@ -334,7 +335,7 @@ export const amTranslations = {
   footerNoAds: "ማስታወቂያ የለም፣ መከታተል የለም",
   footerFaqLink: "ጥያቄዎች",
   sampleReadMore: "ተጨማሪ አንብቢ →",
-  trustStrip: "🦁 የኢትዮጵያ ባህል · 🎙️ ሞቃት ድምፅ · 🌙 4-6 ደቂቃ",
+  trustStrip: "🦁 የኢትዮጵያ ባህል · 🎙️ ሞቃት AI ድምጽ · 🌙 4-6 ደቂቃ",
   problemHeadline: "ልጅሽ እንግሊዝኛ ትመልሳለች። አማርኛ ትፈልጋለሽ።",
   problemBody:
     "በዲያስፖራ የምትኖሩ ወላጆች ይህን ያውቃሉ። አማርኛ ትናገራለሽ፣ እንግሊዝኛ ትመልሳለች። ተረት ተረት ቋንቋንና ባህልን በሌሊት ይመልሳል።",
@@ -342,7 +343,7 @@ export const amTranslations = {
   howItWorksSteps: [
     { title: "ስምና ዕድሜ ጻፊ", sub: "30 ሰከንድ" },
     { title: "የኢትዮጵያ ቦታ ምረጪ", sub: "ላሊበላ፣ አክሱም፣ ስሜን…" },
-    { title: "በአማርኛ ታሪክ ተቀበሊ", sub: "ሞቃት ድምፅ ጋር" },
+    { title: "በአማርኛ ታሪክ ተቀበሊ", sub: "ሞቃት AI ድምጽ ጋር" },
   ],
   howItWorksCta: "🎁 ነፃ ጀምሪ →",
   sampleHeadline: "ታሪክ ስሚ",

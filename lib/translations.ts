@@ -244,6 +244,7 @@ export const translations: Record<
     errorExported: string;
     errorNetwork: string;
     errorGeneric: string;
+    storyGenerationUnavailable: string;
     errorTryAgain: string;
     errorCouldNotSaveWord: string;
     errorStoryDisplayFailed: string;
@@ -646,6 +647,7 @@ export const translations: Record<
     errorExported: "Exported!",
     errorNetwork: "Network error. Try again.",
     errorGeneric: "Something went wrong. Please try again.",
+    storyGenerationUnavailable: "Story creation is busy — please try again in a moment",
     errorTryAgain: "Try again",
     errorCouldNotSaveWord: "Could not save word",
     errorStoryDisplayFailed: "This saved story could not be displayed as pages.",
@@ -713,7 +715,7 @@ export const translations: Record<
     formTraitOpts: ["Brave", "Kind", "Curious", "Creative", "Funny", "Adventurous"],
     formCategoryOpts: ["Bedtime", "History", "Science", "Faith", "Culture", "Surprise me"],
     formRegionOpts: ["Simien Mountains", "Lalibela", "Axum", "Lake Tana", "Addis Ababa", "Danakil", "Bale Mountains", "Harar"],
-    trustNarration: "Real human narration",
+    trustNarration: "Warm AI narration",
     trustHeritage: "Ethiopian heritage",
     trustSafe: "Safe for kids",
     testimonialFeaturedQuote: "My daughter learned 'ሰላም አያቴ' from a story and used it with my mom on FaceTime.",
@@ -727,7 +729,7 @@ export const translations: Record<
     sampleReadMore: "Read more →",
     ctaCreateFree: "🎁 Create your first story free",
     ctaListenSample: "Listen to a sample →",
-    trustStrip: "🦁 Ethiopian heritage · 🎙️ Real human narration · 🌙 4-6 minute bedtime stories",
+    trustStrip: "🦁 Ethiopian heritage · 🎙️ Warm AI narration · 🌙 4-6 minute bedtime stories",
     problemHeadline: "Your child responds in English. You wish they understood Amharic.",
     problemBody: "Every diaspora parent knows the feeling. You speak to them in Amharic. They answer in English. The language is slipping away — and with it, your culture. Teret Stories is built to bring it back, one bedtime story at a time.",
     howItWorksHeadline: "How it works",
@@ -1070,6 +1072,7 @@ export const translations: Record<
     errorExported: "¡Exportado!",
     errorNetwork: "Error de red. Intenta de nuevo.",
     errorGeneric: "Algo salió mal. Intenta de nuevo.",
+    storyGenerationUnavailable: "La creación de cuentos está ocupada — inténtalo de nuevo en un momento",
     errorTryAgain: "Intenta de nuevo",
     errorCouldNotSaveWord: "No se pudo guardar la palabra",
     errorStoryDisplayFailed: "Este cuento guardado no se pudo mostrar en páginas.",
@@ -1137,7 +1140,7 @@ export const translations: Record<
     formTraitOpts: ["Valiente", "Amable", "Curioso", "Creativo", "Divertido", "Aventurero"],
     formCategoryOpts: ["Para dormir", "Historia", "Ciencia", "Fe", "Cultura", "Sorpresa"],
     formRegionOpts: ["Montañas Simien", "Lalibela", "Axum", "Lago Tana", "Addis Abeba", "Danakil", "Montañas Bale", "Harar"],
-    trustNarration: "Narración humana real",
+    trustNarration: "Narración IA cálida",
     trustHeritage: "Herencia etíope",
     trustSafe: "Seguro para niños",
     testimonialFeaturedQuote: "Mi hija aprendió 'ሰላም አያቴ' de un cuento y lo usó con mi mamá en FaceTime.",
@@ -1151,14 +1154,14 @@ export const translations: Record<
     sampleReadMore: "Leer más →",
     ctaCreateFree: "🎁 Crea tu primer cuento gratis",
     ctaListenSample: "Escucha una muestra →",
-    trustStrip: "🦁 Herencia etíope · 🎙️ Narración humana real · 🌙 Cuentos de 4-6 minutos",
+    trustStrip: "🦁 Herencia etíope · 🎙️ Narración IA cálida · 🌙 Cuentos de 4-6 minutos",
     problemHeadline: "Tu hijo responde en inglés. Deseas que entendiera amárico.",
     problemBody: "Todo padre de la diáspora conoce esa sensación. Les hablas en amárico. Responden en inglés. El idioma se escapa — y con él, tu cultura. Teret Stories existe para recuperarlo, un cuento cada noche.",
     howItWorksHeadline: "Cómo funciona",
     howItWorksSteps: [
       { title: "Ingresa el nombre y la edad de tu hijo", sub: "30 segundos" },
       { title: "Elige un escenario etíope", sub: "Lalibela, Axum, montañas Simien y más" },
-      { title: "Recibe un cuento personalizado en amárico", sub: "Léelo en voz alta con narración cálida" },
+      { title: "Recibe un cuento personalizado en amárico", sub: "Léelo en voz alta con narración IA cálida" },
     ],
     howItWorksCta: "🎁 Empieza tu cuento gratis →",
     sampleHeadline: "Escucha un cuento",

@@ -38,6 +38,8 @@ interface QuickStoryFormProps {
   onSubmit: () => void;
   disabled: boolean;
   error: string;
+  errorRetryable?: boolean;
+  onRetry?: () => void;
 }
 
 export function QuickStoryForm({
@@ -56,6 +58,8 @@ export function QuickStoryForm({
   onSubmit,
   disabled,
   error,
+  errorRetryable = false,
+  onRetry,
 }: QuickStoryFormProps) {
   const { t } = useTranslation(lang);
 
@@ -173,9 +177,22 @@ export function QuickStoryForm({
       </div>
 
       {error && (
-        <p className="text-[#ff9a9a] text-[14px] mb-4 font-medium" role="alert">
-          {error}
-        </p>
+        <div className="mb-4" role="alert">
+          <p className="text-[#ff9a9a] text-[14px] font-medium">{error}</p>
+          {errorRetryable && onRetry && (
+            <button
+              type="button"
+              onClick={() => {
+                trackGenerateStoryCta("retry");
+                onRetry();
+              }}
+              disabled={disabled}
+              className="mt-2 text-[14px] font-semibold text-[#FFD700] underline disabled:opacity-60"
+            >
+              {t.errorTryAgain}
+            </button>
+          )}
+        </div>
       )}
 
       <button
