@@ -10,6 +10,7 @@ import {
 } from "@/lib/usageDaily";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseStory, parsedToPages } from "@/lib/parseStory";
+import { rawStoryHasAmharicAsciiLeak } from "@/lib/storyTextSanitize";
 import { getVocabForStory } from "@/lib/vocabulary";
 import { getOptionalUser } from "@/lib/supabase/server";
 import {
@@ -136,6 +137,7 @@ The [AM] blocks are the PRIMARY voice. They are NOT translations of English. Wri
 • TONE: affectionate and oral — "ልያዬ", "ልጄ", gentle exclamations, repetition ("ቅርብ… ቅርብ…"), dialogue that sounds spoken aloud.
 • OPENING/CLOSING: start pages with "ተረት ተረት" where natural; end the final [AM] page with "ተረቱ ሄደ ዘንቢሉ መጣ።"
 • PUNCTUATION: Ge'ez only — ። for period, ፣ for comma, «» for dialogue. No English periods or commas in [AM].
+• NO ENGLISH IN [AM]: Do NOT include any English letters, abbreviations, language codes, or tag markers in Amharic story text. [AM] must contain ONLY Ge'ez script characters, Ge'ez punctuation (። ፣), and «» quotation marks — never stray letters like d, k, e, a, m, or s.
 • AVOID: formal/textbook Amharic, corporate tone, English loanwords where Amharic exists, literal calques from English.
 • [EN] and [ES] retell the same story spirit for diaspora families — but write [AM] first in your mind, then adapt.
 
@@ -579,6 +581,36 @@ No other text. No markdown.`;
         { error: "We couldn't format the story. Please try again." },
         { status: 502 }
       );
+    }
+
+    if (rawStoryHasAmharicAsciiLeak(rawText)) {
+      console.log("[teret] Amharic ASCII leak detected — re-prompting Claude");
+      const asciiRepairPrompt = `Your [AM] Amharic blocks contain English letters or language-code leaks (single stray letters like d, k, e, a, m, s between Amharic words). This is forbidden.
+
+Rewrite the ENTIRE story. In every [AM] block use ONLY Ge'ez script characters, Ge'ez punctuation (። ፣), and «» quotation marks. No ASCII letters, no abbreviations, no language codes, no tag markers.
+
+Keep the same story events and child name. Same format: exactly one [AM], one [EN], one [ES] per page. No other text.`;
+      try {
+        const asciiRetry = await anthropicMessages(systemPrompt, "", {
+          model: STORY_MODEL,
+          maxTokens: ANTHROPIC_MAX_TOKENS,
+          signal: controller.signal,
+          messages: [
+            { role: "user", content: userPrompt },
+            { role: "assistant", content: rawText },
+            { role: "user", content: asciiRepairPrompt },
+          ],
+        });
+        const repairedText = asciiRetry.text;
+        const repairedResult = parseStory(repairedText);
+        if (repairedResult && repairedResult.am.length >= MIN_PAGES) {
+          rawText = repairedText;
+          result = repairedResult;
+          console.log("[teret] Amharic ASCII repair:", rawStoryHasAmharicAsciiLeak(rawText) ? "still has leaks (sanitized on display)" : "success");
+        }
+      } catch (asciiErr) {
+        console.warn("[teret] Amharic ASCII repair failed — using sanitized parse", asciiErr);
+      }
     }
 
     // Generate illustration prompts for each page (local by default, AI when env enabled)

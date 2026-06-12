@@ -8,6 +8,7 @@ import { LangToggle } from "./LangToggle";
 import { AudioPlayer, highlightSentenceInText } from "./AudioPlayer";
 import { LanguageLearningPanel } from "./LanguageLearningPanel";
 import { useTTS } from "@/lib/useTTS";
+import { sanitizeAmharicStoryText } from "@/lib/storyTextSanitize";
 import { getRegionLabel } from "@/lib/constants";
 import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/types";
@@ -184,10 +185,10 @@ export function StoryReader({
   const current = pages[page] || { am: "", en: "", es: "" };
   const text =
     lang === "am"
-      ? current.am
+      ? sanitizeAmharicStoryText(current.am)
       : lang === "en"
-        ? current.en || current.am
-        : current.es || current.am;
+        ? current.en || sanitizeAmharicStoryText(current.am)
+        : current.es || sanitizeAmharicStoryText(current.am);
   useEffect(() => {
     stop();
   }, [page, lang, viewMode, stop]);

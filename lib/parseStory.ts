@@ -88,7 +88,7 @@ export function parsedToPages(parsed: ParsedStory): StoryPage[] {
   const pages: StoryPage[] = [];
   for (let i = 0; i < len; i++) {
     pages.push({
-      am: parsed.am[i] ?? "",
+      am: sanitizeAmharicStoryText(parsed.am[i] ?? ""),
       en: parsed.en[i] ?? parsed.am[i] ?? "",
       es: parsed.es[i] ?? parsed.am[i] ?? "",
     });

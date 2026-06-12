@@ -1,3 +1,5 @@
+import { sanitizeAmharicStoryText } from "@/lib/storyTextSanitize";
+
 const DEFAULT_VOICE = "am-ET-MekdesNeural";
 
 const FULLSTOP_PLACEHOLDER = "\uE000FS\uE001";
@@ -53,11 +55,9 @@ function stripInvisibleChars(text: string): string {
 
 /** Prepare story text for Azure SSML — newlines and some punctuation break synthesis. */
 function sanitizeForAmharicSsml(text: string): string {
-  let s = stripInvisibleChars(text.trim());
+  let s = sanitizeAmharicStoryText(stripInvisibleChars(text));
   s = s.replace(/\r\n/g, "\n").replace(/\s+/g, " ");
   s = s.replace(/[,.\?!;:]/g, "");
-  s = s.replace(/[«»""]/g, "");
-  s = s.replace(/^[a-z]{1,2}\s+(?=[\u1200-\u137F])/i, "");
   return s.trim();
 }
 

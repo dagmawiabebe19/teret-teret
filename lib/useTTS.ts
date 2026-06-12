@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { Lang } from "@/types";
+import { sanitizeAmharicStoryText } from "@/lib/storyTextSanitize";
 
 /** Map app lang codes to SpeechSynthesis utterance.lang */
 function toSpeechLang(lang: string): string {
@@ -143,11 +144,11 @@ function waitForVoices(timeoutMs = 1500): Promise<SpeechSynthesisVoice[]> {
   });
 }
 
-/** Strip ASCII punctuation from Amharic before browser TTS (avoids "comma" artifacts). */
+/** Strip ASCII punctuation and tag leaks from Amharic before browser TTS. */
 export function prepareBrowserTtsText(text: string, lang: Lang): string {
   const trimmed = text.trim();
   if (lang !== "am") return trimmed;
-  return trimmed.replace(/[,.\?!;:]/g, "");
+  return sanitizeAmharicStoryText(trimmed).replace(/[,.\?!;:]/g, "");
 }
 
 /** Split text into sentences for boundary tracking (start char indices) */
