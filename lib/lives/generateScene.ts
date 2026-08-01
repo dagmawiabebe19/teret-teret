@@ -190,7 +190,6 @@ async function callRenderSceneOnce(
   const response = await anthropic.beta.promptCaching.messages.create({
     model: LIVES_MODEL,
     max_tokens: LIVES_MAX_TOKENS,
-    temperature: 0.85,
     system: [
       {
         type: "text",
