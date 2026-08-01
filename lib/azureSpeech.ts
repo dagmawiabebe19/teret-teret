@@ -187,6 +187,8 @@ export async function synthesizeEnglishSpeech(text: string): Promise<ArrayBuffer
 
   const ssml = `<speak version='1.0' xml:lang='en-US'><voice name='${voice}'><prosody rate='-10%'>${escapeXML(cleaned)}</prosody></voice></speak>`;
 
+  console.log("[AzureTTS/en] voice:", voice, "endpoint:", endpoint, "chars:", cleaned.length);
+
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -199,7 +201,13 @@ export async function synthesizeEnglishSpeech(text: string): Promise<ArrayBuffer
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`Azure English TTS failed (${response.status}): ${errorBody.slice(0, 200)}`);
+    console.error("[AzureTTS/en] error status:", response.status, "body:", errorBody);
+    const err = new Error(
+      `Azure English TTS failed (${response.status}): ${errorBody.slice(0, 400)}`
+    ) as Error & { status?: number; body?: string };
+    err.status = response.status;
+    err.body = errorBody;
+    throw err;
   }
 
   return response.arrayBuffer();
