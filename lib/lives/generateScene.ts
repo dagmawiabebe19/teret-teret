@@ -13,6 +13,7 @@ import type {
   RenderSceneInput,
   SceneGenerationState,
 } from "./types";
+import { unescapeSceneText } from "./sceneText";
 
 const OUTPUT_RULES = `
 === OUTPUT RULES ===
@@ -314,11 +315,11 @@ export function normalizeRenderSceneInput(raw: unknown): RenderSceneInput {
         : "";
 
   return {
-    narrative,
+    narrative: unescapeSceneText(narrative),
     choices,
     proposed_deltas: normalizeProposedDeltas(obj.proposed_deltas),
     age_change: ageRaw ?? 0,
-    summary_update: summary,
+    summary_update: unescapeSceneText(summary),
   };
 }
 

@@ -10,6 +10,7 @@ import { AppNav } from "@/components/AppNav";
 import { StatsHeader } from "@/components/lives/StatsHeader";
 import { RelationshipsPanel } from "@/components/lives/RelationshipsPanel";
 import { SceneGeneratingStatus } from "@/components/lives/SceneGeneratingStatus";
+import { SceneText } from "@/components/lives/SceneText";
 import { PaywallModal } from "@/components/PaywallModal";
 import { useTranslation } from "@/lib/useTranslation";
 import { parseStats } from "@/lib/lives/deltas";
@@ -313,16 +314,8 @@ export default function LivesPlayPage() {
 
         {turning ? (
           <div className="mb-6">
-            <div className="mb-4 opacity-35 pointer-events-none select-none" aria-hidden>
-              {play.sceneText.split(/\n\n+/).slice(0, 2).map((para, i) => (
-                <p
-                  key={i}
-                  className="text-[#e8e0ff] text-[15px] leading-[1.7] mb-3 last:mb-0 line-clamp-3"
-                  style={{ fontFamily: "var(--font-lora), Georgia, serif" }}
-                >
-                  {para.trim()}
-                </p>
-              ))}
+            <div className="mb-4 pointer-events-none select-none">
+              <SceneText text={play.sceneText} maxParagraphs={2} faded />
             </div>
             <SceneGeneratingStatus />
           </div>
@@ -332,15 +325,7 @@ export default function LivesPlayPage() {
             className="mb-6"
             style={{ animation: "fadeSlideUp 0.45s ease-out" }}
           >
-            {play.sceneText.split(/\n\n+/).map((para, i) => (
-              <p
-                key={i}
-                className="text-[#e8e0ff] text-[16px] sm:text-[17px] leading-[1.75] mb-4 last:mb-0"
-                style={{ fontFamily: "var(--font-lora), Georgia, serif" }}
-              >
-                {para.trim()}
-              </p>
-            ))}
+            <SceneText text={play.sceneText} />
           </article>
         )}
 
