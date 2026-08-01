@@ -275,6 +275,8 @@ export const translations: Record<
     navMyStories: string;
     navLives: string;
     navBedtimeStories: string;
+    navPractice: string;
+    navPracticeAm: string;
     navProfile: string;
     whoIsStoryFor: string;
     libraryEmptyPrompt: string;
@@ -680,6 +682,8 @@ export const translations: Record<
     navMyStories: "My Stories",
     navLives: "Lives",
     navBedtimeStories: "Stories",
+    navPractice: "Practice",
+    navPracticeAm: "እንግሊዝኛ ተለማመድ",
     navProfile: "Profile",
     whoIsStoryFor: "Who's the story for?",
     libraryEmptyPrompt: "No stories yet — create your first tonight 🌙",
@@ -1107,6 +1111,8 @@ export const translations: Record<
     navMyStories: "Mis cuentos",
     navLives: "Vidas",
     navBedtimeStories: "Cuentos",
+    navPractice: "Practicar",
+    navPracticeAm: "እንግሊዝኛ ተለማመድ",
     navProfile: "Perfil",
     whoIsStoryFor: "¿Para quién es el cuento?",
     libraryEmptyPrompt: "Aún no hay cuentos — crea el primero esta noche 🌙",

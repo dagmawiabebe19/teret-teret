@@ -33,7 +33,15 @@ export function AppNav({
   const { t } = useTranslation(lang);
   const pathname = usePathname() || "/";
   const onLives = pathname.startsWith("/lives");
-  const onStories = !onLives;
+  const onPractice = pathname.startsWith("/practice");
+  const onStories = !onLives && !onPractice;
+
+  const pill = (active: boolean) =>
+    `px-1.5 sm:px-2 py-1 rounded-full text-[10px] sm:text-[11px] font-bold no-underline whitespace-nowrap transition-colors ${
+      active
+        ? "text-[#1a0533] bg-[#FFD700]"
+        : "text-[#c9b8e8] hover:text-[#FFD700]"
+    }`;
 
   return (
     <header
@@ -43,44 +51,37 @@ export function AppNav({
         backdropFilter: "blur(12px)",
       }}
     >
-      <div className="max-w-[640px] mx-auto px-4 h-14 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div className="max-w-[720px] mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
           <Link
             href="/"
             aria-label={t.homeBtn}
-            className="font-fredoka text-[#FFD700] text-[15px] sm:text-[17px] shrink-0 hover:opacity-90 transition-opacity no-underline"
+            className="font-fredoka text-[#FFD700] text-[14px] sm:text-[17px] shrink-0 hover:opacity-90 transition-opacity no-underline"
             style={{ textShadow: "0 0 20px rgba(255,215,0,0.25)" }}
           >
             {t.appTitle}
           </Link>
           <nav
-            className="flex items-center gap-0.5 sm:gap-1 min-w-0"
+            className="flex items-center gap-0.5 min-w-0 overflow-x-auto"
             aria-label="Sections"
           >
-            <Link
-              href="/"
-              className={`px-1.5 sm:px-2 py-1 rounded-full text-[10px] sm:text-[11px] font-bold no-underline whitespace-nowrap transition-colors ${
-                onStories
-                  ? "text-[#1a0533] bg-[#FFD700]"
-                  : "text-[#c9b8e8] hover:text-[#FFD700]"
-              }`}
-            >
+            <Link href="/" className={pill(onStories)}>
               {t.navBedtimeStories}
             </Link>
-            <Link
-              href="/lives"
-              className={`px-1.5 sm:px-2 py-1 rounded-full text-[10px] sm:text-[11px] font-bold no-underline whitespace-nowrap transition-colors ${
-                onLives
-                  ? "text-[#1a0533] bg-[#FFD700]"
-                  : "text-[#c9b8e8] hover:text-[#FFD700]"
-              }`}
-            >
+            <Link href="/lives" className={pill(onLives)}>
               {t.navLives}
+            </Link>
+            <Link
+              href="/practice"
+              className={pill(onPractice)}
+              title={t.navPracticeAm}
+            >
+              {t.navPractice}
             </Link>
           </nav>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 ml-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
           <LangToggle lang={lang} setLang={setLang} />
           {isSignedIn ? (
             <>

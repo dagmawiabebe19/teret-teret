@@ -283,6 +283,8 @@ export const amTranslations = {
   navMyStories: "ታሪኮቼ",
   navLives: "ሕይወት",
   navBedtimeStories: "ታሪኮች",
+  navPractice: "ተለማመድ",
+  navPracticeAm: "እንግሊዝኛ ተለማመድ",
   navProfile: "መገለጫ",
   whoIsStoryFor: "ተረቱ ለማን ነው?",
   libraryEmptyPrompt: "ገና ታሪክ የለም — ዛሬ ሌሊት የመጀመሪያሽን ፍጠሪ 🌙",
