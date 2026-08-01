@@ -273,6 +273,8 @@ export const translations: Record<
     dailyTeretLoadError: string;
     dailyTeretDisplayError: string;
     navMyStories: string;
+    navLives: string;
+    navBedtimeStories: string;
     navProfile: string;
     whoIsStoryFor: string;
     libraryEmptyPrompt: string;
@@ -676,6 +678,8 @@ export const translations: Record<
     dailyTeretLoadError: "Could not load today's story.",
     dailyTeretDisplayError: "Story could not be displayed.",
     navMyStories: "My Stories",
+    navLives: "Lives",
+    navBedtimeStories: "Stories",
     navProfile: "Profile",
     whoIsStoryFor: "Who's the story for?",
     libraryEmptyPrompt: "No stories yet — create your first tonight 🌙",
@@ -1101,6 +1105,8 @@ export const translations: Record<
     dailyTeretLoadError: "No se pudo cargar el cuento de hoy.",
     dailyTeretDisplayError: "No se pudo mostrar el cuento.",
     navMyStories: "Mis cuentos",
+    navLives: "Vidas",
+    navBedtimeStories: "Cuentos",
     navProfile: "Perfil",
     whoIsStoryFor: "¿Para quién es el cuento?",
     libraryEmptyPrompt: "Aún no hay cuentos — crea el primero esta noche 🌙",

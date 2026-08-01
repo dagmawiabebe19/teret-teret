@@ -26,3 +26,9 @@ export const DEFAULT_STARTING_AGE = 18;
 
 /** How many prior beats to include verbatim in the generation context. */
 export const RECENT_BEATS_LIMIT = 3;
+
+/**
+ * Free-tier Lives decisions per rolling 24h window.
+ * Uses the same usage_tracking row / increment_usage RPC as bedtime stories.
+ */
+export const FREE_LIVES_TURNS_PER_DAY = 10;

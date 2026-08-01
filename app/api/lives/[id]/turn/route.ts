@@ -2,12 +2,20 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOptionalUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { RECENT_BEATS_LIMIT } from "@/lib/lives/constants";
+import { resolveProfileAccess } from "@/lib/profileAccess";
+import {
+  FREE_LIVES_TURNS_PER_DAY,
+  RECENT_BEATS_LIMIT,
+} from "@/lib/lives/constants";
 import { parseStats } from "@/lib/lives/deltas";
 import {
   generateScene,
   SceneGenerationError,
 } from "@/lib/lives/generateScene";
+import {
+  getLivesUsageFromRow,
+  LIVES_DAILY_LIMIT_MESSAGE,
+} from "@/lib/lives/usage";
 import type {
   LifeChoice,
   LifeRelationship,
@@ -94,6 +102,33 @@ export async function POST(
     }
     if (life.status !== "active") {
       return NextResponse.json({ error: "Life is not active" }, { status: 409 });
+    }
+
+    // Free-tier gate: shared usage_tracking / rolling 24h window (premium unlimited).
+    const access = await resolveProfileAccess(user.id, request);
+    const hasFullAccess = access.hasFullAccess;
+    if (!hasFullAccess) {
+      await admin.from("usage_tracking").upsert(
+        { user_id: user.id, generation_count: 0 },
+        { onConflict: "user_id", ignoreDuplicates: true }
+      );
+      const { data: usage } = await admin
+        .from("usage_tracking")
+        .select("generation_count, first_story_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const { turnsUsed, remaining } = getLivesUsageFromRow(usage ?? null);
+      if (remaining <= 0) {
+        return NextResponse.json(
+          {
+            error: LIVES_DAILY_LIMIT_MESSAGE,
+            code: "LIVES_DAILY_LIMIT",
+            turnsUsed,
+            limit: FREE_LIVES_TURNS_PER_DAY,
+          },
+          { status: 402 }
+        );
+      }
     }
 
     const { data: scenario, error: scenarioError } = await admin
@@ -281,6 +316,16 @@ export async function POST(
       console.error("[lives/turn] update life:", updateLifeError);
       await rollbackTurn(newBeat.id);
       return NextResponse.json({ error: "Failed to update life" }, { status: 500 });
+    }
+
+    // Meter successful decisions for free users (same RPC as bedtime stories).
+    if (!hasFullAccess) {
+      const { error: usageError } = await admin.rpc("increment_usage", {
+        p_user_id: user.id,
+      });
+      if (usageError) {
+        console.error("[lives/turn] increment_usage:", usageError);
+      }
     }
 
     const { data: freshRels } = await admin

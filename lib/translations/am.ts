@@ -281,6 +281,8 @@ export const amTranslations = {
   dailyTeretLoadError: "የዛሬ ታሪክ አልተጫነም።",
   dailyTeretDisplayError: "ታሪኩን ማሳየት አልተሳካም።",
   navMyStories: "ታሪኮቼ",
+  navLives: "ሕይወት",
+  navBedtimeStories: "ታሪኮች",
   navProfile: "መገለጫ",
   whoIsStoryFor: "ተረቱ ለማን ነው?",
   libraryEmptyPrompt: "ገና ታሪክ የለም — ዛሬ ሌሊት የመጀመሪያሽን ፍጠሪ 🌙",

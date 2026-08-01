@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LangToggle } from "./LangToggle";
 import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/types";
@@ -30,6 +31,9 @@ export function AppNav({
   email,
 }: AppNavProps) {
   const { t } = useTranslation(lang);
+  const pathname = usePathname() || "/";
+  const onLives = pathname.startsWith("/lives");
+  const onStories = !onLives;
 
   return (
     <header
@@ -40,14 +44,41 @@ export function AppNav({
       }}
     >
       <div className="max-w-[640px] mx-auto px-4 h-14 flex items-center justify-between gap-2">
-        <Link
-          href="/"
-          aria-label={t.homeBtn}
-          className="font-fredoka text-[#FFD700] text-[15px] sm:text-[17px] shrink-0 hover:opacity-90 transition-opacity no-underline"
-          style={{ textShadow: "0 0 20px rgba(255,215,0,0.25)" }}
-        >
-          {t.appTitle}
-        </Link>
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Link
+            href="/"
+            aria-label={t.homeBtn}
+            className="font-fredoka text-[#FFD700] text-[15px] sm:text-[17px] shrink-0 hover:opacity-90 transition-opacity no-underline"
+            style={{ textShadow: "0 0 20px rgba(255,215,0,0.25)" }}
+          >
+            {t.appTitle}
+          </Link>
+          <nav
+            className="flex items-center gap-0.5 sm:gap-1 min-w-0"
+            aria-label="Sections"
+          >
+            <Link
+              href="/"
+              className={`px-1.5 sm:px-2 py-1 rounded-full text-[10px] sm:text-[11px] font-bold no-underline whitespace-nowrap transition-colors ${
+                onStories
+                  ? "text-[#1a0533] bg-[#FFD700]"
+                  : "text-[#c9b8e8] hover:text-[#FFD700]"
+              }`}
+            >
+              {t.navBedtimeStories}
+            </Link>
+            <Link
+              href="/lives"
+              className={`px-1.5 sm:px-2 py-1 rounded-full text-[10px] sm:text-[11px] font-bold no-underline whitespace-nowrap transition-colors ${
+                onLives
+                  ? "text-[#1a0533] bg-[#FFD700]"
+                  : "text-[#c9b8e8] hover:text-[#FFD700]"
+              }`}
+            >
+              {t.navLives}
+            </Link>
+          </nav>
+        </div>
 
         <div className="flex items-center gap-2 shrink-0 ml-auto">
           <LangToggle lang={lang} setLang={setLang} />
