@@ -8,6 +8,7 @@ import {
   RECENT_BEATS_LIMIT,
 } from "@/lib/lives/constants";
 import { parseStats } from "@/lib/lives/deltas";
+import { choiceEnglish } from "@/lib/lives/choices";
 import {
   generateScene,
   SceneGenerationError,
@@ -29,11 +30,7 @@ const TurnBodySchema = z.object({
 });
 
 function choiceLabel(choices: unknown, index: number): string | null {
-  if (!Array.isArray(choices)) return null;
-  const item = choices[index];
-  if (!item || typeof item !== "object") return null;
-  const label = (item as { label?: unknown }).label;
-  return typeof label === "string" && label.trim() ? label.trim() : null;
+  return choiceEnglish(choices, index);
 }
 
 function mapRelationship(row: {
@@ -213,6 +210,10 @@ export async function POST(
 
     const nextTurnNumber = life.turn_count + 1;
     const now = new Date().toISOString();
+    const deltasWithVocab = {
+      ...scene.deltasApplied,
+      vocab: scene.vocab,
+    };
 
     // Mutations only after generation succeeds. Roll back on failure so a mid-turn
     // error does not leave the life ahead of its beats (or vice versa).
@@ -262,7 +263,7 @@ export async function POST(
         scene_text: scene.narrative,
         choices: scene.choices,
         chosen_index: null,
-        deltas_applied: scene.deltasApplied,
+        deltas_applied: deltasWithVocab,
       })
       .select("id, turn_number, scene_text, choices, chosen_index, deltas_applied, created_at")
       .single();
@@ -358,6 +359,7 @@ export async function POST(
       },
       scene: newBeat.scene_text,
       choices: newBeat.choices as LifeChoice[],
+      vocab: scene.vocab,
       stats: parseStats(updatedLife.stats),
     });
   } catch (err) {

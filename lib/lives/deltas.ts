@@ -158,13 +158,22 @@ export function parseStartingRelationships(raw: unknown): LifeRelationship[] {
   return out;
 }
 
-/** Coerce jsonb stats into a plain number map. */
+/** Ensure the english skill exists on stats (0–100), default 10 for older lives. */
+export function ensureEnglishStat(stats: LifeStats): LifeStats {
+  const n = asFiniteNumber(stats.english);
+  if (n !== null) return stats;
+  return { ...stats, english: 10 };
+}
+
+/** Coerce jsonb stats into a plain number map (always includes english). */
 export function parseStats(raw: unknown): LifeStats {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return ensureEnglishStat({});
+  }
   const out: LifeStats = {};
   for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
     const n = asFiniteNumber(v);
     if (n !== null) out[k] = n;
   }
-  return out;
+  return ensureEnglishStat(out);
 }

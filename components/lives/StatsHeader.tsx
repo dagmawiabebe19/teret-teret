@@ -10,6 +10,7 @@ const STAT_META: Array<{
 }> = [
   { key: "health", icon: "❤️", label: "Health" },
   { key: "money", icon: "💰", label: "Money", money: true },
+  { key: "english", icon: "📖", label: "English" },
   { key: "reputation", icon: "⭐", label: "Reputation" },
   { key: "intelligence", icon: "📚", label: "Intelligence" },
   { key: "strength", icon: "💪", label: "Strength" },

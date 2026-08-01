@@ -215,8 +215,14 @@ export default function LivesHomePage() {
           ← Bedtime Stories
         </Link>
         <h1 className="font-fredoka text-[28px] text-[#FFD700] mb-1">Lives</h1>
-        <p className="text-[13px] text-[rgba(200,180,255,0.65)] mb-6">
-          An interactive life simulation — your choices shape the story.
+        <p className="text-[13px] text-[rgba(200,180,255,0.65)] mb-1">
+          Learn English by living a life — Amharic story, English choices.
+        </p>
+        <p
+          className="text-[13px] text-[rgba(200,180,255,0.55)] mb-6"
+          style={{ fontFamily: "var(--font-amharic), sans-serif" }}
+        >
+          በሕይወት ታሪክ እንግሊዝኛን ይማሩ — ታሪኩ በአማርኛ፣ ምርጫዎቹ በእንግሊዝኛ።
         </p>
 
         {loading ? (
@@ -256,10 +262,10 @@ export default function LivesHomePage() {
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-3 text-[12px] font-bold text-[#e8e0ff] mb-4">
+                          <span>📖 {Math.round(life.stats.english ?? 10)}</span>
                           <span>💰 {Math.round(money)}</span>
                           <span>❤️ {Math.round(life.stats.health ?? 0)}</span>
                           <span>😊 {Math.round(life.stats.happiness ?? 0)}</span>
-                          <span>⭐ {Math.round(life.stats.reputation ?? 0)}</span>
                         </div>
                         <Link
                           href={`/lives/${life.id}`}

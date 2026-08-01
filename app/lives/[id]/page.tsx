@@ -11,12 +11,24 @@ import { StatsHeader } from "@/components/lives/StatsHeader";
 import { RelationshipsPanel } from "@/components/lives/RelationshipsPanel";
 import { SceneGeneratingStatus } from "@/components/lives/SceneGeneratingStatus";
 import { SceneText } from "@/components/lives/SceneText";
+import { VocabGlossary } from "@/components/lives/VocabGlossary";
 import { PaywallModal } from "@/components/PaywallModal";
 import { useTranslation } from "@/lib/useTranslation";
 import { parseStats } from "@/lib/lives/deltas";
+import {
+  normalizeStoredChoices,
+  vocabFromDeltasApplied,
+} from "@/lib/lives/choices";
 import { friendlySceneError } from "@/lib/lives/errors";
 import { LIVES_DAILY_LIMIT_MESSAGE } from "@/lib/lives/usage";
-import type { LifeChoice, LifeRelationship, LifeStats } from "@/lib/lives/types";
+import { LivesSpeakButton } from "@/components/lives/LivesSpeakButton";
+import { useLivesTTS } from "@/lib/lives/useLivesTTS";
+import type {
+  LifeChoice,
+  LifeRelationship,
+  LifeStats,
+  VocabPair,
+} from "@/lib/lives/types";
 import type { Lang } from "@/types";
 
 type PlayState = {
@@ -28,6 +40,7 @@ type PlayState = {
   status: string;
   sceneText: string;
   choices: LifeChoice[];
+  vocab: VocabPair[];
   beatId: string;
   relationships: LifeRelationship[];
 };
@@ -51,6 +64,7 @@ export default function LivesPlayPage() {
     }
   }, []);
   const { t } = useTranslation(lang);
+  const tts = useLivesTTS();
 
   const [authChecking, setAuthChecking] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -97,7 +111,7 @@ export default function LivesPlayPage() {
     const [{ data: beat }, { data: rels }] = await Promise.all([
       supabase
         .from("life_beats")
-        .select("id, turn_number, scene_text, choices")
+        .select("id, turn_number, scene_text, choices, deltas_applied")
         .eq("life_id", lifeId)
         .order("turn_number", { ascending: false })
         .limit(1)
@@ -114,12 +128,6 @@ export default function LivesPlayPage() {
       return;
     }
 
-    const choices = Array.isArray(beat.choices)
-      ? (beat.choices as LifeChoice[]).filter(
-          (c) => c && typeof c.label === "string" && c.label.trim()
-        )
-      : [];
-
     setPlay({
       lifeId: life.id,
       name: life.name,
@@ -128,7 +136,8 @@ export default function LivesPlayPage() {
       turnCount: life.turn_count,
       status: life.status,
       sceneText: beat.scene_text,
-      choices,
+      choices: normalizeStoredChoices(beat.choices),
+      vocab: vocabFromDeltasApplied(beat.deltas_applied),
       beatId: beat.id,
       relationships: (rels ?? []).map((r) => ({
         id: r.id,
@@ -174,6 +183,7 @@ export default function LivesPlayPage() {
 
   const choose = async (index: number) => {
     if (!play || turning || limitReached || play.status !== "active") return;
+    tts.stop();
     setTurning(true);
     setChosenIndex(index);
     setTurnError(null);
@@ -201,11 +211,9 @@ export default function LivesPlayPage() {
         return;
       }
 
-      const nextChoices = Array.isArray(data.choices)
-        ? (data.choices as LifeChoice[])
-        : Array.isArray(data.beat?.choices)
-          ? (data.beat.choices as LifeChoice[])
-          : [];
+      const nextChoices = normalizeStoredChoices(
+        data.choices ?? data.beat?.choices
+      );
 
       setPlay({
         lifeId: play.lifeId,
@@ -215,9 +223,10 @@ export default function LivesPlayPage() {
         turnCount: data.life?.turnCount ?? play.turnCount + 1,
         status: data.life?.status ?? play.status,
         sceneText: (data.scene as string) ?? data.beat?.sceneText ?? "",
-        choices: nextChoices.filter(
-          (c) => c && typeof c.label === "string" && c.label.trim()
-        ),
+        choices: nextChoices,
+        vocab: Array.isArray(data.vocab)
+          ? data.vocab
+          : vocabFromDeltasApplied(data.beat?.deltasApplied),
         beatId: data.beat?.id ?? play.beatId,
         relationships: Array.isArray(data.relationships)
           ? data.relationships.map(
@@ -322,11 +331,40 @@ export default function LivesPlayPage() {
         ) : (
           <article
             key={sceneKey}
-            className="mb-6"
+            className="mb-4"
             style={{ animation: "fadeSlideUp 0.45s ease-out" }}
           >
+            <div className="flex items-start gap-2 mb-3">
+              <LivesSpeakButton
+                clipKey={`scene-${play.beatId}`}
+                text={play.sceneText}
+                lang="am"
+                playingKey={tts.playingKey}
+                loadingKey={tts.loadingKey}
+                onSpeak={tts.speak}
+                label="Listen to scene in Amharic"
+              />
+              <span className="text-[11px] text-[rgba(200,180,255,0.55)] pt-2.5">
+                አዳምጡ · Listen
+              </span>
+            </div>
             <SceneText text={play.sceneText} />
           </article>
+        )}
+
+        {!turning && (
+          <VocabGlossary
+            vocab={play.vocab}
+            playingKey={tts.playingKey}
+            loadingKey={tts.loadingKey}
+            onSpeak={tts.speak}
+          />
+        )}
+
+        {tts.error && (
+          <p className="text-[#ff6b6b] text-[12px] mb-3" role="alert">
+            {tts.error}
+          </p>
         )}
 
         {turnError && !limitReached && (
@@ -360,27 +398,60 @@ export default function LivesPlayPage() {
           {play.choices.map((choice, index) => {
             const isChosen = turning && chosenIndex === index;
             const isDimmed = turning && chosenIndex !== index;
+            const clipKey = `choice-${play.beatId}-${index}`;
             return (
-              <button
+              <div
                 key={`${sceneKey}-${index}`}
-                type="button"
-                disabled={turning || limitReached || play.status !== "active"}
-                onClick={() => choose(index)}
-                className={`w-full min-h-[56px] text-left px-4 py-3.5 rounded-2xl text-[15px] font-bold border transition-all active:scale-[0.99] tap-zone ${
+                className={`flex items-stretch gap-2 rounded-2xl border transition-all ${
                   isChosen
-                    ? "text-[#1a0533] border-[#FFD700] opacity-100"
+                    ? "border-[#FFD700]"
                     : isDimmed
-                      ? "text-[#e8e0ff] border-[rgba(255,215,0,0.12)] opacity-35 cursor-not-allowed"
-                      : "text-[#e8e0ff] border-[rgba(255,215,0,0.22)] hover:border-[#FFD700] hover:bg-[rgba(255,215,0,0.06)] disabled:opacity-45 disabled:cursor-not-allowed"
+                      ? "border-[rgba(255,215,0,0.12)] opacity-35"
+                      : "border-[rgba(255,215,0,0.22)]"
                 }`}
                 style={{
                   background: isChosen
-                    ? "linear-gradient(135deg, #FFB088, #FFD700)"
+                    ? "linear-gradient(135deg, rgba(255,176,136,0.35), rgba(255,215,0,0.25))"
                     : "rgba(255,255,255,0.05)",
                 }}
               >
-                {choice.label}
-              </button>
+                <div className="flex items-center pl-2">
+                  <LivesSpeakButton
+                    clipKey={clipKey}
+                    text={choice.english}
+                    lang="en"
+                    playingKey={tts.playingKey}
+                    loadingKey={tts.loadingKey}
+                    onSpeak={tts.speak}
+                    label={`Hear pronunciation: ${choice.english}`}
+                    size="sm"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={turning || limitReached || play.status !== "active"}
+                  onClick={() => choose(index)}
+                  className={`flex-1 min-h-[64px] text-left px-3 py-3.5 rounded-2xl tap-zone disabled:cursor-not-allowed ${
+                    isChosen ? "text-[#1a0533]" : "text-[#e8e0ff]"
+                  }`}
+                >
+                  <span className="block text-[15px] font-bold leading-snug">
+                    {choice.english}
+                  </span>
+                  {choice.amharic && (
+                    <span
+                      className={`block text-[12px] mt-1 leading-snug ${
+                        isChosen
+                          ? "text-[rgba(26,5,51,0.75)]"
+                          : "text-[rgba(200,180,255,0.65)]"
+                      }`}
+                      style={{ fontFamily: "var(--font-amharic), sans-serif" }}
+                    >
+                      {choice.amharic}
+                    </span>
+                  )}
+                </button>
+              </div>
             );
           })}
         </div>

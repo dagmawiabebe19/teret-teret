@@ -161,7 +161,7 @@ export async function POST(request: Request) {
         scene_text: scene.narrative,
         choices: scene.choices,
         chosen_index: null,
-        deltas_applied: scene.deltasApplied,
+        deltas_applied: { ...scene.deltasApplied, vocab: scene.vocab },
       })
       .select("id, turn_number, scene_text, choices, chosen_index, deltas_applied, created_at")
       .single();
@@ -204,6 +204,7 @@ export async function POST(request: Request) {
       // Convenience aliases for the client play loop
       scene: beat.scene_text,
       choices: beat.choices as LifeChoice[],
+      vocab: scene.vocab,
       stats: parseStats(life.stats),
     });
   } catch (err) {

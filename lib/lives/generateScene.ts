@@ -5,59 +5,87 @@ import {
   LIVES_MAX_TOKENS,
   LIVES_MODEL,
 } from "./constants";
-import { applyDeltas } from "./deltas";
+import { applyDeltas, ensureEnglishStat } from "./deltas";
 import type {
   AppliedSceneResult,
   LifeChoice,
   ProposedDeltas,
   RenderSceneInput,
   SceneGenerationState,
+  VocabPair,
 } from "./types";
 import { unescapeSceneText } from "./sceneText";
 
 const OUTPUT_RULES = `
-=== OUTPUT RULES ===
+=== OUTPUT RULES (English-learning life sim) ===
 You MUST call the render_scene tool. Do not write free-form prose outside the tool.
 
-Stay consistent with the state JSON the user provides. Never contradict prior beats or the rolling summary.
-Keep money and consequences realistic for the setting. Propose only modest per-turn changes.
-Every scene must end on a hook or cliffhanger that forces a meaningful decision.
-Choices (2–4) must be meaningfully different — distinct stakes or directions, not paraphrases.
-choices MUST be a JSON array of objects like [{"label":"..."},{"label":"..."}]. Never use XML, <parameter> tags, or a bare string for choices.
-summary_update must be a tight compressed memory of what matters going forward: key relationships, unresolved threads, and important facts. Never exceed ~200 words. On the opening BEGIN scene it may be brief or empty.
-narrative should be 2–4 short paragraphs.
+NARRATIVE: Write the scene in natural, fluent Amharic (አማርኛ) — 2 short paragraphs, emotionally grounded, ending on a hook. Sound spoken and real, not stilted or translationese.
+
+CHOICES: Provide 2–4 choices. Each choice MUST be a JSON object with:
+  - "english": a short, natural, everyday spoken English phrase the character could say or do (required)
+  - "amharic": the Amharic meaning/translation of that phrase (required)
+All English phrases must be valid English — not right/wrong grammar quizzes. They must mean different things and lead to different life consequences.
+Keep English phrases short and useful — things a real person would actually say.
+choices MUST be a JSON array of objects. Never use XML, <parameter> tags, or a bare string.
+
+VOCAB (optional): up to 4 { "english", "amharic" } key-word pairs from this scene for a tap-to-learn glossary.
+
+ENGLISH SKILL: Propose a small positive "english" stat gain most turns (typically +1 to +5). Larger gains when the player picks more ambitious or complex English phrasing.
+
+Stay consistent with the state JSON. Never contradict prior beats or the rolling summary.
+Keep money and consequences realistic. Propose only modest per-turn changes for other stats.
+summary_update must be in English — a tight compressed memory of what matters going forward (<= ~200 words). May be brief or empty on BEGIN.
 proposed_deltas may be omitted or empty when nothing changed (common on BEGIN).
-proposed_deltas.stats: only include keys that changed this turn (e.g. { "money": -50, "happiness": 5 }).
-proposed_deltas.relationships: only existing people by name; only changed dimensions.
 age_change is usually 0; use 1 only when meaningful time passes. Omit to mean 0.
 `.trim();
 
 const RENDER_SCENE_TOOL: Anthropic.Tool = {
   name: "render_scene",
   description:
-    "Render the next life-sim scene: narrative, player choices, proposed stat/relationship deltas, age change, and updated rolling summary.",
+    "Render the next English-learning life scene: Amharic narrative, English-phrase choices with Amharic meanings, optional vocab, proposed deltas, age change, and English rolling summary.",
   input_schema: {
     type: "object",
     properties: {
       narrative: {
         type: "string",
-        description: "2–4 short paragraphs ending on a hook/cliffhanger",
+        description:
+          "The scene in natural fluent Amharic. 2 short paragraphs ending on a hook/cliffhanger.",
       },
       choices: {
         type: "array",
         description:
-          "The 2 to 4 choices the player can pick from. MUST be a JSON array of objects, each with a single 'label' string. Do not use any other format.",
+          "2 to 4 choices. MUST be a JSON array of objects with 'english' and 'amharic' strings. Do not use any other format.",
         minItems: 2,
         maxItems: 4,
         items: {
           type: "object",
           properties: {
-            label: {
+            english: {
               type: "string",
-              description: "The choice text shown on the button.",
+              description:
+                "Short natural spoken English phrase the character would say or do.",
+            },
+            amharic: {
+              type: "string",
+              description: "Amharic translation/meaning of that English phrase.",
             },
           },
-          required: ["label"],
+          required: ["english", "amharic"],
+          additionalProperties: false,
+        },
+      },
+      vocab: {
+        type: "array",
+        description: "Optional up to 4 key vocabulary pairs from this scene.",
+        maxItems: 4,
+        items: {
+          type: "object",
+          properties: {
+            english: { type: "string" },
+            amharic: { type: "string" },
+          },
+          required: ["english", "amharic"],
           additionalProperties: false,
         },
       },
@@ -67,7 +95,8 @@ const RENDER_SCENE_TOOL: Anthropic.Tool = {
           stats: {
             type: "object",
             additionalProperties: { type: "number" },
-            description: "Only keys that changed, e.g. { money: -50, happiness: 5 }",
+            description:
+              "Only keys that changed, e.g. { money: -50, happiness: 5, english: 3 }",
           },
           relationships: {
             type: "array",
@@ -92,7 +121,7 @@ const RENDER_SCENE_TOOL: Anthropic.Tool = {
       summary_update: {
         type: "string",
         description:
-          "Full rewritten rolling memory, compressed, <= ~200 words. May be empty on BEGIN.",
+          "Full rewritten rolling memory in English, compressed, <= ~200 words. May be empty on BEGIN.",
       },
     },
     required: ["narrative", "choices"],
@@ -154,100 +183,110 @@ function asFiniteNumber(value: unknown): number | null {
   return null;
 }
 
-/** Pull choice labels out of XML-ish <parameter name="label">...</parameter> slips. */
-function extractLabelsFromParameterXml(text: string): string[] {
+function extractXmlParam(text: string, name: string): string[] {
   const out: string[] = [];
-  const re =
-    /<parameter\s+name=["']label["']\s*>([\s\S]*?)(?:<\/parameter>|(?=<parameter\b)|$)/gi;
+  const re = new RegExp(
+    `<parameter\\s+name=["']${name}["']\\s*>([\\s\\S]*?)(?:</parameter>|(?=<parameter\\b)|$)`,
+    "gi"
+  );
   let match: RegExpExecArray | null;
   while ((match = re.exec(text)) !== null) {
-    const label = match[1].replace(/<\/?[^>]+>/g, "").trim();
-    if (label) out.push(label);
-  }
-  // Fallback: name="label">TEXT patterns without a full parameter tag
-  if (out.length === 0) {
-    const loose = /name=["']label["']\s*>([^<\n]+)/gi;
-    while ((match = loose.exec(text)) !== null) {
-      const label = match[1].trim();
-      if (label) out.push(label);
-    }
+    const v = match[1].replace(/<\/?[^>]+>/g, "").trim();
+    if (v) out.push(v);
   }
   return out;
 }
 
-function pushLabel(out: string[], value: unknown): void {
-  if (typeof value === "string") {
-    const t = value.trim();
-    if (t) out.push(t);
-    return;
+function strField(obj: Record<string, unknown>, ...keys: string[]): string {
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
   }
-  if (Array.isArray(value)) {
-    for (const item of value) pushLabel(out, item);
-  }
+  return "";
 }
 
 /**
- * Reconstruct choices from normal JSON, string arrays, XML-fragment slips,
- * and stray top-level `label` keys the model sometimes leaks.
+ * Normalize choices to { english, amharic }.
+ * Bare strings / { label } become english with empty amharic.
  */
 function normalizeChoices(
   choicesRaw: unknown,
   toolInput: Record<string, unknown>
 ): LifeChoice[] | null {
-  const labels: string[] = [];
+  const out: LifeChoice[] = [];
+
+  const push = (english: string, amharic = "") => {
+    const e = english.trim();
+    if (!e) return;
+    if (out.some((c) => c.english.toLowerCase() === e.toLowerCase())) return;
+    out.push({ english: e, amharic: amharic.trim() });
+  };
 
   if (Array.isArray(choicesRaw)) {
     for (const item of choicesRaw) {
       if (typeof item === "string") {
-        const xmlLabels = extractLabelsFromParameterXml(item);
-        if (xmlLabels.length > 0) {
-          labels.push(...xmlLabels);
+        const xmlEn = extractXmlParam(item, "english");
+        const xmlLabel = extractXmlParam(item, "label");
+        if (xmlEn.length > 0) {
+          xmlEn.forEach((e) => push(e));
+        } else if (xmlLabel.length > 0) {
+          xmlLabel.forEach((e) => push(e));
         } else {
-          pushLabel(labels, item);
+          push(item);
         }
         continue;
       }
       if (item && typeof item === "object") {
-        const labelVal =
-          (item as { label?: unknown; text?: unknown }).label ??
-          (item as { text?: unknown }).text;
-        pushLabel(labels, labelVal);
+        const row = item as Record<string, unknown>;
+        const english = strField(row, "english", "label", "text");
+        const amharic = strField(row, "amharic", "translation", "meaning");
+        if (english) push(english, amharic);
       }
     }
   } else if (typeof choicesRaw === "string") {
-    const xmlLabels = extractLabelsFromParameterXml(choicesRaw);
-    if (xmlLabels.length > 0) {
-      labels.push(...xmlLabels);
-    } else {
-      // Plain multi-line string of options as a last resort
+    const xmlEn = extractXmlParam(choicesRaw, "english");
+    const xmlLabel = extractXmlParam(choicesRaw, "label");
+    if (xmlEn.length > 0) xmlEn.forEach((e) => push(e));
+    else if (xmlLabel.length > 0) xmlLabel.forEach((e) => push(e));
+    else {
       for (const line of choicesRaw.split(/\n+/)) {
         const cleaned = line
           .replace(/^[-*•\d.)\s]+/, "")
           .replace(/<\/?[^>]+>/g, "")
           .trim();
-        if (cleaned) labels.push(cleaned);
+        if (cleaned) push(cleaned);
       }
     }
   }
 
-  // Stray top-level label / label_N keys (seen when XML serialization leaks)
+  // Stray top-level english/label leaks
   for (const [key, value] of Object.entries(toolInput)) {
-    if (key === "label" || /^label[_-]?\d+$/i.test(key)) {
-      pushLabel(labels, value);
+    if (
+      key === "english" ||
+      key === "label" ||
+      /^english[_-]?\d+$/i.test(key) ||
+      /^label[_-]?\d+$/i.test(key)
+    ) {
+      if (typeof value === "string") push(value);
     }
   }
 
-  const seen = new Set<string>();
-  const unique: LifeChoice[] = [];
-  for (const label of labels) {
-    const key = label.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    unique.push({ label });
-    if (unique.length >= 4) break;
-  }
+  return out.length >= 2 ? out.slice(0, 4) : null;
+}
 
-  return unique.length >= 2 ? unique : null;
+function normalizeVocab(raw: unknown): VocabPair[] {
+  if (!Array.isArray(raw)) return [];
+  const out: VocabPair[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as Record<string, unknown>;
+    const english = strField(row, "english", "word");
+    const amharic = strField(row, "amharic", "translation", "meaning");
+    if (!english) continue;
+    out.push({ english, amharic });
+    if (out.length >= 4) break;
+  }
+  return out;
 }
 
 function normalizeProposedDeltas(raw: unknown): ProposedDeltas {
@@ -282,9 +321,6 @@ function normalizeProposedDeltas(raw: unknown): ProposedDeltas {
   return { stats, relationships };
 }
 
-/**
- * Tolerate normal variation from the model. Only narrative + ≥2 choices are required.
- */
 export function normalizeRenderSceneInput(raw: unknown): RenderSceneInput {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     logMalformedInput(raw);
@@ -317,6 +353,7 @@ export function normalizeRenderSceneInput(raw: unknown): RenderSceneInput {
   return {
     narrative: unescapeSceneText(narrative),
     choices,
+    vocab: normalizeVocab(obj.vocab),
     proposed_deltas: normalizeProposedDeltas(obj.proposed_deltas),
     age_change: ageRaw ?? 0,
     summary_update: unescapeSceneText(summary),
@@ -365,7 +402,10 @@ async function callRenderSceneOnce(
     messages: [
       {
         role: "user",
-        content: buildUserStateBlock(state),
+        content: buildUserStateBlock({
+          ...state,
+          stats: ensureEnglishStat(state.stats),
+        }),
       },
     ],
   });
@@ -373,10 +413,6 @@ async function callRenderSceneOnce(
   return extractRenderScene(response.content);
 }
 
-/**
- * Generate a scene via forced tool-use, validate/apply deltas deterministically.
- * Retries once on malformed tool output. Does not write to the database.
- */
 export async function generateScene(
   state: SceneGenerationState
 ): Promise<AppliedSceneResult> {
@@ -386,7 +422,7 @@ export async function generateScene(
     try {
       const scene = await callRenderSceneOnce(state);
       const applied = applyDeltas(
-        state.stats,
+        ensureEnglishStat(state.stats),
         state.relationships,
         state.age,
         scene
@@ -394,6 +430,7 @@ export async function generateScene(
       return {
         narrative: scene.narrative,
         choices: scene.choices,
+        vocab: scene.vocab,
         summaryUpdate: scene.summary_update,
         stats: applied.stats,
         relationships: applied.relationships,

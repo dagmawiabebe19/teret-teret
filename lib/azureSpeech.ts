@@ -164,3 +164,43 @@ export async function synthesizeAmharicSpeech(text: string): Promise<ArrayBuffer
 
   return audioBuffer;
 }
+
+const DEFAULT_ENGLISH_VOICE = "en-US-JennyNeural";
+
+function voiceForEnglish(): string {
+  return process.env.AZURE_VOICE_EN?.trim() || DEFAULT_ENGLISH_VOICE;
+}
+
+/** English phrase pronunciation via Azure (additive — does not change Amharic path). */
+export async function synthesizeEnglishSpeech(text: string): Promise<ArrayBuffer> {
+  const apiKey = process.env.AZURE_SPEECH_KEY?.trim();
+  if (!apiKey) {
+    throw new Error("AZURE_SPEECH_KEY is not set");
+  }
+
+  const voice = voiceForEnglish();
+  const endpoint = azureTtsUrl();
+  const cleaned = stripInvisibleChars(text).replace(/\s+/g, " ").trim();
+  if (!cleaned) {
+    throw new Error("Azure TTS: empty English text");
+  }
+
+  const ssml = `<speak version='1.0' xml:lang='en-US'><voice name='${voice}'><prosody rate='-10%'>${escapeXML(cleaned)}</prosody></voice></speak>`;
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Ocp-Apim-Subscription-Key": apiKey,
+      "Content-Type": "application/ssml+xml",
+      "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
+    },
+    body: ssml,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Azure English TTS failed (${response.status}): ${errorBody.slice(0, 200)}`);
+  }
+
+  return response.arrayBuffer();
+}

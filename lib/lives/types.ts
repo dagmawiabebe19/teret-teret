@@ -9,8 +9,15 @@ export interface LifeRelationship {
   dimensions: RelationshipDimensions;
 }
 
+/** English phrase the character says + Amharic meaning for the learner. */
 export interface LifeChoice {
-  label: string;
+  english: string;
+  amharic: string;
+}
+
+export interface VocabPair {
+  english: string;
+  amharic: string;
 }
 
 export interface ProposedDeltas {
@@ -21,6 +28,7 @@ export interface ProposedDeltas {
 export interface RenderSceneInput {
   narrative: string;
   choices: LifeChoice[];
+  vocab: VocabPair[];
   proposed_deltas: ProposedDeltas;
   age_change: number;
   summary_update: string;
@@ -41,7 +49,7 @@ export interface SceneGenerationState {
   turnCount: number;
   summary: string;
   recentBeats: RecentBeat[];
-  /** Chosen label, or "BEGIN" for the opening scene. */
+  /** Chosen English phrase, or "BEGIN" for the opening scene. */
   playerAction: string;
 }
 
@@ -54,6 +62,7 @@ export interface AppliedDeltas {
 export interface AppliedSceneResult {
   narrative: string;
   choices: LifeChoice[];
+  vocab: VocabPair[];
   summaryUpdate: string;
   stats: LifeStats;
   relationships: LifeRelationship[];
