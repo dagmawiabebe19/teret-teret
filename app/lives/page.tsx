@@ -10,6 +10,7 @@ import { AppNav } from "@/components/AppNav";
 import { NamePromptModal } from "@/components/lives/NamePromptModal";
 import { useTranslation } from "@/lib/useTranslation";
 import { parseStats } from "@/lib/lives/deltas";
+import { friendlySceneError } from "@/lib/lives/errors";
 import type { Lang } from "@/types";
 
 type ScenarioRow = {
@@ -154,7 +155,7 @@ export default function LivesHomePage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setStartError(data.error ?? "Could not start life");
+        setStartError(friendlySceneError(data.error));
         setStarting(false);
         return;
       }

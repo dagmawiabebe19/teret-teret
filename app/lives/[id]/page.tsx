@@ -9,9 +9,11 @@ import { DecorativeBackground } from "@/components/DecorativeBackground";
 import { AppNav } from "@/components/AppNav";
 import { StatsHeader } from "@/components/lives/StatsHeader";
 import { RelationshipsPanel } from "@/components/lives/RelationshipsPanel";
+import { SceneGeneratingStatus } from "@/components/lives/SceneGeneratingStatus";
 import { PaywallModal } from "@/components/PaywallModal";
 import { useTranslation } from "@/lib/useTranslation";
 import { parseStats } from "@/lib/lives/deltas";
+import { friendlySceneError } from "@/lib/lives/errors";
 import { LIVES_DAILY_LIMIT_MESSAGE } from "@/lib/lives/usage";
 import type { LifeChoice, LifeRelationship, LifeStats } from "@/lib/lives/types";
 import type { Lang } from "@/types";
@@ -55,6 +57,7 @@ export default function LivesPlayPage() {
   const [play, setPlay] = useState<PlayState | null>(null);
   const [sceneKey, setSceneKey] = useState(0);
   const [turning, setTurning] = useState(false);
+  const [chosenIndex, setChosenIndex] = useState<number | null>(null);
   const [turnError, setTurnError] = useState<string | null>(null);
   const [limitReached, setLimitReached] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -168,15 +171,16 @@ export default function LivesPlayPage() {
     });
   }, [router, lifeId, loadLife]);
 
-  const choose = async (chosenIndex: number) => {
-    if (!play || turning || play.status !== "active") return;
+  const choose = async (index: number) => {
+    if (!play || turning || limitReached || play.status !== "active") return;
     setTurning(true);
+    setChosenIndex(index);
     setTurnError(null);
     try {
       const res = await fetch(`/api/lives/${play.lifeId}/turn`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chosen_index: chosenIndex }),
+        body: JSON.stringify({ chosen_index: index }),
       });
       const data = await res.json().catch(() => ({}));
 
@@ -185,12 +189,14 @@ export default function LivesPlayPage() {
         setLimitReached(true);
         setShowPaywall(true);
         setTurning(false);
+        setChosenIndex(null);
         return;
       }
 
       if (!res.ok) {
-        setTurnError(data.error ?? "Could not advance — try again");
+        setTurnError(friendlySceneError(data.error));
         setTurning(false);
+        setChosenIndex(null);
         return;
       }
 
@@ -230,9 +236,11 @@ export default function LivesPlayPage() {
       });
       setSceneKey((k) => k + 1);
       setTurning(false);
+      setChosenIndex(null);
     } catch {
       setTurnError("Could not advance — try again");
       setTurning(false);
+      setChosenIndex(null);
     }
   };
 
@@ -303,46 +311,37 @@ export default function LivesPlayPage() {
           </span>
         </div>
 
-        <article
-          key={sceneKey}
-          className="mb-6"
-          style={{ animation: "fadeSlideUp 0.45s ease-out" }}
-        >
-          {play.sceneText.split(/\n\n+/).map((para, i) => (
-            <p
-              key={i}
-              className="text-[#e8e0ff] text-[16px] sm:text-[17px] leading-[1.75] mb-4 last:mb-0"
-              style={{ fontFamily: "var(--font-lora), Georgia, serif" }}
-            >
-              {para.trim()}
-            </p>
-          ))}
-        </article>
-
-        {turning && (
-          <div
-            className="mb-5 rounded-2xl border border-[rgba(255,215,0,0.2)] px-4 py-4 text-center"
-            style={{ background: "rgba(255,255,255,0.04)" }}
-            aria-live="polite"
-          >
-            <p className="text-[#FFD700] font-bold text-[14px] mb-1">
-              Writing the next moment…
-            </p>
-            <p className="text-[rgba(200,180,255,0.65)] text-[12px]">
-              Your choice is shaping what happens next
-            </p>
-            <div className="mt-3 flex justify-center gap-1.5" aria-hidden>
-              <span className="w-2 h-2 rounded-full bg-[#FFD700] animate-pulse" />
-              <span
-                className="w-2 h-2 rounded-full bg-[#FFB088] animate-pulse"
-                style={{ animationDelay: "0.2s" }}
-              />
-              <span
-                className="w-2 h-2 rounded-full bg-[#c9b8e8] animate-pulse"
-                style={{ animationDelay: "0.4s" }}
-              />
+        {turning ? (
+          <div className="mb-6">
+            <div className="mb-4 opacity-35 pointer-events-none select-none" aria-hidden>
+              {play.sceneText.split(/\n\n+/).slice(0, 2).map((para, i) => (
+                <p
+                  key={i}
+                  className="text-[#e8e0ff] text-[15px] leading-[1.7] mb-3 last:mb-0 line-clamp-3"
+                  style={{ fontFamily: "var(--font-lora), Georgia, serif" }}
+                >
+                  {para.trim()}
+                </p>
+              ))}
             </div>
+            <SceneGeneratingStatus />
           </div>
+        ) : (
+          <article
+            key={sceneKey}
+            className="mb-6"
+            style={{ animation: "fadeSlideUp 0.45s ease-out" }}
+          >
+            {play.sceneText.split(/\n\n+/).map((para, i) => (
+              <p
+                key={i}
+                className="text-[#e8e0ff] text-[16px] sm:text-[17px] leading-[1.75] mb-4 last:mb-0"
+                style={{ fontFamily: "var(--font-lora), Georgia, serif" }}
+              >
+                {para.trim()}
+              </p>
+            ))}
+          </article>
         )}
 
         {turnError && !limitReached && (
@@ -373,18 +372,32 @@ export default function LivesPlayPage() {
         )}
 
         <div className="space-y-3 mb-8">
-          {play.choices.map((choice, index) => (
-            <button
-              key={`${sceneKey}-${index}`}
-              type="button"
-              disabled={turning || limitReached || play.status !== "active"}
-              onClick={() => choose(index)}
-              className="w-full min-h-[56px] text-left px-4 py-3.5 rounded-2xl text-[15px] font-bold text-[#e8e0ff] border border-[rgba(255,215,0,0.22)] disabled:opacity-45 disabled:cursor-not-allowed transition-all active:scale-[0.99] hover:border-[#FFD700] hover:bg-[rgba(255,215,0,0.06)] tap-zone"
-              style={{ background: "rgba(255,255,255,0.05)" }}
-            >
-              {choice.label}
-            </button>
-          ))}
+          {play.choices.map((choice, index) => {
+            const isChosen = turning && chosenIndex === index;
+            const isDimmed = turning && chosenIndex !== index;
+            return (
+              <button
+                key={`${sceneKey}-${index}`}
+                type="button"
+                disabled={turning || limitReached || play.status !== "active"}
+                onClick={() => choose(index)}
+                className={`w-full min-h-[56px] text-left px-4 py-3.5 rounded-2xl text-[15px] font-bold border transition-all active:scale-[0.99] tap-zone ${
+                  isChosen
+                    ? "text-[#1a0533] border-[#FFD700] opacity-100"
+                    : isDimmed
+                      ? "text-[#e8e0ff] border-[rgba(255,215,0,0.12)] opacity-35 cursor-not-allowed"
+                      : "text-[#e8e0ff] border-[rgba(255,215,0,0.22)] hover:border-[#FFD700] hover:bg-[rgba(255,215,0,0.06)] disabled:opacity-45 disabled:cursor-not-allowed"
+                }`}
+                style={{
+                  background: isChosen
+                    ? "linear-gradient(135deg, #FFB088, #FFD700)"
+                    : "rgba(255,255,255,0.05)",
+                }}
+              >
+                {choice.label}
+              </button>
+            );
+          })}
         </div>
 
         <RelationshipsPanel relationships={play.relationships} />

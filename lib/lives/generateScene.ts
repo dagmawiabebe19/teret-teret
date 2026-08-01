@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { z } from "zod";
 import { getAnthropicApiKey } from "./anthropic";
 import {
   LIVES_ANTHROPIC_TIMEOUT_MS,
@@ -9,6 +8,8 @@ import {
 import { applyDeltas } from "./deltas";
 import type {
   AppliedSceneResult,
+  LifeChoice,
+  ProposedDeltas,
   RenderSceneInput,
   SceneGenerationState,
 } from "./types";
@@ -21,37 +22,13 @@ Stay consistent with the state JSON the user provides. Never contradict prior be
 Keep money and consequences realistic for the setting. Propose only modest per-turn changes.
 Every scene must end on a hook or cliffhanger that forces a meaningful decision.
 Choices (2–4) must be meaningfully different — distinct stakes or directions, not paraphrases.
-summary_update must be a tight compressed memory of what matters going forward: key relationships, unresolved threads, and important facts. Never exceed ~200 words.
+summary_update must be a tight compressed memory of what matters going forward: key relationships, unresolved threads, and important facts. Never exceed ~200 words. On the opening BEGIN scene it may be brief or empty.
 narrative should be 2–4 short paragraphs.
+proposed_deltas may be omitted or empty when nothing changed (common on BEGIN).
 proposed_deltas.stats: only include keys that changed this turn (e.g. { "money": -50, "happiness": 5 }).
 proposed_deltas.relationships: only existing people by name; only changed dimensions.
-age_change is usually 0; use 1 only when meaningful time passes.
+age_change is usually 0; use 1 only when meaningful time passes. Omit to mean 0.
 `.trim();
-
-const RenderSceneSchema = z.object({
-  narrative: z.string().min(1),
-  choices: z
-    .array(z.object({ label: z.string().min(1) }))
-    .min(2)
-    .max(4),
-  proposed_deltas: z
-    .object({
-      stats: z.record(z.number()).optional().default({}),
-      relationships: z
-        .array(
-          z.object({
-            name: z.string(),
-            changes: z.record(z.number()),
-          })
-        )
-        .optional()
-        .default([]),
-    })
-    .optional()
-    .default({ stats: {}, relationships: [] }),
-  age_change: z.number().optional().default(0),
-  summary_update: z.string().min(1),
-});
 
 const RENDER_SCENE_TOOL: Anthropic.Tool = {
   name: "render_scene",
@@ -107,10 +84,10 @@ const RENDER_SCENE_TOOL: Anthropic.Tool = {
       summary_update: {
         type: "string",
         description:
-          "Full rewritten rolling memory, compressed, <= ~200 words",
+          "Full rewritten rolling memory, compressed, <= ~200 words. May be empty on BEGIN.",
       },
     },
-    required: ["narrative", "choices", "proposed_deltas", "age_change", "summary_update"],
+    required: ["narrative", "choices"],
   },
 };
 
@@ -150,28 +127,131 @@ function buildUserStateBlock(state: SceneGenerationState): string {
   );
 }
 
+function logMalformedInput(raw: unknown): void {
+  let serialized: string;
+  try {
+    serialized = JSON.stringify(raw, null, 2);
+  } catch {
+    serialized = String(raw);
+  }
+  console.error("[lives] malformed render_scene input:", serialized);
+}
+
+function asFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function normalizeChoices(raw: unknown): LifeChoice[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: LifeChoice[] = [];
+  for (const item of raw) {
+    if (typeof item === "string") {
+      const label = item.trim();
+      if (label) out.push({ label });
+      continue;
+    }
+    if (item && typeof item === "object") {
+      const labelVal = (item as { label?: unknown; text?: unknown }).label
+        ?? (item as { text?: unknown }).text;
+      if (typeof labelVal === "string" && labelVal.trim()) {
+        out.push({ label: labelVal.trim() });
+      }
+    }
+  }
+  if (out.length < 2) return null;
+  return out.slice(0, 4);
+}
+
+function normalizeProposedDeltas(raw: unknown): ProposedDeltas {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { stats: {}, relationships: [] };
+  }
+  const obj = raw as Record<string, unknown>;
+  const stats: Record<string, number> = {};
+  if (obj.stats && typeof obj.stats === "object" && !Array.isArray(obj.stats)) {
+    for (const [k, v] of Object.entries(obj.stats as Record<string, unknown>)) {
+      const n = asFiniteNumber(v);
+      if (n !== null) stats[k] = n;
+    }
+  }
+  const relationships: ProposedDeltas["relationships"] = [];
+  if (Array.isArray(obj.relationships)) {
+    for (const item of obj.relationships) {
+      if (!item || typeof item !== "object") continue;
+      const row = item as Record<string, unknown>;
+      const name = typeof row.name === "string" ? row.name.trim() : "";
+      if (!name) continue;
+      const changes: Record<string, number> = {};
+      if (row.changes && typeof row.changes === "object" && !Array.isArray(row.changes)) {
+        for (const [k, v] of Object.entries(row.changes as Record<string, unknown>)) {
+          const n = asFiniteNumber(v);
+          if (n !== null) changes[k] = n;
+        }
+      }
+      relationships.push({ name, changes });
+    }
+  }
+  return { stats, relationships };
+}
+
+/**
+ * Tolerate normal variation from the model. Only narrative + ≥2 choices are required.
+ */
+export function normalizeRenderSceneInput(raw: unknown): RenderSceneInput {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    logMalformedInput(raw);
+    throw new SceneGenerationError("Malformed render_scene tool input");
+  }
+
+  const obj = raw as Record<string, unknown>;
+  const narrative =
+    typeof obj.narrative === "string"
+      ? obj.narrative.trim()
+      : typeof obj.scene_text === "string"
+        ? obj.scene_text.trim()
+        : "";
+
+  const choices = normalizeChoices(obj.choices);
+
+  if (!narrative || !choices) {
+    logMalformedInput(raw);
+    throw new SceneGenerationError("Malformed render_scene tool input");
+  }
+
+  const ageRaw = asFiniteNumber(obj.age_change);
+  const summary =
+    typeof obj.summary_update === "string"
+      ? obj.summary_update.trim()
+      : typeof obj.summary === "string"
+        ? obj.summary.trim()
+        : "";
+
+  return {
+    narrative,
+    choices,
+    proposed_deltas: normalizeProposedDeltas(obj.proposed_deltas),
+    age_change: ageRaw ?? 0,
+    summary_update: summary,
+  };
+}
+
 function extractRenderScene(content: Anthropic.ContentBlock[]): RenderSceneInput {
   const block = content.find(
     (b): b is Anthropic.ToolUseBlock =>
       b.type === "tool_use" && b.name === "render_scene"
   );
   if (!block) {
+    console.error("[lives] malformed render_scene input: (no tool_use block)", {
+      contentTypes: content.map((b) => b.type),
+    });
     throw new SceneGenerationError("Model did not call render_scene");
   }
-  const parsed = RenderSceneSchema.safeParse(block.input);
-  if (!parsed.success) {
-    throw new SceneGenerationError("Malformed render_scene tool input");
-  }
-  return {
-    narrative: parsed.data.narrative.trim(),
-    choices: parsed.data.choices.map((c) => ({ label: c.label.trim() })),
-    proposed_deltas: {
-      stats: parsed.data.proposed_deltas.stats ?? {},
-      relationships: parsed.data.proposed_deltas.relationships ?? [],
-    },
-    age_change: parsed.data.age_change ?? 0,
-    summary_update: parsed.data.summary_update.trim(),
-  };
+  return normalizeRenderSceneInput(block.input);
 }
 
 async function callRenderSceneOnce(
@@ -239,7 +319,6 @@ export async function generateScene(
       };
     } catch (err) {
       lastError = err;
-      // Retry only for malformed/missing tool output; still retry once on API blips.
       console.error(`[lives/generateScene] attempt ${attempt + 1} failed:`, err);
     }
   }

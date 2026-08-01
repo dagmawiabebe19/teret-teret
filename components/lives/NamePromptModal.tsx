@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { SceneGeneratingStatus } from "@/components/lives/SceneGeneratingStatus";
 
 interface NamePromptModalProps {
   scenarioTitle: string;
@@ -21,8 +22,8 @@ export function NamePromptModal({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (!loading) inputRef.current?.focus();
+  }, [loading]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -57,20 +58,29 @@ export function NamePromptModal({
         <p className="text-[#c9b8e8] text-sm leading-relaxed mb-4">
           Starting <span className="text-[#FFD700]">{scenarioTitle}</span>
         </p>
-        <label className="block text-[12px] font-bold text-[rgba(200,180,255,0.75)] mb-1.5">
-          Character name
-        </label>
-        <input
-          ref={inputRef}
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={80}
-          disabled={loading}
-          placeholder="e.g. Dawit"
-          className="w-full min-h-[48px] rounded-xl px-4 text-[15px] text-[#e8e0ff] outline-none border border-[rgba(255,215,0,0.25)] focus:border-[#FFD700] mb-3"
-          style={{ background: "rgba(0,0,0,0.25)" }}
-        />
+
+        {loading ? (
+          <div className="mb-4">
+            <SceneGeneratingStatus compact />
+          </div>
+        ) : (
+          <>
+            <label className="block text-[12px] font-bold text-[rgba(200,180,255,0.75)] mb-1.5">
+              Character name
+            </label>
+            <input
+              ref={inputRef}
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={80}
+              placeholder="e.g. Dawit"
+              className="w-full min-h-[48px] rounded-xl px-4 text-[15px] text-[#e8e0ff] outline-none border border-[rgba(255,215,0,0.25)] focus:border-[#FFD700] mb-3"
+              style={{ background: "rgba(0,0,0,0.25)" }}
+            />
+          </>
+        )}
+
         {error && (
           <p className="text-[#ff6b6b] text-[13px] mb-3" role="alert">
             {error}
@@ -94,7 +104,7 @@ export function NamePromptModal({
               boxShadow: "0 2px 12px rgba(255,140,0,0.25)",
             }}
           >
-            {loading ? "Starting…" : "Begin"}
+            {loading ? "Writing…" : "Begin"}
           </button>
         </div>
       </form>
