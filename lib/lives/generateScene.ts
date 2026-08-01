@@ -22,6 +22,7 @@ Stay consistent with the state JSON the user provides. Never contradict prior be
 Keep money and consequences realistic for the setting. Propose only modest per-turn changes.
 Every scene must end on a hook or cliffhanger that forces a meaningful decision.
 Choices (2–4) must be meaningfully different — distinct stakes or directions, not paraphrases.
+choices MUST be a JSON array of objects like [{"label":"..."},{"label":"..."}]. Never use XML, <parameter> tags, or a bare string for choices.
 summary_update must be a tight compressed memory of what matters going forward: key relationships, unresolved threads, and important facts. Never exceed ~200 words. On the opening BEGIN scene it may be brief or empty.
 narrative should be 2–4 short paragraphs.
 proposed_deltas may be omitted or empty when nothing changed (common on BEGIN).
@@ -43,14 +44,20 @@ const RENDER_SCENE_TOOL: Anthropic.Tool = {
       },
       choices: {
         type: "array",
+        description:
+          "The 2 to 4 choices the player can pick from. MUST be a JSON array of objects, each with a single 'label' string. Do not use any other format.",
         minItems: 2,
         maxItems: 4,
         items: {
           type: "object",
           properties: {
-            label: { type: "string", description: "Player-facing choice text" },
+            label: {
+              type: "string",
+              description: "The choice text shown on the button.",
+            },
           },
           required: ["label"],
+          additionalProperties: false,
         },
       },
       proposed_deltas: {
@@ -146,25 +153,100 @@ function asFiniteNumber(value: unknown): number | null {
   return null;
 }
 
-function normalizeChoices(raw: unknown): LifeChoice[] | null {
-  if (!Array.isArray(raw)) return null;
-  const out: LifeChoice[] = [];
-  for (const item of raw) {
-    if (typeof item === "string") {
-      const label = item.trim();
-      if (label) out.push({ label });
-      continue;
+/** Pull choice labels out of XML-ish <parameter name="label">...</parameter> slips. */
+function extractLabelsFromParameterXml(text: string): string[] {
+  const out: string[] = [];
+  const re =
+    /<parameter\s+name=["']label["']\s*>([\s\S]*?)(?:<\/parameter>|(?=<parameter\b)|$)/gi;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    const label = match[1].replace(/<\/?[^>]+>/g, "").trim();
+    if (label) out.push(label);
+  }
+  // Fallback: name="label">TEXT patterns without a full parameter tag
+  if (out.length === 0) {
+    const loose = /name=["']label["']\s*>([^<\n]+)/gi;
+    while ((match = loose.exec(text)) !== null) {
+      const label = match[1].trim();
+      if (label) out.push(label);
     }
-    if (item && typeof item === "object") {
-      const labelVal = (item as { label?: unknown; text?: unknown }).label
-        ?? (item as { text?: unknown }).text;
-      if (typeof labelVal === "string" && labelVal.trim()) {
-        out.push({ label: labelVal.trim() });
+  }
+  return out;
+}
+
+function pushLabel(out: string[], value: unknown): void {
+  if (typeof value === "string") {
+    const t = value.trim();
+    if (t) out.push(t);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) pushLabel(out, item);
+  }
+}
+
+/**
+ * Reconstruct choices from normal JSON, string arrays, XML-fragment slips,
+ * and stray top-level `label` keys the model sometimes leaks.
+ */
+function normalizeChoices(
+  choicesRaw: unknown,
+  toolInput: Record<string, unknown>
+): LifeChoice[] | null {
+  const labels: string[] = [];
+
+  if (Array.isArray(choicesRaw)) {
+    for (const item of choicesRaw) {
+      if (typeof item === "string") {
+        const xmlLabels = extractLabelsFromParameterXml(item);
+        if (xmlLabels.length > 0) {
+          labels.push(...xmlLabels);
+        } else {
+          pushLabel(labels, item);
+        }
+        continue;
+      }
+      if (item && typeof item === "object") {
+        const labelVal =
+          (item as { label?: unknown; text?: unknown }).label ??
+          (item as { text?: unknown }).text;
+        pushLabel(labels, labelVal);
+      }
+    }
+  } else if (typeof choicesRaw === "string") {
+    const xmlLabels = extractLabelsFromParameterXml(choicesRaw);
+    if (xmlLabels.length > 0) {
+      labels.push(...xmlLabels);
+    } else {
+      // Plain multi-line string of options as a last resort
+      for (const line of choicesRaw.split(/\n+/)) {
+        const cleaned = line
+          .replace(/^[-*•\d.)\s]+/, "")
+          .replace(/<\/?[^>]+>/g, "")
+          .trim();
+        if (cleaned) labels.push(cleaned);
       }
     }
   }
-  if (out.length < 2) return null;
-  return out.slice(0, 4);
+
+  // Stray top-level label / label_N keys (seen when XML serialization leaks)
+  for (const [key, value] of Object.entries(toolInput)) {
+    if (key === "label" || /^label[_-]?\d+$/i.test(key)) {
+      pushLabel(labels, value);
+    }
+  }
+
+  const seen = new Set<string>();
+  const unique: LifeChoice[] = [];
+  for (const label of labels) {
+    const key = label.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push({ label });
+    if (unique.length >= 4) break;
+  }
+
+  return unique.length >= 2 ? unique : null;
 }
 
 function normalizeProposedDeltas(raw: unknown): ProposedDeltas {
@@ -216,7 +298,7 @@ export function normalizeRenderSceneInput(raw: unknown): RenderSceneInput {
         ? obj.scene_text.trim()
         : "";
 
-  const choices = normalizeChoices(obj.choices);
+  const choices = normalizeChoices(obj.choices, obj);
 
   if (!narrative || !choices) {
     logMalformedInput(raw);
