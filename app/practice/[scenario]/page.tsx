@@ -340,9 +340,14 @@ export default function PracticeSessionPage() {
           <div ref={bottomRef} />
         </div>
 
-        {(turnError || speech.error || tts.error) && (
+        {(turnError || speech.error) && (
           <p className="text-[#ff6b6b] text-[13px] mb-2 text-center" role="alert">
-            {turnError || speech.error || tts.error}
+            {turnError || speech.error}
+          </p>
+        )}
+        {tts.error && !turnError && !speech.error && (
+          <p className="text-[rgba(200,180,255,0.55)] text-[12px] mb-2 text-center">
+            {tts.error}
           </p>
         )}
 
