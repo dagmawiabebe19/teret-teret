@@ -66,7 +66,12 @@ export async function synthesizeSpeech(text: string, lang: Lang): Promise<ArrayB
 
   if (!res.ok) {
     const errBody = await res.text().catch(() => "");
-    throw new Error(`ElevenLabs TTS failed (${res.status}): ${errBody.slice(0, 200)}`);
+    const err = new Error(
+      `ElevenLabs TTS failed (${res.status}): ${errBody.slice(0, 400)}`
+    ) as Error & { status?: number; body?: string };
+    err.status = res.status;
+    err.body = errBody;
+    throw err;
   }
 
   return res.arrayBuffer();

@@ -159,7 +159,7 @@ export default function PracticeSessionPage() {
 
         setBusy(false);
         if (reply) {
-          void tts.speak(reply);
+          tts.speak(reply);
         }
       } catch {
         setTurnError("Could not get a reply. Please try again.");
@@ -171,6 +171,9 @@ export default function PracticeSessionPage() {
 
   const onMicTap = () => {
     if (busy) return;
+    // Unlock HTMLAudioElement under this user gesture (bedtime plays on tap;
+    // without this, autoplay after the async turn is blocked by the browser).
+    tts.unlock();
     if (speech.listening) {
       speech.stop();
       return;
@@ -185,6 +188,7 @@ export default function PracticeSessionPage() {
     e.preventDefault();
     const v = textFallback.trim();
     if (!v || busy) return;
+    tts.unlock();
     setTextFallback("");
     void sendUtterance(v);
   };
@@ -225,11 +229,15 @@ export default function PracticeSessionPage() {
     ? "Listening… speak now"
     : busy
       ? "Partner is thinking…"
-      : tts.loading || tts.speaking
-        ? "Partner is speaking…"
-        : started
-          ? "Tap the mic to talk"
-          : "Tap the mic and say hello";
+      : tts.loading
+        ? "Loading partner voice…"
+        : tts.speaking
+          ? "Partner is speaking…"
+          : tts.needsTapToPlay
+            ? "Tap ▶ on the reply to hear it"
+            : started
+              ? "Tap the mic to talk"
+              : "Tap the mic and say hello";
 
   return (
     <div
@@ -294,9 +302,23 @@ export default function PracticeSessionPage() {
                       : "mr-auto bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-[#e8e0ff]"
                   }`}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-[rgba(200,180,255,0.5)] mb-1">
-                    {m.role === "user" ? "You" : "Partner"}
-                  </p>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-[rgba(200,180,255,0.5)]">
+                      {m.role === "user" ? "You" : "Partner"}
+                    </p>
+                    {m.role === "partner" && (
+                      <button
+                        type="button"
+                        onClick={() => tts.speakFromTap(m.text)}
+                        disabled={tts.loading}
+                        className="min-w-[44px] min-h-[44px] rounded-full text-[16px] font-bold border border-[rgba(255,215,0,0.35)] text-[#FFD700] bg-[rgba(255,215,0,0.1)] tap-zone disabled:opacity-50"
+                        aria-label="Play partner reply"
+                        title="Hear reply"
+                      >
+                        {tts.loading && tts.pendingText === m.text ? "…" : "▶"}
+                      </button>
+                    )}
+                  </div>
                   {m.text}
                 </div>
                 {m.role === "user" &&

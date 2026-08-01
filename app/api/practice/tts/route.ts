@@ -19,54 +19,50 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * Practice English TTS.
- * Prefer the same English path as bedtime /api/tts (ElevenLabs).
- * Fall back to Azure English only if ElevenLabs is not configured.
- * Does not modify /api/tts or Lives.
+ * Practice English TTS — mirrors bedtime /api/tts English branch:
+ * same ELEVENLABS_API_KEY, voice (ELEVENLABS_VOICE_EN / default), model,
+ * synthesizeSpeech("en"), and raw audio/mpeg bytes response.
  */
 const Schema = z.object({
-  text: z.string().min(1).max(2000),
+  text: z.string().min(1).max(5000),
 });
 
 const AUDIO_UNAVAILABLE =
   "Couldn't play audio — you can still read the reply.";
 
-function logPracticeTtsEnv(): void {
+/** Same default as lib/elevenlabs.ts for English. */
+const BEDTIME_DEFAULT_VOICE_EN = "EXAVITQu4vr4xnSDxMaL";
+const BEDTIME_DEFAULT_MODEL = "eleven_multilingual_v2";
+
+function logPracticeTtsEnv(): {
+  hasElevenKey: boolean;
+  voiceId: string;
+  modelId: string;
+} {
+  const elevenKey = process.env.ELEVENLABS_API_KEY?.trim() ?? "";
+  const voiceId =
+    process.env.ELEVENLABS_VOICE_EN?.trim() || BEDTIME_DEFAULT_VOICE_EN;
+  const modelId =
+    process.env.ELEVENLABS_MODEL_ID?.trim() || BEDTIME_DEFAULT_MODEL;
   const azureKey = process.env.AZURE_SPEECH_KEY?.trim() ?? "";
   const azureRegion = process.env.AZURE_SPEECH_REGION?.trim() ?? "";
   const azureEndpoint = process.env.AZURE_SPEECH_ENDPOINT?.trim() ?? "";
-  const azureVoiceEn = process.env.AZURE_VOICE_EN?.trim() ?? "";
-  const elevenKey = process.env.ELEVENLABS_API_KEY?.trim() ?? "";
-  const elevenVoiceEn = process.env.ELEVENLABS_VOICE_EN?.trim() ?? "";
 
-  console.log("[practice/tts] env check:", {
+  const snapshot = {
+    hasElevenKey: Boolean(elevenKey),
+    elevenKeyEmptyString: process.env.ELEVENLABS_API_KEY === "",
+    hasElevenLabsVoiceEn: Boolean(process.env.ELEVENLABS_VOICE_EN?.trim()),
+    voiceId,
+    modelId,
+    elevenLabsConfigured: isElevenLabsConfigured(),
     hasAzureKey: Boolean(azureKey),
-    azureKeyEmptyString: process.env.AZURE_SPEECH_KEY === "",
     hasAzureRegion: Boolean(azureRegion),
     azureRegion: azureRegion || null,
     hasAzureEndpoint: Boolean(azureEndpoint),
-    azureEndpointEmptyString: process.env.AZURE_SPEECH_ENDPOINT === "",
-    azureEndpointHost: azureEndpoint
-      ? (() => {
-          try {
-            return new URL(
-              azureEndpoint.includes("://")
-                ? azureEndpoint
-                : `https://${azureEndpoint}`
-            ).host;
-          } catch {
-            return "(unparseable)";
-          }
-        })()
-      : null,
-    hasAzureVoiceEn: Boolean(azureVoiceEn),
-    azureVoiceEn: azureVoiceEn || "en-US-JennyNeural (default)",
-    hasElevenLabsKey: Boolean(elevenKey),
-    elevenLabsKeyEmptyString: process.env.ELEVENLABS_API_KEY === "",
-    hasElevenLabsVoiceEn: Boolean(elevenVoiceEn),
-    elevenLabsConfigured: isElevenLabsConfigured(),
     azureConfigured: isAzureSpeechConfigured(),
-  });
+  };
+  console.log("[practice/tts] env check:", snapshot);
+  return { hasElevenKey: snapshot.hasElevenKey, voiceId, modelId };
 }
 
 function logPracticeTtsError(err: unknown, phase: string): void {
@@ -100,13 +96,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
-  logPracticeTtsEnv();
+  const { hasElevenKey, voiceId, modelId } = logPracticeTtsEnv();
 
   const elevenOk = isElevenLabsConfigured();
   const azureOk = isAzureSpeechConfigured();
   if (!elevenOk && !azureOk) {
     console.error(
-      "[practice/tts] error: neither ElevenLabs nor Azure TTS is configured"
+      "[practice/tts] error: neither ElevenLabs nor Azure configured",
+      { hasElevenKey }
     );
     return NextResponse.json(
       {
@@ -128,11 +125,14 @@ export async function POST(request: Request) {
 
   const trimmed = parsed.data.text.trim();
   const access = await resolveProfileAccess(user.id, request);
+
+  // Same cache key shape as bedtime for English (no practice: prefix collision risk
+  // with different synthesis — keep practice prefix but same lang/path helper).
   const key = ttsCacheKey(`practice:${trimmed}`, "en");
   const path = ttsStoragePath("en", key);
   const admin = createAdminClient();
   if (!admin) {
-    console.error("[practice/tts] error: admin client / Supabase not configured");
+    console.error("[practice/tts] error: Supabase admin client missing");
     return NextResponse.json(
       { error: AUDIO_UNAVAILABLE, audioUnavailable: true, useBrowserTts: true },
       { status: 503 }
@@ -144,11 +144,13 @@ export async function POST(request: Request) {
       .from("tts-cache")
       .download(path);
     if (cached && !downloadError) {
-      return new NextResponse(await cached.arrayBuffer(), {
+      const buffer = await cached.arrayBuffer();
+      return new NextResponse(buffer, {
         headers: {
           "Content-Type": "audio/mpeg",
           "Cache-Control": "public, max-age=31536000, immutable",
           "X-TTS-Cache": "hit",
+          "X-TTS-Provider": "elevenlabs",
           "X-TTS-Feature": "practice",
         },
       });
@@ -173,23 +175,40 @@ export async function POST(request: Request) {
     );
   }
 
-  // Match bedtime /api/tts English: ElevenLabs first (known-good path).
   let provider: "elevenlabs" | "azure" = elevenOk ? "elevenlabs" : "azure";
   try {
     let audio: ArrayBuffer;
+
     if (elevenOk) {
-      console.log("[practice/tts] synthesizing via ElevenLabs (bedtime parity)");
+      console.log("[practice/tts] ElevenLabs request (bedtime parity):", {
+        hasElevenKey,
+        voiceId,
+        modelId,
+        textChars: trimmed.length,
+        endpoint: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      });
       try {
+        // Identical call bedtime /api/tts uses for lang === "en"
         audio = await synthesizeSpeech(trimmed, "en");
+        console.log("[practice/tts] ElevenLabs OK, bytes:", audio.byteLength);
       } catch (elevenErr) {
-        logPracticeTtsError(elevenErr, "ElevenLabs synthesis failed");
+        const message =
+          elevenErr instanceof Error ? elevenErr.message : String(elevenErr);
+        console.error("[practice/tts] error: ElevenLabs synthesis failed", {
+          hasElevenKey,
+          voiceId,
+          modelId,
+          message,
+          status: (elevenErr as { status?: number })?.status,
+          body: (elevenErr as { body?: unknown })?.body,
+        });
         if (!azureOk) throw elevenErr;
-        console.warn("[practice/tts] falling back to Azure English voice");
+        console.warn("[practice/tts] falling back to Azure English");
         provider = "azure";
         audio = await synthesizeEnglishSpeech(trimmed);
       }
     } else {
-      console.log("[practice/tts] synthesizing via Azure English (ElevenLabs not configured)");
+      console.log("[practice/tts] ElevenLabs not configured; using Azure English");
       audio = await synthesizeEnglishSpeech(trimmed);
     }
 
@@ -209,6 +228,7 @@ export async function POST(request: Request) {
       await recordTtsUsage(admin, user.id, trimmed.length);
     }
 
+    // Same response shape as bedtime /api/tts: raw audio/mpeg bytes
     return new NextResponse(audio, {
       headers: {
         "Content-Type": "audio/mpeg",
