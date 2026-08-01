@@ -63,6 +63,9 @@ export function usePracticeTTS() {
 
   /** Call from a user gesture (mic tap) so later autoplay of premium audio is allowed. */
   const unlock = useCallback(() => {
+    // Already unlocked — skip silent play so we don't fight SpeechRecognition
+    // for the audio device on later turns.
+    if (unlockedRef.current) return;
     try {
       const audio = ensureAudioEl();
       // Silent unlock: play empty → pause. Must run inside click/touch handler.

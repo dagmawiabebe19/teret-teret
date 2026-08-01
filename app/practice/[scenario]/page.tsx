@@ -171,17 +171,19 @@ export default function PracticeSessionPage() {
 
   const onMicTap = () => {
     if (busy) return;
-    // Unlock HTMLAudioElement under this user gesture (bedtime plays on tap;
-    // without this, autoplay after the async turn is blocked by the browser).
-    tts.unlock();
     if (speech.listening) {
       speech.stop();
       return;
     }
+    // Stop partner audio first so SpeechRecognition can claim the mic cleanly.
+    // Start recognition synchronously under this user gesture (do not defer —
+    // browsers often require start() in the click stack). Unlock TTS after
+    // start so the silent unlock clip does not race the recognizer.
     tts.stop();
     speech.start((finalText) => {
       void sendUtterance(finalText);
     });
+    tts.unlock();
   };
 
   const onTextSubmit = (e: FormEvent) => {
